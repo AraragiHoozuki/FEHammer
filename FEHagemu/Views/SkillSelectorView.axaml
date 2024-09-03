@@ -1,0 +1,75 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:u="https://irihi.tech/ursa"
+             xmlns:local="using:FEHagemu"
+             xmlns:vm="using:FEHagemu.ViewModels"
+             xmlns:views="clr-namespace:FEHagemu.Views"
+             Name="SkillSelectDialog"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:DataType="vm:SkillSelectorViewModel"
+             x:Class="FEHagemu.Views.SkillSelectorView"
+             Width="450">
+  <DockPanel>
+    <ItemsControl ItemsSource="{Binding WeaponTypeTogglers}" HorizontalAlignment="Center" DockPanel.Dock="Top">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <WrapPanel/>
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <ToggleButton Height="36" Padding="0" IsChecked="{Binding IsSelected}" Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).DoSearchCommand}">
+            <Image Source="{Binding Icon}"/>
+          </ToggleButton>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <ItemsControl ItemsSource="{Binding SlotTypeTogglers}" HorizontalAlignment="Center" DockPanel.Dock="Top">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <StackPanel Orientation="Horizontal"/>
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <ToggleButton Height="36" Padding="0" IsChecked="{Binding Path=IsSelected}" Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).DoSearchCommand}">
+            <Image Source="{Binding Icon}"/>
+          </ToggleButton>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" DockPanel.Dock="Top">
+      <CheckBox Content="专属" Theme="{DynamicResource CardCheckBox}" Padding="4" Height="36" IsChecked="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).ExclusiveToggler}" 
+                Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).DoSearchCommand}"/>
+      <CheckBox Content="锻造" Theme="{DynamicResource CardCheckBox}" Padding="4" Height="36"  IsChecked="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).RefinedToggler}" 
+                Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).DoSearchCommand}"/>
+      <CheckBox Content="300SP" Theme="{DynamicResource CardCheckBox}" Padding="4" Height="36"  IsChecked="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).SP300Toggler}" 
+                    Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).DoSearchCommand}"/>
+    </StackPanel>
+    <u:Divider DockPanel.Dock="Top"/>
+    <ListBox Name="SkillList"  ItemsSource="{Binding FilteredSkills}" SelectedItem="{Binding SelectedSkill}" Height="600" HorizontalAlignment="Stretch">
+      <ListBox.ItemsPanel>
+        <ItemsPanelTemplate>
+          <VirtualizingStackPanel/>
+        </ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <Border  BorderBrush="Black" BoxShadow="inset 3 3 10 0 DarkGray" BorderThickness="2" CornerRadius="3"
+                   ToolTip.Tip="{Binding FullDescription}" HorizontalAlignment="Stretch">
+            <Grid ColumnDefinitions="Auto,*,Auto" HorizontalAlignment="Stretch">
+              <Image Grid.Column="0" Source="{Binding Icon}" Height="36" />
+              <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="24" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Stretch"/>
+              <Button Grid.Column="2" HorizontalAlignment="Right" Content="Export" Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).ExportCommand}"
+                      CommandParameter="{Binding}"/>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+
+  </DockPanel>
+</UserControl>

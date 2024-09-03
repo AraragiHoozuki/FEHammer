@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:local="using:FEHagemu"
+             xmlns:vm="using:FEHagemu.ViewModels"
+             xmlns:views="clr-namespace:FEHagemu.Views"
+             x:DataType="vm:PersonSelectorViewModel"
+             x:Class="FEHagemu.Views.PersonSelectorView"
+             Width="450"
+             Name="PersonSelectorDialog">
+  <DockPanel>
+    <ItemsControl ItemsSource="{Binding WeaponTypeTogglers}" HorizontalAlignment="Center" DockPanel.Dock="Top">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <WrapPanel/>
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <ToggleButton Height="36" Padding="0" IsChecked="{Binding IsSelected}" Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).DoSearchCommand}">
+            <Image Source="{Binding Icon}"/>
+          </ToggleButton>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <ItemsControl ItemsSource="{Binding MoveTypeTogglers}" HorizontalAlignment="Center" DockPanel.Dock="Top">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <StackPanel Orientation="Horizontal"/>
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <ToggleButton Height="36" Padding="0" IsChecked="{Binding Path=IsSelected}" Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).DoSearchCommand}">
+            <Image Source="{Binding Icon}"/>
+          </ToggleButton>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <ListBox Name="PersonList" ItemsSource="{Binding FilteredPersons}" SelectedItem="{Binding SelectedPerson}" Height="600">
+      <ListBox.Resources>
+        <local:FaceConverter x:Key="FaceConverter"/>
+      </ListBox.Resources>
+      <ListBox.ItemsPanel>
+        <ItemsPanelTemplate>
+          <VirtualizingStackPanel/>
+        </ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <Border BorderBrush="Black" BoxShadow="inset 3 3 10 0 DarkGray" BorderThickness="2" CornerRadius="3">
+            <StackPanel Orientation="Horizontal">
+              <Image Source="{Binding Face^}" Height="36" DockPanel.Dock="Top" />
+              <Image Source="{Binding WeaponIcon}" Height="36" DockPanel.Dock="Top" />
+              <Image Source="{Binding MoveIcon}" Height="36" DockPanel.Dock="Top" />
+              <TextBlock Text="{Binding Name}" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+
+  </DockPanel>
+</UserControl>

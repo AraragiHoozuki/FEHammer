@@ -1,0 +1,101 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:u="https://irihi.tech/ursa"
+             xmlns:local="using:FEHagemu"
+             xmlns:vm="using:FEHagemu.ViewModels"
+             x:DataType="vm:BoardUnitViewModel"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="FEHagemu.Views.BoardUnitView">
+
+      <Expander Name="UnitPanelExpander">
+        <Expander.Header>
+          <StackPanel Orientation="Horizontal" Spacing="2" Margin="0,0,8,0">
+            <Image Source="{Binding WeaponIcon}" Height="30"/>
+            <Image Source="{Binding MoveIcon}" Height="24"/>
+            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Margin="4,0"/>
+            <Button HorizontalAlignment="Right" Content="Edit" Theme="{DynamicResource SolidButton}" Classes="Success"
+                    Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).ChangePersonCommand}"
+                    CommandParameter="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.SelectedCell}"/>
+            <Button HorizontalAlignment="Right" Content="Copy" Theme="{DynamicResource SolidButton}" Classes="Disabled" IsEnabled="False"/>
+            <Button HorizontalAlignment="Right" Content="Delete" Theme="{DynamicResource SolidButton}" Classes="Danger"
+                    Command="{Binding $parent[UserControl;1].((vm:BoardCellViewModel)DataContext).DeleteUnitCommand}"
+                    CommandParameter="{Binding}"/>
+          </StackPanel>
+        </Expander.Header>
+        <StackPanel Spacing="1">
+          <StackPanel.Resources>
+            <local:SkillIconConverter x:Key="SkillIconConverter"/>
+          </StackPanel.Resources>
+          <StackPanel.Styles>
+            <Style Selector=":is(u|NumericUpDown)">
+              <Setter Property="FontFamily" Value="Consolas" />
+            </Style>
+          </StackPanel.Styles>
+          <u:NumericIntUpDown InnerLeftContent="HP" InnerRightContent="{Binding DefaultHP}"
+                    Step="1" Minimum="0" Maximum="99"
+                    Value="{Binding HP}" HorizontalContentAlignment="Right"/>
+          <u:NumericIntUpDown InnerLeftContent="ATK" InnerRightContent="{Binding DefaultATK}"
+                          Step="1" Minimum="0" Maximum="99"
+                          Value="{Binding ATK}" HorizontalContentAlignment="Right"/>
+          <u:NumericIntUpDown InnerLeftContent="SPD" InnerRightContent="{Binding DefaultSPD}"
+                          Step="1" Minimum="0" Maximum="99"
+                          Value="{Binding SPD}" HorizontalContentAlignment="Right"/>
+          <u:NumericIntUpDown InnerLeftContent="DEF" InnerRightContent="{Binding DefaultDEF}"
+                          Step="1" Minimum="0" Maximum="99"
+                          Value="{Binding DEF}" HorizontalContentAlignment="Right"/>
+          <u:NumericIntUpDown InnerLeftContent="RES" InnerRightContent="{Binding DefaultRES}"
+                          Step="1" Minimum="0" Maximum="99"
+                          Value="{Binding RES}" HorizontalContentAlignment="Right"/>
+          <StackPanel Orientation="Horizontal" Margin="0, 6, 0, 6" Spacing="2">
+            <Button Content="Reset Stats" Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).ResetStatsCommand}"/>
+            <Button Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).ApplyFlowersCommand}">
+              <u:Badge HorizontalAlignment="Center" Header="{Binding DragonFlowerCount}">
+                  <TextBlock Text="Apply Flowers"/>
+              </u:Badge>
+            </Button>
+          </StackPanel>
+
+          <u:NumericIntUpDown InnerLeftContent="Intial Special CD"
+                          Step="1" Minimum="0" Maximum="255"
+                          Value="{Binding CD}" HorizontalContentAlignment="Right"/>
+          <u:NumericIntUpDown InnerLeftContent="Start Turn"
+                          Step="1" Minimum="0" Maximum="255"
+                          Value="{Binding StartTurn}" HorizontalContentAlignment="Right"/>
+          <u:NumericIntUpDown InnerLeftContent="Move Group"
+                          Step="1" Minimum="0" Maximum="255"
+                          Value="{Binding MoveGroup}" HorizontalContentAlignment="Right"/>
+          <u:NumericIntUpDown InnerLeftContent="Move Delay"
+                          Step="1" Minimum="0" Maximum="255"
+                          Value="{Binding MoveDelay}" HorizontalContentAlignment="Right"/>
+          
+          <CheckBox Content="As Enemy" IsChecked="{Binding IsEnemy}" Theme="{DynamicResource CardCheckBox}" Padding="4"/>
+          <CheckBox Content="Returning" IsChecked="{Binding IsReturning}" Theme="{DynamicResource CardCheckBox}" Padding="4"
+                    ToolTip.Tip="如果勾选，则该单位在检测不到周围有敌方时，会返回初始位置"/>
+          
+          <ItemsControl ItemsSource="{Binding Skills}" HorizontalAlignment="Stretch">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Padding="0" Margin="2" CornerRadius="4" BorderBrush="Black" BorderThickness="1"  ToolTip.Tip="{Binding FullDescription}">
+                  <Grid ColumnDefinitions="Auto,Auto">
+                    <Button Grid.Column="0" Padding="1" Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).ChangeSkillCommand}"
+                            CommandParameter="{Binding}">
+                      <Image Height="30"
+                           Source="{Binding Path=Icon}"/>
+                    </Button>
+                    <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="16" VerticalAlignment="Center"/>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+
+        </StackPanel>
+
+      </Expander>
+
+
+
+</UserControl>

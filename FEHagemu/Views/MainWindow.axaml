@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:FEHagemu.ViewModels"
+        xmlns:views="clr-namespace:FEHagemu.Views"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:u="https://irihi.tech/ursa"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        SizeToContent="Width"
+        Height="600"
+        x:Class="FEHagemu.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="FEHagemu">
+  <DockPanel>
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="Open Map" Command="{Binding OpenMapCommand}"/>
+      <MenuItem Header="Save Map" Command="{Binding SaveMapCommand}"/>
+      <MenuItem Header="Import Skill" Command="{Binding ImportSkillCommand}"/>
+      <MenuItem Header="Export Package" Command="{Binding ExportPackageCommand}"/>
+      <MenuItem Header="About"/>
+    </Menu>
+    <u:Divider DockPanel.Dock="Top"/>
+    <ScrollViewer DockPanel.Dock="Left">
+      <views:GameBoardView DataContext="{Binding GameBoard}" DockPanel.Dock="Left"/>
+    </ScrollViewer>
+    
+    <ScrollViewer DockPanel.Dock="Right">
+      <views:CellPanelView DataContext="{Binding GameBoard.SelectedCell}"/>
+    </ScrollViewer>
+  </DockPanel>
+
+</Window>
