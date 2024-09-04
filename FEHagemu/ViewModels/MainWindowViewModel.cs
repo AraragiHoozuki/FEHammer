@@ -59,6 +59,7 @@ namespace FEHagemu.ViewModels
                         string description = s.description;
                         string id_name = MasterData.StripIdPrefix(s.id, out _);
                         if (!id_name.Contains("MOD")) id_name = id_name + "MOD";
+                        s.id = id_name;
                         s.name = $"MSID_{id_name}";
                         s.description = $"MSID_H_{id_name}";
 
@@ -137,6 +138,15 @@ namespace FEHagemu.ViewModels
             mapData.player_count = (uint)mapData.player_positions.Length;
             mapData.map_units = GameBoard.Cells.SelectMany(cell => cell).SelectMany(cell => cell.Units).Select(uvm => uvm.unit).ToArray();
             mapData.unit_count = (uint)mapData.map_units.Length;
+            uint w = mapData.field.width; uint h = mapData.field.height;
+            for (int i = 0; i < h; i++)
+            {
+                int view_y = (int)(h - i - 1);
+                for (int j = 0; j < w; j++)
+                {
+                    mapData.field.terrains[i * w + j].tid = (byte)GameBoard.Cells[view_y][j].Terrain;
+                }
+            }
             byte[] buffer = mapArc.Binarize();
             File.WriteAllBytes(mapArc.FilePath, Cryptor.EncryptAndCompress(buffer));
         }

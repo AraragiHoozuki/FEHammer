@@ -7,6 +7,7 @@ using FEHagemu.HSDArcIO;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -191,16 +192,19 @@ namespace FEHagemu
         public static void AddSkill(HSDArc<SkillList> arc, Skill skill)
         {
             int index = Array.FindIndex(arc.data.list, s => s.id == skill.id);
-            if (index > -1 && index < arc.data.list.Length)
+            if (index > -1)
             {
                 arc.data.list[index] = skill;
                 SkillDict[skill.id] = skill;
             }
             else
             {
+                skill.id_num = SkillDict.Values.MaxBy(sk => sk.id_num)!.id_num + 1;
+                skill.sort_value = SkillDict.Values.MaxBy(sk => sk.sort_value)!.sort_value + 1;
                 Array.Resize(ref arc.data.list, arc.data.list.Length + 1);
                 arc.data.list[^1] = skill;
                 arc.data.size += 1;
+                SkillDict[skill.id] = skill;
             }
         }
 

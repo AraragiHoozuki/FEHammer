@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FEHagemu.HSDArchive;
 using FEHagemu.Views;
-using HarfBuzzSharp;
 using System;
 using System.Collections.ObjectModel;
 using System.Text;
