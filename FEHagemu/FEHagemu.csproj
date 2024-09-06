@@ -35,4 +35,10 @@
     <PackageReference Include="Irihi.Ursa.Themes.Semi" Version="1.2.0" />
     <PackageReference Include="Semi.Avalonia" Version="11.1.0.3" />
   </ItemGroup>
+
+
+
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Views\SkillToolTipPanel.axaml" />
+  </ItemGroup>
 </Project>

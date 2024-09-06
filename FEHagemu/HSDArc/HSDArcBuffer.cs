@@ -76,5 +76,10 @@ namespace FEHagemu.HSDArchive
             }
             return buffer;
         }
+
+        public void Save()
+        {
+            File.WriteAllBytes(FilePath, Cryptor.EncryptAndCompress(Binarize()));
+        }
     }
 }

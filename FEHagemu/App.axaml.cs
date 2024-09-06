@@ -27,7 +27,6 @@ namespace FEHagemu
                 {
                     DataContext = new MainWindowViewModel(),
                 };
-                MasterData.Init();
             }
 
             base.OnFrameworkInitializationCompleted();

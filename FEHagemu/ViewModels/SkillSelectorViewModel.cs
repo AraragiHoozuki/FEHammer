@@ -12,10 +12,18 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
 using System.Threading.Tasks;
+using Ursa.Controls;
 
 namespace FEHagemu.ViewModels
 {
-    public partial class SkillSelectorViewModel: ViewModelBase
+    public partial class TypeFilterItem(int index, IImage i) : ViewModelBase
+    {
+        [ObservableProperty]
+        public int index = index;
+        [ObservableProperty]
+        public IImage icon = i;
+    }
+    public partial class SkillSelectorViewModel : ViewModelBase
     {
         [ObservableProperty]
         ObservableCollection<SkillViewModel> filteredSkills = [];
@@ -29,19 +37,75 @@ namespace FEHagemu.ViewModels
             [ObservableProperty]
             public IImage icon = i;
         }
+
+
         [ObservableProperty]
-        ObservableCollection<SkillTypeToggler> weaponTypeTogglers = new(MasterData.WeaponTypeIcons.Select(i => new SkillTypeToggler(false, i)));
+        ObservableCollection<TypeFilterItem> weaponTypeComboItems = new(MasterData.WeaponTypeIcons.Select((v, i) => new TypeFilterItem(i, MasterData.GetWeaponIcon(i))));
+        [ObservableProperty]
+        ObservableCollection<TypeFilterItem> selectedWeaponTypes = [];
+
+        [ObservableProperty]
+        ObservableCollection<TypeFilterItem> skillSlotSelectItems = [new TypeFilterItem(0, MasterData.GetSkillIcon(1)), new TypeFilterItem(1, MasterData.GetSkillIcon(2)), new TypeFilterItem(2, MasterData.GetSkillIcon(3)), new TypeFilterItem(3, MasterData.GetABCSXIcon("A")), new TypeFilterItem(4, MasterData.GetABCSXIcon("B")), new TypeFilterItem(5, MasterData.GetABCSXIcon("C")), new TypeFilterItem(6, MasterData.GetABCSXIcon("X")), new TypeFilterItem(7, MasterData.GetABCSXIcon("S"))];
+
+        TypeFilterItem? selectedSkillSlot;
+        public TypeFilterItem? SelectedSkillSlot { get => selectedSkillSlot; set
+            {
+                selectedSkillSlot = value;
+                OnPropertyChanged();
+                DoSearch();
+            } 
+        }
+
+        [ObservableProperty]
+        ObservableCollection<SkillTypeToggler> weaponTypeTogglers = new(MasterData.WeaponTypeIcons.Select((v, i) => new SkillTypeToggler(false, MasterData.GetWeaponIcon(i))));
         [ObservableProperty]
         ObservableCollection<SkillTypeToggler> slotTypeTogglers = [new SkillTypeToggler(false, MasterData.GetSkillIcon(1)), new SkillTypeToggler(false, MasterData.GetSkillIcon(2)), new SkillTypeToggler(false, MasterData.GetSkillIcon(3)), new SkillTypeToggler(false, MasterData.GetABCSXIcon("A")), new SkillTypeToggler(false, MasterData.GetABCSXIcon("B")), new SkillTypeToggler(false, MasterData.GetABCSXIcon("C")), new SkillTypeToggler(false, MasterData.GetABCSXIcon("X")), new SkillTypeToggler(false, MasterData.GetABCSXIcon("S"))];
         [ObservableProperty]
-        bool exclusiveToggler = false;
+        bool? exclusiveQ = null;
         [ObservableProperty]
-        bool refinedToggler = false;
-        [ObservableProperty]
-        bool sP300Toggler = false;
+        bool? refinedQ = null;
+        int minSp = 0;
+        public int MinSp {get =>minSp; set {
+                minSp = value;
+                OnPropertyChanged();
+                DoSearch();
+            }
+        }
+        int maxSp = 500;
+        public int MaxSp
+        {
+            get => maxSp; set
+            {
+                maxSp = value;
+                OnPropertyChanged();
+                DoSearch();
+            }
+        }
 
         public SkillSelectorViewModel()
         {
+            SelectAllWeaponFilters();
+        }
+        bool IsWeaponTypeSelected(int type)
+        {
+            return SelectedWeaponTypes.Any(item => item.Index == type);
+        }
+        bool CheckWeaponType(Skill sk)
+        {
+            for (int i = 0; i < (int)WeaponType.ColorlessBeast + 1; i++)
+            {
+                if (IsWeaponTypeSelected(i) && (sk.wep_equip & (1 << i)) == (1 << i)) return true;
+            }
+            return false;
+        }
+        bool CheckSlot(Skill sk)
+        {
+            return (int)sk.category == SelectedSkillSlot?.Index;
+        }
+        bool CheckCheckers(Skill sk)
+        {
+            return (ExclusiveQ == null || ((sk.exclusiveQ == 1) == ExclusiveQ)) &&
+                (RefinedQ == null || ((sk.refinedQ == 1) == RefinedQ));
         }
         [RelayCommand]
         public void DoSearch()
@@ -52,25 +116,31 @@ namespace FEHagemu.ViewModels
             {
                 foreach (var skill in arc.data.list)
                 {
-                    var wep = skill.wep_equip;
-                    bool wep_check = false;
-                    for (int i = 0; i < (int)WeaponType.ColorlessBeast + 1; i++)
-                    {
-                        if (WeaponTypeTogglers[i].IsSelected && skill.category == SkillCategory.Weapon && (wep & (1 << i)) == (1 << i)) { wep_check = true; break; }
-                    }
-                    bool slot_check = false;
-                    for (int i = 0; i < (int)SkillCategory.Refine; i++)
-                    {
-                        if (SlotTypeTogglers[i].IsSelected && (int)skill.category == i) { slot_check = true; break; };
-                    }
-                    bool and_check = (ExclusiveToggler ==false|| ExclusiveToggler == (skill.exclusiveQ == 1)) && (RefinedToggler == false||RefinedToggler == (skill.refinedQ == 1)) && (SP300Toggler == false || skill.sp_cost >= 300);
-                   if ((wep_check || slot_check) && and_check) list.Add(new SkillViewModel(skill.id, 0));
+                    if (!CheckWeaponType(skill)) continue;
+                    if (!CheckSlot(skill)) continue;
+                    if (!CheckCheckers(skill)) continue;
+                    if (!(skill.sp_cost >= MinSp && skill.sp_cost <= MaxSp)) continue;
+                    list.Add(new SkillViewModel(skill.id, 0));
                 }
             }
             list.Sort((x, y) => -x.skill!.sort_value.CompareTo(y.skill!.sort_value));
             FilteredSkills = new(list);
         }
-
+        [RelayCommand]
+        void ClearWeaponFilters()
+        {
+            SelectedWeaponTypes.Clear();
+        }
+        [RelayCommand]
+        void SelectAllWeaponFilters()
+        {
+            SelectedWeaponTypes.Clear();
+            foreach (var item in WeaponTypeComboItems)
+            {
+                SelectedWeaponTypes.Add(item);
+            }
+            
+        }
         [RelayCommand]
         public async Task Export(SkillViewModel svm)
         {
@@ -87,6 +157,7 @@ namespace FEHagemu.ViewModels
                 var file = await mainWindow.StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions()
                 {
                     Title = "Export json",
+                    SuggestedFileName = svm.skill?.name
                 });
                 if (file is not null)
                 {
@@ -94,6 +165,19 @@ namespace FEHagemu.ViewModels
                     using var streamWriter = new StreamWriter(stream); 
                     await streamWriter.WriteAsync(jsonString);
                 }
+            }
+        }
+
+        [RelayCommand]
+        public async Task Delete(SkillViewModel svm)
+        {
+            if (svm is not null && svm.skill is not null && svm.skill.id.Contains("MOD"))
+            {
+                MasterData.DeleteSkill(MasterData.ModSkillArc, svm.skill);
+                DoSearch();
+            } else
+            {
+                await MessageBox.ShowAsync("Cannot delete built-in skill", "Error", MessageBoxIcon.Error, MessageBoxButton.OK);
             }
         }
     }

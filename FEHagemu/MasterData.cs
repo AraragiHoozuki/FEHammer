@@ -39,8 +39,14 @@ namespace FEHagemu
         public static Bitmap FallBackFace = new Bitmap(AssetLoader.Open(new Uri($"avares://FEHagemu/Assets/Face/ch00_00_Eclat_F_Avatar01/Face_FC.png")));
         public static Bitmap EmptyBitmap = new Bitmap(AssetLoader.Open(new Uri("avares://FEHagemu/Assets/empty.png")));
 
+        public static HSDArc<SkillList> ModSkillArc => SkillArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!;
+        public static HSDArc<MessageList> ModMsgArc => MsgArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!;
 
-        public static void Init()
+        public static async Task<bool> LoadAsync()
+        {
+            return await Task.Run(Init);
+        }
+        public static bool Init()
         {
             string[] files;
             files = Directory.GetFiles(PERSON_PATH, DATAEXT);
@@ -79,10 +85,13 @@ namespace FEHagemu
             
             
             InitImage();
+            return true;
         }
 
         public static IImage[] WeaponTypeIcons = null!;
         public static IImage[] MoveTypeIcons = null!;
+
+        
         static void InitImage()
         {
             STATUS = new Bitmap(UI_PATH + "Status.png");
@@ -95,13 +104,13 @@ namespace FEHagemu
             }
             WeaponTypeIcons = new IImage[(int)WeaponType.ColorlessBeast + 1];
             MoveTypeIcons = new IImage[(int)MoveType.Flying + 1];
-            for (int i = 0; i <= (int)WeaponType.ColorlessBeast; i++) WeaponTypeIcons[i] = GetWeaponIcon(i);
-            for (int i = 0; i <= (int)MoveType.Flying; i++) MoveTypeIcons[i] = GetMoveIcon(i);
-            GetABCSXIcon("A");
-            GetABCSXIcon("B");
-            GetABCSXIcon("C");
-            GetABCSXIcon("S");
-            GetABCSXIcon("X");
+            //for (int i = 0; i <= (int)WeaponType.ColorlessBeast; i++) WeaponTypeIcons[i] = GetWeaponIcon(i);
+            //for (int i = 0; i <= (int)MoveType.Flying; i++) MoveTypeIcons[i] = GetMoveIcon(i);
+            //GetABCSXIcon("A");
+            //GetABCSXIcon("B");
+            //GetABCSXIcon("C");
+            //GetABCSXIcon("S");
+            //GetABCSXIcon("X");
         }
 
         public static IImage GetSkillIcon(int id)
@@ -184,7 +193,7 @@ namespace FEHagemu
                 Array.Resize(ref arc.data.list, arc.data.list.Length + 2);
                 arc.data.list[index] = key;
                 arc.data.list[index + 1] = message;
-                arc.data.size += 1;
+                arc.data.size = (ulong)arc.data.list.Length/2;
                 MsgDict.Add(key, message);
             }
         }
@@ -194,6 +203,8 @@ namespace FEHagemu
             int index = Array.FindIndex(arc.data.list, s => s.id == skill.id);
             if (index > -1)
             {
+                skill.id_num = arc.data.list[index].id_num;
+                skill.sort_value = arc.data.list[index].sort_value;
                 arc.data.list[index] = skill;
                 SkillDict[skill.id] = skill;
             }
@@ -203,8 +214,37 @@ namespace FEHagemu
                 skill.sort_value = SkillDict.Values.MaxBy(sk => sk.sort_value)!.sort_value + 1;
                 Array.Resize(ref arc.data.list, arc.data.list.Length + 1);
                 arc.data.list[^1] = skill;
-                arc.data.size += 1;
-                SkillDict[skill.id] = skill;
+                arc.data.size = (ulong)arc.data.list.Length;
+                SkillDict.Add(skill.id, skill);
+            }
+        }
+
+        public static void DeleteSkill(HSDArc<SkillList> arc, Skill skill)
+        {
+            if (!skill.id.Contains("MOD")) return;
+            int index = Array.FindIndex(arc.data.list, s => s.id == skill.id);
+            if (index > -1)
+            {
+                arc.data.list[index] = arc.data.list[^1];
+                arc.data.list = arc.data.list[..^1];
+                arc.data.size = (ulong)arc.data.list.Length;
+                SkillDict.Remove(skill.id);
+                DeleteMessage(ModMsgArc, skill.name);
+                DeleteMessage(ModMsgArc, skill.description);
+            }
+        }
+
+        public static void DeleteMessage(HSDArc<MessageList> arc, string key)
+        {
+            if (!key.Contains("MOD")) return;
+            int index = Array.FindIndex(arc.data.list, m => m == key);
+            if (index > -1)
+            {
+                arc.data.list[index] = arc.data.list[^2];
+                arc.data.list[index+1] = arc.data.list[^1];
+                arc.data.list = arc.data.list[..^2];
+                arc.data.size = (ulong)arc.data.list.Length/2;
+                MsgDict.Remove(key);
             }
         }
 

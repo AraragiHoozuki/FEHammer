@@ -357,6 +357,30 @@ namespace FEHagemu.ViewModels
         public IImage Icon => MasterData.GetSkillIcon(skill is null ? 0 : (int)skill.icon);
         public string Name => MasterData.GetMessage(skill?.name ?? string.Empty);
         public string Description => MasterData.GetMessage(skill?.description ?? string.Empty);
+        public string? RefineDescription
+        {
+            get
+            {
+                if (skill is null || !RefinedQ) return string.Empty;
+                var s = MasterData.GetSkill(skill.refine_id);
+                if (s is null) return string.Empty;
+                return MasterData.GetMessage(s.description ?? string.Empty);
+            }
+            
+        }
+        public bool RefinedQ => (skill?.refinedQ == 1);
+        public bool SpecialQ => skill?.category == SkillCategory.Special;
+        public bool WeaponQ => skill?.category == SkillCategory.Weapon;
+        public bool ShowExNumberQ => SpecialQ || WeaponQ;
+        public int ExNumber
+        {
+            get
+            {
+                if (skill?.category == SkillCategory.Weapon) return skill.might;
+                if (skill?.category == SkillCategory.Special) return skill.cooldown;
+                return 0;
+            }
+        }
         public string FullDescription {
             get {
                 StringBuilder sb = new();
@@ -391,19 +415,6 @@ namespace FEHagemu.ViewModels
                     return skill.cooldown;
                 }
                 return 0;
-            }
-        }
-
-        public string Refine
-        {
-            get
-            {
-                if (skill is null) { return string.Empty; } else
-                if (!string.IsNullOrEmpty(skill.refine_id))
-                {
-                    return MasterData.GetMessage(MasterData.GetSkill(skill.refine_id)!.description);
-                }
-                return string.Empty;
             }
         }
     }

@@ -15,11 +15,16 @@ using System.Text.Json;
 using System.Text.Unicode;
 using System.Collections.Generic;
 using System;
+using Avalonia.Threading;
 
 namespace FEHagemu.ViewModels
 {
     public partial class MainWindowViewModel : ViewModelBase
     {
+        public MainWindowViewModel()
+        {
+            LoadMasterData();
+        }
 
         HSDArc<SRPGMap> mapArc = null!;
         SRPGMap mapData = null!;
@@ -27,6 +32,15 @@ namespace FEHagemu.ViewModels
         ObservableCollection<ObservableCollection<MapSpaceViewModel>> mapSpaces = [];
         [ObservableProperty]
         GameBoardViewModel? gameBoard;
+        [ObservableProperty]
+        bool loadingQ  = true;
+
+        async void LoadMasterData()
+        {
+            await MasterData.LoadAsync();
+            LoadingQ = false;
+        }
+
         [RelayCommand]
         async Task ImportSkill()
         {
@@ -59,7 +73,7 @@ namespace FEHagemu.ViewModels
                         string description = s.description;
                         string id_name = MasterData.StripIdPrefix(s.id, out _);
                         if (!id_name.Contains("MOD")) id_name = id_name + "MOD";
-                        s.id = id_name;
+                        s.id = "SID_" + id_name;
                         s.name = $"MSID_{id_name}";
                         s.description = $"MSID_H_{id_name}";
 
@@ -69,6 +83,7 @@ namespace FEHagemu.ViewModels
                             if (!id_name.Contains("MOD"))
                             {
                                 await MessageBox.ShowOverlayAsync("Cannot overwrite built-in skills", "Error", icon: MessageBoxIcon.Error);
+                                return;
                             }
                             else
                             {
@@ -87,12 +102,6 @@ namespace FEHagemu.ViewModels
                         }
 
                         if (!skill_modified) return;
-
-                        byte[] buffer;
-                        buffer = skill_arc.Binarize();
-                        File.WriteAllBytes(skill_arc.FilePath, Cryptor.EncryptAndCompress(buffer));
-                        buffer = msg_arc.Binarize();
-                        File.WriteAllBytes(msg_arc.FilePath, Cryptor.EncryptAndCompress(buffer));
                     }
 
                 }
@@ -147,13 +156,17 @@ namespace FEHagemu.ViewModels
                     mapData.field.terrains[i * w + j].tid = (byte)GameBoard.Cells[view_y][j].Terrain;
                 }
             }
-            byte[] buffer = mapArc.Binarize();
-            File.WriteAllBytes(mapArc.FilePath, Cryptor.EncryptAndCompress(buffer));
+            mapArc.Save();
+            MasterData.ModSkillArc.Save();
+            MasterData.ModMsgArc.Save();
         }
         [RelayCommand]
         void ExportPackage()
         {
             if (mapArc is null || GameBoard is null) return;
+            mapArc.Save();
+            MasterData.ModSkillArc.Save();
+            MasterData.ModMsgArc.Save();
             var root = Path.GetDirectoryName(mapArc.FilePath);
             if (Directory.Exists(root)) {
                 byte[] buffer;
@@ -182,7 +195,6 @@ namespace FEHagemu.ViewModels
                         writer.WriteStruct(mapData);
                         writer.WritePointerOffsets();
                         writer.WriteEnd(mapArc.header.unknown1, mapArc.header.unknown2, mapArc.header.magic);
-                        //writer.WriteAll(_arc, _map);
                         buffer = mapArc.XStart.Concat(ms.ToArray()).ToArray();
                     }
                     File.WriteAllBytes(srpg_map.FullName + "\\" + Path.GetFileName(mapArc.FilePath), Cryptor.EncryptAndCompress(buffer));
