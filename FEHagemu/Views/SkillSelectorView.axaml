@@ -149,23 +149,22 @@
                                 FontSize="24"
                                 FontWeight="Bold"
                                 Text="{Binding Name}" />
-                            <Button
-                                Grid.Column="2"
-                                HorizontalAlignment="Right"
-                                Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).ExportCommand}"
-                                CommandParameter="{Binding}"
-                                Content="Export" />
-                            <Button
-                                Grid.Column="3"
-                                HorizontalAlignment="Right"
-                                Classes="Danger"
-                                Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).DeleteCommand}"
-                                CommandParameter="{Binding}"
-                                Content="Delete" />
                         </Grid>
                         <ToolTip.Tip>
                             <views:SkillToolTipPanel />
                         </ToolTip.Tip>
+                        <Border.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem
+                                    Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).ExportCommand}"
+                                    CommandParameter="{Binding}"
+                                    Header="Export Skill" />
+                                <MenuItem
+                                    Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).DeleteCommand}"
+                                    CommandParameter="{Binding}"
+                                    Header="Delete Skill" />
+                            </ContextMenu>
+                        </Border.ContextMenu>
                     </Border>
                 </DataTemplate>
             </ListBox.ItemTemplate>

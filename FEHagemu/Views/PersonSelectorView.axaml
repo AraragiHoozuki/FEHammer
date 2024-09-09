@@ -132,6 +132,15 @@
                         BorderThickness="2"
                         BoxShadow="inset 3 3 10 0 DarkGray"
                         CornerRadius="3">
+                        <Border.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem
+                                    Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).ShowSameCharactersCommand}"
+                                    CommandParameter="{Binding}"
+                                    Header="Show Same Characters" />
+                            </ContextMenu>
+
+                        </Border.ContextMenu>
                         <StackPanel Orientation="Horizontal">
                             <StackPanel.Styles>
                                 <Style Selector="Image">

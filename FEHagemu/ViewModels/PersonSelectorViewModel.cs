@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using static FEHagemu.ViewModels.SkillSelectorViewModel;
 
 namespace FEHagemu.ViewModels
 {
@@ -41,7 +40,7 @@ namespace FEHagemu.ViewModels
         bool checkEngageQ;
 
         public static List<uint> Versions { get {
-                return MasterData.PersonArcs.SelectMany(arc => arc.data.list).Select(p => p.version_num).Distinct().Order().ToList(); } }
+                return MasterData.PersonArcs.SelectMany(arc => arc.data.list).Select(p => p.version_num).Distinct().OrderDescending().ToList(); } }
         uint? selectedVersion;
         public uint? SelectedVersion { get => selectedVersion; set {
                 selectedVersion = value;
@@ -76,6 +75,18 @@ namespace FEHagemu.ViewModels
                     {
                         FilteredPersons.Add(new PersonViewModel(person));
                     }
+                }
+            }
+        }
+        [RelayCommand]
+        void ShowSameCharacters(PersonViewModel pvm)
+        {
+            FilteredPersons.Clear();
+            foreach (var arc in MasterData.PersonArcs.Reverse())
+            {
+                foreach (var person in arc.data.list)
+                {
+                    if (person.origins == pvm.person.origins && person.sort_value == pvm.person.sort_value) FilteredPersons.Add(new PersonViewModel(person));
                 }
             }
         }
