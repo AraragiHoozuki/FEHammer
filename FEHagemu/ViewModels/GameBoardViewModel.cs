@@ -184,8 +184,16 @@ namespace FEHagemu.ViewModels
                 DefaultSPD = (ushort)stats[2];
                 DefaultDEF = (ushort)stats[3];
                 DefaultRES = (ushort)stats[4];
+
+                var ls = MasterData.GetSkill(p.legendary.btn_skill_id);
+                if (ls is not null) {
+                    LegendarySkill = new SkillViewModel(p.legendary.btn_skill_id, 9);
+                }
+                
             }
             
+
+
         }
 
         public string Name => MasterData.GetMessage($"M{unit.id_tag}");
@@ -267,22 +275,27 @@ namespace FEHagemu.ViewModels
                 return p is not null ? MasterData.GetMoveIcon((int)p!.move_type) : null;
             }
         }
+
+        [ObservableProperty]
+        SkillViewModel? legendarySkill;
+        public bool HasLegendarySkillQ => LegendarySkill is not null;
+
         [RelayCommand]
         public async Task ChangeSkill(SkillViewModel svm)
         {
             var vm = new SkillSelectorViewModel();
-            var res = await Dialog.ShowModal(new SkillSelectorView(), vm, null, new DialogOptions()
+            vm.SelectSlot(svm.Index);
+            bool? result = await Dialog.ShowCustomModal<SkillSelectorView, SkillSelectorViewModel, bool?>(vm, null, new DialogOptions()
             {
-                Title = "Select skill (Click no to select empty skill)",
-                Button = DialogButton.YesNoCancel,
+                Title = "Select Skill"
             });
-            if (res == DialogResult.No) {
-                SetSkill(string.Empty, svm.Index);
-            } else if (res == DialogResult.Yes)
+            if (result is null)
             {
-                if (vm.SelectedSkill is not null) SetSkill(vm.SelectedSkill.skill!.id, svm.Index);
+                SetSkill(string.Empty, svm.Index);
+            } else if (result.Value && vm.SelectedSkill is not null)
+            {
+                SetSkill(vm.SelectedSkill.skill!.id, svm.Index);
             }
-            
         }
         [RelayCommand]
         public async Task ChangePerson(BoardCellViewModel cell)
@@ -291,7 +304,7 @@ namespace FEHagemu.ViewModels
             var res = await Dialog.ShowModal(new PersonSelectorView(), vm, null, new DialogOptions()
             {
                 Button = DialogButton.OKCancel,
-                Title = "选择角色"
+                Title = "Select Person"
             });
             if (res == DialogResult.OK && vm.SelectedPerson is not null) {
                 var pvm = vm.SelectedPerson;
@@ -306,8 +319,14 @@ namespace FEHagemu.ViewModels
                 DefaultSPD = SPD = (ushort)stats[2];
                 DefaultDEF = DEF = (ushort)stats[3];
                 DefaultRES = RES = (ushort)stats[4];
+                var ls = MasterData.GetSkill(pvm.person.legendary.btn_skill_id);
+                if (ls is not null)
+                {
+                    LegendarySkill = new SkillViewModel(pvm.person.legendary.btn_skill_id, 9);
+                }
                 cell.CallFirstPersonChange();
                 OnPropertyChanged(nameof(DragonFlowerCount));
+                OnPropertyChanged(nameof(HasLegendarySkillQ));
             }
         }
 

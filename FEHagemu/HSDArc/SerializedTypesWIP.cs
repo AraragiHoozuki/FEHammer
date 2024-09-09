@@ -13,6 +13,25 @@ namespace FEHagemu.HSDArchive
     };
     public enum Element : byte { None, Fire, Thunder, Wind, Light, Dark };
     public enum MoveType { Infantry, Armored, Cavalry, Flying };
+
+    public enum Origins
+    {
+        Heroes,
+        Mystery_of_the_Emblem,
+        Shadows_of_Valentia,
+        Genealogy_of_the_Holy_War,
+        Thracia_776,
+        The_Binding_Blade,
+        The_Blazing_Blade,
+        The_Sacred_Stones,
+        Path_of_Radiance,
+        Radiant_Dawn,
+        Awakening,
+        Fates,
+        Three_Houses,
+        FE_Encore,
+        Engage
+    }
     public class Person
     {
         [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
@@ -137,6 +156,17 @@ namespace FEHagemu.HSDArchive
     public class Enemy : Person
     {
     }
+    public enum LegendaryKind : byte
+    {
+        None,
+        LegendaryOrMythic,
+        Pair,
+        TwinWorld,
+        FlowerBud = 4,
+        Diabolos = 5,
+        Resonate = 6,
+        Engage
+    }
     public enum LegendaryElement
     {
         None, Fire, Water, Wind, Earth, Light, Dark, Astra, Anima
@@ -148,7 +178,7 @@ namespace FEHagemu.HSDArchive
         [HSDHelper(Type = HSDBinType.Struct)]
         public Stats bonus_stats; // 16 bytes
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x21)]
-        public byte kind; // 1 byte
+        public LegendaryKind kind; // 1 byte
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x05)]
         public LegendaryElement element; // 1 byte
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x0F)]
@@ -370,7 +400,8 @@ namespace FEHagemu.HSDArchive
         X,
         S,
         Refine,
-        Transform
+        Transform,
+        Engage
     }
 
     public struct SkillLimit

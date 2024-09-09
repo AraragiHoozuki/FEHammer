@@ -90,6 +90,7 @@ namespace FEHagemu
 
         public static IImage[] WeaponTypeIcons = null!;
         public static IImage[] MoveTypeIcons = null!;
+        public static IImage[] OriginTypeIcons = null!;
 
         
         static void InitImage()
@@ -104,6 +105,7 @@ namespace FEHagemu
             }
             WeaponTypeIcons = new IImage[(int)WeaponType.ColorlessBeast + 1];
             MoveTypeIcons = new IImage[(int)MoveType.Flying + 1];
+            OriginTypeIcons = new IImage[(int)Origins.Engage + 1];
             //for (int i = 0; i <= (int)WeaponType.ColorlessBeast; i++) WeaponTypeIcons[i] = GetWeaponIcon(i);
             //for (int i = 0; i <= (int)MoveType.Flying; i++) MoveTypeIcons[i] = GetMoveIcon(i);
             //GetABCSXIcon("A");
@@ -126,13 +128,19 @@ namespace FEHagemu
         public static IImage GetMoveIcon(int id)
         {
             if (MoveTypeIcons?[id] is not null) return MoveTypeIcons[id];
-            CroppedBitmap cropped = new(STATUS, new Avalonia.PixelRect(353 + 55 * id, 413, 55, 55));
+            CroppedBitmap cropped = new(STATUS, new Avalonia.PixelRect(353 + 56 * id, 469, 56, 56));
             return cropped;
         }
         public static IImage GetWeaponIcon(int id)
         {
             if (WeaponTypeIcons?[id] is not null) { return WeaponTypeIcons[id]; }
-            CroppedBitmap cropped = new(STATUS, new Avalonia.PixelRect(1 + 56 * id, 205, 56, 56));
+            CroppedBitmap cropped = new(STATUS, new Avalonia.PixelRect(1 + 56 * id, 261, 56, 56));
+            return cropped;
+        }
+        public static IImage GetOriginIcon(int id)
+        {
+            if (OriginTypeIcons?[id] is not null) { return OriginTypeIcons[id]; }
+            CroppedBitmap cropped = new(STATUS, new Avalonia.PixelRect(  -3 + 90 * id, 171, 90, 88));
             return cropped;
         }
         public static IImage GetABCSXIcon(string name)

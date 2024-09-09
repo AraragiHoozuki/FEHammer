@@ -4,8 +4,11 @@ using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FEHagemu.HSDArchive;
+using Irihi.Avalonia.Shared.Contracts;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Text.Encodings.Web;
@@ -22,8 +25,10 @@ namespace FEHagemu.ViewModels
         public int index = index;
         [ObservableProperty]
         public IImage icon = i;
+        [ObservableProperty]
+        public bool selectedQ = false;
     }
-    public partial class SkillSelectorViewModel : ViewModelBase
+    public partial class SkillSelectorViewModel : ViewModelBase, IDialogContext
     {
         [ObservableProperty]
         ObservableCollection<SkillViewModel> filteredSkills = [];
@@ -38,6 +43,13 @@ namespace FEHagemu.ViewModels
             public IImage icon = i;
         }
 
+        string? searchText;
+        public string? SearchText { get => searchText; set {
+                searchText = value;
+                OnPropertyChanged();
+                DoSearch();
+            } 
+        }
 
         [ObservableProperty]
         ObservableCollection<TypeFilterItem> weaponTypeComboItems = new(MasterData.WeaponTypeIcons.Select((v, i) => new TypeFilterItem(i, MasterData.GetWeaponIcon(i))));
@@ -56,10 +68,6 @@ namespace FEHagemu.ViewModels
             } 
         }
 
-        [ObservableProperty]
-        ObservableCollection<SkillTypeToggler> weaponTypeTogglers = new(MasterData.WeaponTypeIcons.Select((v, i) => new SkillTypeToggler(false, MasterData.GetWeaponIcon(i))));
-        [ObservableProperty]
-        ObservableCollection<SkillTypeToggler> slotTypeTogglers = [new SkillTypeToggler(false, MasterData.GetSkillIcon(1)), new SkillTypeToggler(false, MasterData.GetSkillIcon(2)), new SkillTypeToggler(false, MasterData.GetSkillIcon(3)), new SkillTypeToggler(false, MasterData.GetABCSXIcon("A")), new SkillTypeToggler(false, MasterData.GetABCSXIcon("B")), new SkillTypeToggler(false, MasterData.GetABCSXIcon("C")), new SkillTypeToggler(false, MasterData.GetABCSXIcon("X")), new SkillTypeToggler(false, MasterData.GetABCSXIcon("S"))];
         [ObservableProperty]
         bool? exclusiveQ = null;
         [ObservableProperty]
@@ -82,9 +90,18 @@ namespace FEHagemu.ViewModels
             }
         }
 
+        public void SelectSlot(int slot)
+        {
+            SelectedSkillSlot = SkillSlotSelectItems[slot];
+        }
+
         public SkillSelectorViewModel()
         {
             SelectAllWeaponFilters();
+            SelectedWeaponTypes.CollectionChanged += (object? sender, NotifyCollectionChangedEventArgs e) =>
+            {
+                DoSearch();
+            };
         }
         bool IsWeaponTypeSelected(int type)
         {
@@ -120,6 +137,7 @@ namespace FEHagemu.ViewModels
                     if (!CheckSlot(skill)) continue;
                     if (!CheckCheckers(skill)) continue;
                     if (!(skill.sp_cost >= MinSp && skill.sp_cost <= MaxSp)) continue;
+                    if (!string.IsNullOrEmpty(SearchText) && !skill.Name.Contains(SearchText)) continue;
                     list.Add(new SkillViewModel(skill.id, 0));
                 }
             }
@@ -180,6 +198,26 @@ namespace FEHagemu.ViewModels
                 await MessageBox.ShowAsync("Cannot delete built-in skill", "Error", MessageBoxIcon.Error, MessageBoxButton.OK);
             }
         }
+
+
+        public event EventHandler<object?>? RequestClose;
+        [RelayCommand]
+        public void Close()
+        {
+            RequestClose?.Invoke(this, false);
+        }
+        [RelayCommand]
+        void Select()
+        {
+            RequestClose?.Invoke(this, true);
+        }
+        [RelayCommand]
+        void Unequip()
+        {
+            RequestClose?.Invoke(this, null);
+        }
+
+        
     }
 
     

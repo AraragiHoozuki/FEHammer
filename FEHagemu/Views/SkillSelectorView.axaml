@@ -14,12 +14,15 @@
     d:DesignWidth="800"
     x:DataType="vm:SkillSelectorViewModel"
     mc:Ignorable="d">
-    <StackPanel Spacing="4">
-        <TextBox Name="SearchBar" HorizontalAlignment="Stretch" />
+    <StackPanel Margin="24,64,24,12" Spacing="4">
+        <TextBox
+            Name="SearchBar"
+            HorizontalAlignment="Stretch"
+            InnerLeftContent="Name"
+            Text="{Binding SearchText}" />
         <u:MultiComboBox
             Width="{x:Static x:Double.NaN}"
             HorizontalAlignment="Stretch"
-            InnerLeftContent="Weapon"
             ItemsSource="{Binding WeaponTypeComboItems}"
             SelectedItems="{Binding SelectedWeaponTypes}"
             Watermark="Please Select">
@@ -114,16 +117,10 @@
                 Theme="{DynamicResource CardCheckBox}" />
 
         </StackPanel>
-        <Button
-            HorizontalAlignment="Stretch"
-            Classes="Secondary"
-            Command="{Binding DoSearch}"
-            Content="Search"
-            Theme="{DynamicResource SolidButton}" />
         <u:Divider />
         <ListBox
             Name="SkillList"
-            Height="600"
+            Height="500"
             HorizontalAlignment="Stretch"
             ItemsSource="{Binding FilteredSkills}"
             SelectedItem="{Binding SelectedSkill}">
@@ -172,8 +169,24 @@
                     </Border>
                 </DataTemplate>
             </ListBox.ItemTemplate>
-        </ListBox>
 
+        </ListBox>
+        <Grid ColumnDefinitions="*,*,*">
+            <Button
+                HorizontalAlignment="Stretch"
+                Command="{Binding SelectCommand}"
+                Content="Select" />
+            <Button
+                Grid.Column="1"
+                HorizontalAlignment="Stretch"
+                Command="{Binding UnequipCommand}"
+                Content="Unequip" />
+            <Button
+                Grid.Column="2"
+                HorizontalAlignment="Stretch"
+                Command="{Binding CloseCommand}"
+                Content="Cancel" />
+        </Grid>
 
     </StackPanel>
 </UserControl>

@@ -3,6 +3,7 @@ using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FEHagemu.HSDArchive;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,10 +20,38 @@ namespace FEHagemu.ViewModels
 
 
         [ObservableProperty]
-        ObservableCollection<SkillTypeToggler> weaponTypeTogglers = new(MasterData.WeaponTypeIcons.Select(i => new SkillTypeToggler(false, i)));
+        ObservableCollection<TypeFilterItem> weaponTypeTogglers = new(MasterData.WeaponTypeIcons.Select((v, i) => new TypeFilterItem(i, MasterData.GetWeaponIcon(i))));
         [ObservableProperty]
-        ObservableCollection<SkillTypeToggler> moveTypeTogglers = new(MasterData.MoveTypeIcons.Select(i => new SkillTypeToggler(false, i)));
+        ObservableCollection<TypeFilterItem> moveTypeTogglers = new(MasterData.MoveTypeIcons.Select((v,i) => new TypeFilterItem(i, MasterData.GetMoveIcon(i))));
+        [ObservableProperty]
+        ObservableCollection<TypeFilterItem> originTypeTogglers = new(MasterData.OriginTypeIcons.Select((v, i) => new TypeFilterItem(i, MasterData.GetOriginIcon(i))));
+        [ObservableProperty]
+        bool checkDanceQ;
+        [ObservableProperty]
+        bool checkPairQ;
+        [ObservableProperty]
+        bool checkTwinWorldQ;
+        [ObservableProperty]
+        bool checkFlowerBudQ;
+        [ObservableProperty]
+        bool checkDiabolosWeaponQ;
+        [ObservableProperty]
+        bool checkResonateQ;
+        [ObservableProperty]
+        bool checkEngageQ;
+
+        public static List<uint> Versions { get {
+                return MasterData.PersonArcs.SelectMany(arc => arc.data.list).Select(p => p.version_num).Distinct().Order().ToList(); } }
+        uint? selectedVersion;
+        public uint? SelectedVersion { get => selectedVersion; set {
+                selectedVersion = value;
+                OnPropertyChanged();
+                DoSearch();
+            }
+        }
+
         public PersonSelectorViewModel() {
+            DoSearch();
         }
 
         [RelayCommand]
@@ -33,7 +62,17 @@ namespace FEHagemu.ViewModels
             {
                 foreach (var person in arc.data.list)
                 {
-                    if ((WeaponTypeTogglers[(int)person.weapon_type].IsSelected || WeaponTypeTogglers.All(item => !item.IsSelected)) && (MoveTypeTogglers.All(item => !item.IsSelected) || MoveTypeTogglers[(int)person.move_type].IsSelected))
+                    if ((WeaponTypeTogglers[(int)person.weapon_type].SelectedQ || WeaponTypeTogglers.All(item => !item.SelectedQ)) && (MoveTypeTogglers.All(item => !item.SelectedQ) || MoveTypeTogglers[(int)person.move_type].SelectedQ) &&
+                       (SelectedVersion is null||person.version_num == SelectedVersion) &&
+                       (CheckDanceQ == false || person.refresherQ ==1) &&
+                       (CheckPairQ == false || person.legendary.kind == LegendaryKind.Pair) &&
+                       (CheckTwinWorldQ == false || person.legendary.kind == LegendaryKind.TwinWorld) &&
+                       (CheckFlowerBudQ == false || person.legendary.kind == LegendaryKind.FlowerBud) &&
+                       (CheckDiabolosWeaponQ == false || person.legendary.kind == LegendaryKind.Diabolos) &&
+                       (CheckResonateQ == false || person.legendary.kind == LegendaryKind.Resonate) &&
+                       (CheckEngageQ == false || person.legendary.kind == LegendaryKind.Engage)
+                       
+                       )
                     {
                         FilteredPersons.Add(new PersonViewModel(person));
                     }
@@ -59,6 +98,7 @@ namespace FEHagemu.ViewModels
             skills[6] = p.skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.X)) ?? string.Empty;
             
         }
+
         IImage GetSkillImage(int index)
         {
             if (skills[index] is null) return MasterData.GetSkillIcon(0);
@@ -66,6 +106,14 @@ namespace FEHagemu.ViewModels
             return s is not null ? MasterData.GetSkillIcon((int)s.icon) : MasterData.GetSkillIcon(0);
         }
         public string Name => MasterData.GetMessage("M" + person.id);
+        public bool DiabolosWeaponQ => person.legendary.kind == LegendaryKind.Diabolos;
+        public bool FlowerBudQ => person.legendary.kind == LegendaryKind.FlowerBud;
+        public bool ResonateQ => person.legendary.kind == LegendaryKind.Resonate;
+        public bool LegendaryQ => person.legendary.kind == LegendaryKind.LegendaryOrMythic;
+        public bool PairQ => person.legendary.kind == LegendaryKind.Pair;
+        public bool TwinWorldQ => person.legendary.kind == LegendaryKind.TwinWorld;
+        public bool EngageQ => person.legendary.kind == LegendaryKind.Engage;
+        public bool DanceQ => person.refresherQ == 1;
         public Task<Bitmap> Face => MasterData.GetFaceAsync(person.face);
 
         public string Title
