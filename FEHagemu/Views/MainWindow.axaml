@@ -23,8 +23,14 @@
             <Menu DockPanel.Dock="Top">
                 <MenuItem Command="{Binding OpenMapCommand}" Header="Open Map" />
                 <MenuItem Command="{Binding SaveMapCommand}" Header="Save Map" />
-                <MenuItem Command="{Binding ImportSkillCommand}" Header="Import Skill" />
-                <MenuItem Command="{Binding ExportPackageCommand}" Header="Export Package" />
+                <MenuItem
+                    Command="{Binding ImportSkillCommand}"
+                    Header="Import Skill"
+                    ToolTip.Tip="Right click a skill in skill selector window and export its json, then edit it and import it." />
+                <MenuItem
+                    Command="{Binding ExportPackageCommand}"
+                    Header="Export Package"
+                    ToolTip.Tip="Export a package including imported skills. Copy it to the game data folder." />
                 <MenuItem Header="About" />
             </Menu>
             <u:Divider DockPanel.Dock="Top" />

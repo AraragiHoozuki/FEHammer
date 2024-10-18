@@ -372,8 +372,8 @@ namespace FEHagemu.HSDArchive
         public byte range_shape;
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0xA7)]
         public byte target_eitherQ;
-        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0xDB)]
-        public byte distant_counterQ;
+        //[HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0xDB)]
+        //public byte distant_counterQ;
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x41)]
         public byte canto_range;
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0xBE)]
@@ -384,6 +384,8 @@ namespace FEHagemu.HSDArchive
         public byte unknown_byte1;
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x3D)]
         public byte seer_snare_availableQ;
+        [HSDHelper(Type = HSDBinType.Unknown, Size = 9)]
+        public byte[] ver_810_new;
 
         public string Name => MasterData.GetMessage(name); 
         public string Description => MasterData.GetMessage(description);

@@ -19,6 +19,7 @@
                 Margin="0,0,8,0"
                 Orientation="Horizontal"
                 Spacing="2">
+
                 <Image Height="30" Source="{Binding WeaponIcon}" />
                 <Image Height="24" Source="{Binding MoveIcon}" />
                 <TextBlock

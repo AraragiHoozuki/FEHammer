@@ -1,76 +1,98 @@
-<UserControl Name="GameBoard"
-             xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:u="https://irihi.tech/ursa"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             xmlns:local="using:FEHagemu"
-             xmlns:vm="using:FEHagemu.ViewModels"
-             x:DataType="vm:GameBoardViewModel"
-             x:Class="FEHagemu.Views.GameBoardView">
-  <Grid RowDefinitions="Auto,Auto">
-    <Grid ColumnDefinitions="Auto,*,*" HorizontalAlignment="Stretch">
-      <Button Classes="Warning" Theme="{DynamicResource SolidButton}" Content="Resize Map"
-              Command="{Binding ResizeMapCommand}"/>
-      <u:NumericUIntUpDown InnerLeftContent="X" ShowButtonSpinner="False"
-                           Value="{Binding ResizeX}"
-                           Maximum="48"
-                           Minimum="0"
-                           Grid.Column="1"/>
-      <u:NumericUIntUpDown InnerLeftContent="Y" ShowButtonSpinner="False"
-                           Value="{Binding ResizeY}"
-                           Maximum="48"
-                           Minimum="0"
-                           Grid.Column="2"/>
-    </Grid>
-      <ItemsControl Grid.Row="1" ItemsSource="{Binding Cells}">
-        <ItemsControl.Background>
-          <ImageBrush Source="{Binding FieldBackground}"/>
-        </ItemsControl.Background>
-        <ItemsControl.Resources>
-          <local:FaceConverter x:Key="FaceConverter"/>
-        </ItemsControl.Resources>
-        <ItemsControl.ItemsPanel>
-          <ItemsPanelTemplate>
-            <StackPanel Orientation="Vertical"/>
-          </ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-        <ItemsControl.ItemTemplate>
-          <DataTemplate>
-            <ItemsControl ItemsSource="{Binding}">
-              <ItemsControl.ItemsPanel>
+<UserControl
+    x:Class="FEHagemu.Views.GameBoardView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:FEHagemu"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:u="https://irihi.tech/ursa"
+    xmlns:vm="using:FEHagemu.ViewModels"
+    Name="GameBoard"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    x:DataType="vm:GameBoardViewModel"
+    mc:Ignorable="d">
+    <Grid RowDefinitions="Auto,Auto">
+        <Grid HorizontalAlignment="Stretch" ColumnDefinitions="Auto,*,*">
+            <Button
+                Classes="Warning"
+                Command="{Binding ResizeMapCommand}"
+                Content="Resize Map"
+                Theme="{DynamicResource SolidButton}" />
+            <u:NumericUIntUpDown
+                Grid.Column="1"
+                InnerLeftContent="X"
+                Maximum="48"
+                Minimum="0"
+                ShowButtonSpinner="False"
+                Value="{Binding ResizeX}" />
+            <u:NumericUIntUpDown
+                Grid.Column="2"
+                InnerLeftContent="Y"
+                Maximum="48"
+                Minimum="0"
+                ShowButtonSpinner="False"
+                Value="{Binding ResizeY}" />
+        </Grid>
+        <ItemsControl Grid.Row="1" ItemsSource="{Binding Cells}">
+            <ItemsControl.Background>
+                <ImageBrush Source="{Binding FieldBackground}" />
+            </ItemsControl.Background>
+            <ItemsControl.Resources>
+                <local:FaceConverter x:Key="FaceConverter" />
+            </ItemsControl.Resources>
+            <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                  <StackPanel Orientation="Horizontal"/>
+                    <StackPanel Orientation="Vertical" />
                 </ItemsPanelTemplate>
-              </ItemsControl.ItemsPanel>
-              <ItemsControl.ItemTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <Grid>
-                    <Border Padding="1" BorderBrush="LawnGreen" BorderThickness="4" CornerRadius="4" IsVisible="{Binding IsPlayerSlot}"/>
-                    <Border Padding="1" BorderBrush="Black" BorderThickness="0.5" CornerRadius="4">
-                      <ToggleButton Width="48" Height="48"  Padding="0"
-                                  Classes="Primary"
-                                  Command="{Binding #GameBoard.((vm:GameBoardViewModel)DataContext).SelectCell}"
-                                  CommandParameter="{Binding}"
-                                  IsChecked="{Binding IsSelected}">
-                        <!--<Image Source="{Binding FirstUnitFace, Converter={StaticResource FaceConverter}}"/>-->
-                        <Image Source="{Binding CellFace^}"/>
-                      </ToggleButton>
-                    </Border>
+                    <ItemsControl ItemsSource="{Binding}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Border
+                                        Padding="1"
+                                        BorderBrush="LawnGreen"
+                                        BorderThickness="4"
+                                        CornerRadius="4"
+                                        IsVisible="{Binding IsPlayerSlot}" />
+                                    <Border
+                                        Padding="1"
+                                        BorderBrush="Black"
+                                        BorderThickness="0.5"
+                                        CornerRadius="4">
+                                        <ToggleButton
+                                            Width="48"
+                                            Height="48"
+                                            Padding="0"
+                                            Classes="Primary"
+                                            Command="{Binding #GameBoard.((vm:GameBoardViewModel)DataContext).SelectCell}"
+                                            CommandParameter="{Binding}"
+                                            IsChecked="{Binding IsSelected}">
+                                            <!--<Image Source="{Binding FirstUnitFace, Converter={StaticResource FaceConverter}}"/>-->
+                                            <Image Source="{Binding CellFace^}" />
+                                        </ToggleButton>
+                                    </Border>
 
-                  </Grid>
+                                </Grid>
 
 
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
 
-    
-  </Grid>
+
+    </Grid>
 
 
 </UserControl>

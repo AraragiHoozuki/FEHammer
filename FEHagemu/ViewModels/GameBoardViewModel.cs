@@ -6,6 +6,7 @@ using FEHagemu.HSDArchive;
 using FEHagemu.Views;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Ursa.Controls;
@@ -56,6 +57,7 @@ namespace FEHagemu.ViewModels
                 }
                 Cells.Insert(0, new ObservableCollection<BoardCellViewModel>(grids[view_y]));
             }
+            
             foreach (var unit in mapData.map_units)
             {
                 var u = new BoardUnitViewModel(unit);
