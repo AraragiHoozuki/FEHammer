@@ -1,39 +1,58 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:u="https://irihi.tech/ursa"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             xmlns:views="clr-namespace:FEHagemu.Views"
-             xmlns:vm="using:FEHagemu.ViewModels"
-             x:DataType="vm:BoardCellViewModel"
-             x:Class="FEHagemu.Views.CellPanelView"
-             Name="CellPanelControl">
-  <StackPanel Spacing="2">
-    <Grid ColumnDefinitions="*,*" HorizontalAlignment="Stretch" Margin="2">
-      <u:EnumSelector Margin="4,0,4,0"
+<UserControl
+    x:Class="FEHagemu.Views.CellPanelView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:u="https://irihi.tech/ursa"
+    xmlns:views="clr-namespace:FEHagemu.Views"
+    xmlns:vm="using:FEHagemu.ViewModels"
+    Name="CellPanelControl"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    x:DataType="vm:BoardCellViewModel"
+    mc:Ignorable="d">
+    <StackPanel Name="CellPanel" Spacing="2">
+        <Grid
+            Margin="2"
             HorizontalAlignment="Stretch"
-            DisplayDescription="True"
-            EnumType="{Binding Terrains}"
-            
-            Value="{Binding Terrain}" />
-      <ToggleSwitch IsChecked="{Binding IsPlayerSlot}" Grid.Column="1" HorizontalAlignment="Left"
-                  OffContent="Not Deploy Location" OnContent="Deploy Location"/>
-    </Grid>
-    
+            ColumnDefinitions="*,*">
+            <u:EnumSelector
+                Margin="4,0,4,0"
+                HorizontalAlignment="Stretch"
+                DisplayDescription="True"
+                EnumType="{Binding Terrains}"
+                Value="{Binding Terrain}" />
+            <ToggleSwitch
+                Grid.Column="1"
+                HorizontalAlignment="Left"
+                IsChecked="{Binding IsPlayerSlot}"
+                OffContent="Not Deploy Location"
+                OnContent="Deploy Location" />
+        </Grid>
 
-    <ItemsControl ItemsSource="{Binding Units}">
-      <ItemsControl.ItemTemplate>
-        <DataTemplate>
-          <views:BoardUnitView DataContext="{Binding}"/>
-        </DataTemplate>
-      </ItemsControl.ItemTemplate>
-    </ItemsControl>
-    <Grid ColumnDefinitions="*,*">
-      <Button Grid.Column="0" Content="Add Unit" Theme="{DynamicResource SolidButton}" Command="{Binding AddUnitCommand}"/>
-      <Button Grid.Column="1" Content="Paste Unit" IsEnabled="False" Theme="{DynamicResource SolidButton}"/>
-    </Grid>
 
-  </StackPanel>
+        <ItemsControl ItemsSource="{Binding Units}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <views:BoardUnitView DataContext="{Binding}" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Grid ColumnDefinitions="*,*">
+            <Button
+                Grid.Column="0"
+                Command="{Binding AddUnitCommand}"
+                Content="Add Unit"
+                Theme="{DynamicResource SolidButton}" />
+            <Button
+                Grid.Column="1"
+                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.PasteUnitCommand}"
+                CommandParameter="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.SelectedCell}"
+                Content="Paste Unit"
+                Theme="{DynamicResource SolidButton}" />
+        </Grid>
+
+    </StackPanel>
 
 </UserControl>

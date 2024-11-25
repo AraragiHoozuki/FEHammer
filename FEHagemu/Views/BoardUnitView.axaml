@@ -35,9 +35,9 @@
                     Theme="{DynamicResource SolidButton}" />
                 <Button
                     HorizontalAlignment="Right"
-                    Classes="Disabled"
+                    Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).CloneUnitCommand}"
+                    CommandParameter="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard}"
                     Content="Copy"
-                    IsEnabled="False"
                     Theme="{DynamicResource SolidButton}" />
                 <Button
                     HorizontalAlignment="Right"

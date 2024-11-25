@@ -28,6 +28,7 @@ namespace FEHagemu.ViewModels
         [ObservableProperty]
         Bitmap? fieldBackground;
         SRPGMap? mapData;
+        public Unit? ClonedUnit { get; set; }
 
         public GameBoardViewModel(SRPGMap map)
         {
@@ -120,6 +121,17 @@ namespace FEHagemu.ViewModels
         {
             ReCreateField(ResizeX, ResizeY);
         }
+
+        [RelayCommand(CanExecute = nameof(HasUnitCloned))]
+        public void PasteUnit(BoardCellViewModel cell)
+        {
+            if (ClonedUnit is not null)
+            {
+                cell.AddUnit(ClonedUnit);
+            }
+        }
+
+        bool HasUnitCloned => ClonedUnit is not null;
     }
 
     public partial class BoardCellViewModel : ViewModelBase
@@ -137,6 +149,7 @@ namespace FEHagemu.ViewModels
         bool isPlayerSlot = false;
         [ObservableProperty]
         public ObservableCollection<BoardUnitViewModel> units = [];
+        
         public string FirstUnitFace => Units.Count > 0 ? Units[0].Face : string.Empty;
 
         public Task<Bitmap>? CellFace => Units.Count > 0 ? Units[0].FaceImg :  Task.Run(()=>MasterData.EmptyBitmap);
@@ -152,7 +165,16 @@ namespace FEHagemu.ViewModels
             Units.Add(new BoardUnitViewModel(u));
             OnPropertyChanged(nameof(FirstUnitFace));
             OnPropertyChanged(nameof(CellFace));
+            
         }
+
+        public void AddUnit(Unit u)
+        {
+            Units.Add(new BoardUnitViewModel(u));
+            OnPropertyChanged(nameof(FirstUnitFace));
+            OnPropertyChanged(nameof(CellFace));
+        }
+
         [RelayCommand]
         public void DeleteUnit(BoardUnitViewModel u) 
         {
@@ -330,6 +352,11 @@ namespace FEHagemu.ViewModels
                 OnPropertyChanged(nameof(DragonFlowerCount));
                 OnPropertyChanged(nameof(HasLegendarySkillQ));
             }
+        }
+        [RelayCommand]
+        public void CloneUnit(GameBoardViewModel gb)
+        {
+            gb.ClonedUnit = unit.Clone();
         }
 
         [RelayCommand]

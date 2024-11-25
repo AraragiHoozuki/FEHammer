@@ -630,7 +630,9 @@ namespace FEHagemu.HSDArchive
 
         public Unit Clone()
         {
-            return (Unit)this.MemberwiseClone();
+            Unit new_unit = (Unit)MemberwiseClone();
+            new_unit.skills = (string[])skills.Clone();
+            return new_unit;
         }
 
 
