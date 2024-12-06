@@ -209,9 +209,9 @@ namespace FEHagemu.ViewModels
                 DefaultDEF = (ushort)stats[3];
                 DefaultRES = (ushort)stats[4];
 
-                var ls = MasterData.GetSkill(p.legendary.btn_skill_id);
+                var ls = MasterData.GetSkill(p.Legendary.btn_skill_id);
                 if (ls is not null) {
-                    LegendarySkill = new SkillViewModel(p.legendary.btn_skill_id, 9);
+                    LegendarySkill = new SkillViewModel(p.Legendary.btn_skill_id, 9);
                 }
                 
             }
@@ -246,7 +246,7 @@ namespace FEHagemu.ViewModels
         }
         [ObservableProperty]
         ObservableCollection<SkillViewModel> skills = [];
-        public string Face => MasterData.GetPerson(unit.id_tag)?.face ?? string.Empty;
+        public string Face => MasterData.GetPerson(unit.id_tag)?.Face ?? string.Empty;
 
         public Task<Bitmap> FaceImg => MasterData.GetFaceAsync(Face);
         public ushort HP { get => unit.stats.hp; set { unit.stats.hp = value; OnPropertyChanged(); } }
@@ -266,7 +266,7 @@ namespace FEHagemu.ViewModels
         [ObservableProperty]
         public ushort defaultRES;
 
-        public uint DragonFlowerCount { get { var p = MasterData.GetPerson(unit.id_tag); return p.dragonflower_num; } }
+        public uint DragonFlowerCount { get { var p = MasterData.GetPerson(unit.id_tag); return p.DragonflowerNumber; } }
 
         public byte CD { get => unit.cd; set { unit.cd = value; OnPropertyChanged(); } }
         public byte StartTurn { get => unit.start_turn; set { unit.start_turn = value; OnPropertyChanged(); } }
@@ -288,7 +288,7 @@ namespace FEHagemu.ViewModels
             get
             {
                 var p = MasterData.GetPerson(unit.id_tag);
-                return p is not null ? MasterData.GetWeaponIcon((int)p!.weapon_type) : null;
+                return p is not null ? MasterData.GetWeaponIcon((int)p!.WeaponType) : null;
             }
         }
         public IImage? MoveIcon
@@ -296,7 +296,7 @@ namespace FEHagemu.ViewModels
             get
             {
                 var p = MasterData.GetPerson(unit.id_tag);
-                return p is not null ? MasterData.GetMoveIcon((int)p!.move_type) : null;
+                return p is not null ? MasterData.GetMoveIcon((int)p!.MoveType) : null;
             }
         }
 
@@ -332,7 +332,7 @@ namespace FEHagemu.ViewModels
             });
             if (res == DialogResult.OK && vm.SelectedPerson is not null) {
                 var pvm = vm.SelectedPerson;
-                Id = pvm.person.id;
+                Id = pvm.person.Id;
                 for (int i = 0; i< pvm.skills.Length; i++)
                 {
                     SetSkill(pvm.skills[i], i);
@@ -343,10 +343,10 @@ namespace FEHagemu.ViewModels
                 DefaultSPD = SPD = (ushort)stats[2];
                 DefaultDEF = DEF = (ushort)stats[3];
                 DefaultRES = RES = (ushort)stats[4];
-                var ls = MasterData.GetSkill(pvm.person.legendary.btn_skill_id);
+                var ls = MasterData.GetSkill(pvm.person.Legendary.btn_skill_id);
                 if (ls is not null)
                 {
-                    LegendarySkill = new SkillViewModel(pvm.person.legendary.btn_skill_id, 9);
+                    LegendarySkill = new SkillViewModel(pvm.person.Legendary.btn_skill_id, 9);
                 }
                 cell.CallFirstPersonChange();
                 OnPropertyChanged(nameof(DragonFlowerCount));

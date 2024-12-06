@@ -18,6 +18,7 @@
         <Grid ColumnDefinitions="*,*">
             <ComboBox
                 HorizontalAlignment="Stretch"
+                Classes="ClearButton"
                 ItemsSource="{Binding Versions}"
                 PlaceholderText="Versions"
                 SelectedItem="{Binding SelectedVersion}" />

@@ -1,4 +1,6 @@
-﻿using FEHagemu.HSDArchive;
+﻿using Avalonia.Automation.Peers;
+using FEHagemu.HSDArchive;
+using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -32,7 +34,25 @@ namespace FEHagemu.HSDArchive
         FE_Encore,
         Engage
     }
-    public class Person
+    public interface IPerson
+    {
+        public string Id { get; }
+        public string Face { get; }
+        public string[] Skills { get; }
+        public uint Origins { get; }
+        public uint SortValue { get; }
+        public uint Version {  get; }
+        public byte RefresherQ { get; }
+        public MoveType MoveType { get; }
+        public WeaponType WeaponType { get; }
+        public uint DragonflowerNumber { get; }
+        public LegendaryInfo Legendary { get; }
+
+        public int Stat(int index, int hone = 0, int level = 40);
+        public int[] CalcStats(int level, int merge, int honeIndex, int flawIndex);
+        
+    }
+    public class Person : IPerson
     {
         [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
         public string id;
@@ -91,7 +111,158 @@ namespace FEHagemu.HSDArchive
             value = value + stats[index] + 1 + hone;
             return value;
         }
+        public int[] CalcStats(int level, int merge, int honeIndex, int flawIndex)
+        {
+            int[] temp = [stats.hp, stats.atk, stats.spd, stats.def, stats.res];
+            if (honeIndex > 0) temp[honeIndex] += 1;
+            if (flawIndex > 0) temp[flawIndex] -= 1;
+            var order = temp.Select((n, i) => new { Value = n, Index = i }).OrderByDescending(x => x.Value);
+            int[] res = new int[5];
 
+            for (int mt = 0; mt < merge; mt++)
+            {
+                switch (mt)
+                {
+                    case 0:
+                        res[order.Skip(0).First().Index] += 1;
+                        res[order.Skip(1).First().Index] += 1;
+                        if (flawIndex < 0)
+                        {
+                            res[order.Skip(0).First().Index] += 1;
+                            res[order.Skip(1).First().Index] += 1;
+                            res[order.Skip(2).First().Index] += 1;
+                        }
+                        break;
+                    case 1:
+                    case 6:
+                        res[order.Skip(2).First().Index] += 1;
+                        res[order.Skip(3).First().Index] += 1;
+                        break;
+                    case 2:
+                    case 7:
+                        res[order.Skip(0).First().Index] += 1;
+                        res[order.Skip(4).First().Index] += 1;
+                        break;
+                    case 3:
+                    case 8:
+                        res[order.Skip(1).First().Index] += 1;
+                        res[order.Skip(2).First().Index] += 1;
+                        break;
+                    case 4:
+                    case 9:
+                        res[order.Skip(3).First().Index] += 1;
+                        res[order.Skip(4).First().Index] += 1;
+                        break;
+                    case 5:
+                        res[order.Skip(0).First().Index] += 1;
+                        res[order.Skip(1).First().Index] += 1;
+                        break;
+                    default:
+                        break;
+
+                }
+
+            }
+
+            if (merge > 0) flawIndex = -1;
+            for (int i = 0; i < 5; i++)
+            {
+                res[i] += Stat(i, honeIndex == i ? 1 : (flawIndex == i ? -1 : 0), level);
+            }
+            return res;
+        }
+        public string[] Skills => skills;
+        public uint Origins => origins;
+        public uint SortValue => sort_value;
+
+        public string Id => id;
+
+        public string Face => face;
+
+        public uint Version => version_num;
+
+        public byte RefresherQ => refresherQ;
+
+        public MoveType MoveType => move_type;
+
+        public WeaponType WeaponType => weapon_type;
+
+        public uint DragonflowerNumber => dragonflower_num;
+
+        public LegendaryInfo Legendary => legendary;
+    }
+    public class Enemy : IPerson
+    {
+        [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
+        public string id;
+        [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
+        public string romman;
+        [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
+        public string face;
+        [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
+        public string face2;
+        [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
+        public string top_weapon;
+        [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
+        public string assist1;
+        [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
+        public string assist2;
+        [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
+        public string special;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 8, Key = 0xBDC1E742E9B6489B)]
+        public ulong timestamp;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x422F41D4)]
+        public uint id_num;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0xF7)]
+        public byte npcQ;
+        [HSDHelper(Type = HSDBinType.Unknown, Size = 3)]
+        public byte[] unknown;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0xE4)]
+        public WeaponType weapon_type;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x81)]
+        public Element tome_class;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x0D)]
+        public MoveType move_type;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0xC4)]
+        public byte spawnableQ;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x6A)]
+        public byte bossQ;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x2A)]
+        public byte refresherQ;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x13)]
+        public byte enemyQ;
+        [HSDHelper(Type = HSDBinType.Padding, Size = 1)]
+        public byte padding;
+        [HSDHelper(Type = HSDBinType.Struct)]
+        public Stats stats;
+        [HSDHelper(Type = HSDBinType.Struct)]
+        public Stats grow;
+        public string[] Skills => Array.Empty<string>();
+        public uint Origins => 0;
+        public uint SortValue => 0;
+        public string Id => id;
+
+        public string Face => face;
+
+        public uint Version => 65535;
+
+        public byte RefresherQ => refresherQ;
+
+        public MoveType MoveType => move_type;
+
+        public WeaponType WeaponType => weapon_type;
+
+        public uint DragonflowerNumber => 0;
+
+        public LegendaryInfo Legendary => LegendaryInfo.None;
+        public int Stat(int index, int hone = 0, int level = 40)
+        {
+            int value = grow[index] + 5 * hone;
+            value = value * 114 / 100;
+            value = value * (level - 1) / 100;
+            value = value + stats[index] + 1 + hone;
+            return value;
+        }
         public int[] CalcStats(int level, int merge, int honeIndex, int flawIndex)
         {
             int[] temp = [stats.hp, stats.atk, stats.spd, stats.def, stats.res];
@@ -153,9 +324,6 @@ namespace FEHagemu.HSDArchive
             return res;
         }
     }
-    public class Enemy : Person
-    {
-    }
     public enum LegendaryKind : byte
     {
         None,
@@ -187,6 +355,11 @@ namespace FEHagemu.HSDArchive
         public byte duelQ; // 1 byte
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x05)]
         public byte ae_extra_slotQ; // 1 byte
+
+        public static readonly LegendaryInfo None = new()
+        {
+            kind = LegendaryKind.None,
+        };
     }
 
     public struct Stats
@@ -661,6 +834,19 @@ namespace FEHagemu.HSDArchive
         public static int CalcListSize(PersonList pl)
         {
             return (int)pl.size;
+        }
+    }
+
+    public class EnemyList
+    {
+        [HSDHelper(Type = HSDBinType.Array, ElementType = HSDBinType.Struct, ElementRealType = typeof(Enemy), DynamicSizeCalculator = "CalcListSize", IsPtr = true, IsDelayedPtr = true)]
+        public Enemy[] list;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 8, Key = 0x62CA95119CC5345C)]
+        public ulong size;
+
+        public static int CalcListSize(EnemyList el)
+        {
+            return (int)el.size;
         }
     }
 

@@ -125,7 +125,7 @@ namespace FEHagemu.ViewModels
             get
             {
                 var p = MasterData.GetPerson(unit.id_tag);
-                return p is not null?MasterData.GetWeaponIcon((int)p!.weapon_type):null;
+                return p is not null?MasterData.GetWeaponIcon((int)p!.WeaponType):null;
             }
         }
         public IImage? MoveIcon
@@ -133,7 +133,7 @@ namespace FEHagemu.ViewModels
             get
             {
                 var p = MasterData.GetPerson(unit.id_tag);
-                return p is not null ? MasterData.GetMoveIcon((int)p!.move_type) : null;
+                return p is not null ? MasterData.GetMoveIcon((int)p!.MoveType) : null;
             }
         }
         public IImage WeaponImage => GetSkillImage(0);

@@ -31,9 +31,11 @@ namespace FEHagemu
 
         public static HSDArc<SkillList>[] SkillArcs = null!;
         public static HSDArc<PersonList>[] PersonArcs = null!;
+        public static HSDArc<EnemyList>[] EnemyArcs = null!;
         public static HSDArc<MessageList>[] MsgArcs = null!;
         public static Dictionary<string, string> MsgDict = [];
         public static Dictionary<string, Person> PersonDict = [];
+        public static Dictionary<string, Enemy> EnemyDict = [];
         public static Dictionary<string, Skill> SkillDict = [];
         public static Dictionary<string, Bitmap> FaceDict = [];
         public static Bitmap FallBackFace = new Bitmap(AssetLoader.Open(new Uri($"avares://FEHagemu/Assets/Face/ch00_00_Eclat_F_Avatar01/Face_FC.png")));
@@ -57,6 +59,17 @@ namespace FEHagemu
                 for (int j = 0; j < PersonArcs[i].data.list.Length; j += 1)
                 {
                     PersonDict.Add(PersonArcs[i].data.list[j].id, PersonArcs[i].data.list[j]);
+                }
+            }
+
+            files = Directory.GetFiles(ENEMY_PATH, DATAEXT);
+            EnemyArcs = new HSDArc<EnemyList>[files.Length];
+            for (int i = 0; i < files.Length; i++)
+            {
+                EnemyArcs[i] = new HSDArc<EnemyList>(files[i]);
+                for (int j = 0; j < EnemyArcs[i].data.list.Length; j += 1)
+                {
+                    EnemyDict.Add(EnemyArcs[i].data.list[j].id, EnemyArcs[i].data.list[j]);
                 }
             }
 
@@ -170,10 +183,11 @@ namespace FEHagemu
             return null;
         }
 
-        public static Person? GetPerson(string id)
+        public static IPerson? GetPerson(string id)
         {
             if (id is null) return null;
-            if (PersonDict.TryGetValue(id, out Person? p)) return p;
+            if (EnemyDict.TryGetValue(id, out Enemy? p)) return p;
+            if (PersonDict.TryGetValue(id, out Person? e)) return e;
             return null;
         }
 

@@ -40,7 +40,7 @@ namespace FEHagemu.ViewModels
         bool checkEngageQ;
 
         public static List<uint> Versions { get {
-                return MasterData.PersonArcs.SelectMany(arc => arc.data.list).Select(p => p.version_num).Distinct().OrderDescending().ToList(); } }
+                return MasterData.PersonArcs.SelectMany(arc => arc.data.list).Select(p => p.version_num).Distinct().Append((uint)65535).OrderDescending().ToList(); } }
         uint? selectedVersion;
         public uint? SelectedVersion { get => selectedVersion; set {
                 selectedVersion = value;
@@ -59,18 +59,38 @@ namespace FEHagemu.ViewModels
             FilteredPersons.Clear();
             foreach (var arc in MasterData.PersonArcs.Reverse())
             {
-                foreach (var person in arc.data.list)
+                foreach (IPerson person in arc.data.list)
                 {
-                    if ((WeaponTypeTogglers[(int)person.weapon_type].SelectedQ || WeaponTypeTogglers.All(item => !item.SelectedQ)) && (MoveTypeTogglers.All(item => !item.SelectedQ) || MoveTypeTogglers[(int)person.move_type].SelectedQ) &&
-                       (SelectedVersion is null||person.version_num == SelectedVersion) &&
-                       (CheckDanceQ == false || person.refresherQ ==1) &&
-                       (CheckPairQ == false || person.legendary.kind == LegendaryKind.Pair) &&
-                       (CheckTwinWorldQ == false || person.legendary.kind == LegendaryKind.TwinWorld) &&
-                       (CheckFlowerBudQ == false || person.legendary.kind == LegendaryKind.FlowerBud) &&
-                       (CheckDiabolosWeaponQ == false || person.legendary.kind == LegendaryKind.Diabolos) &&
-                       (CheckResonateQ == false || person.legendary.kind == LegendaryKind.Resonate) &&
-                       (CheckEngageQ == false || person.legendary.kind == LegendaryKind.Engage)
+                    if ((WeaponTypeTogglers[(int)person.WeaponType].SelectedQ || WeaponTypeTogglers.All(item => !item.SelectedQ)) && (MoveTypeTogglers.All(item => !item.SelectedQ) || MoveTypeTogglers[(int)person.MoveType].SelectedQ) &&
+                       (SelectedVersion is null||person.Version == SelectedVersion) &&
+                       (CheckDanceQ == false || person.RefresherQ ==1) &&
+                       (CheckPairQ == false || person.Legendary.kind == LegendaryKind.Pair) &&
+                       (CheckTwinWorldQ == false || person.Legendary.kind == LegendaryKind.TwinWorld) &&
+                       (CheckFlowerBudQ == false || person.Legendary.kind == LegendaryKind.FlowerBud) &&
+                       (CheckDiabolosWeaponQ == false || person.Legendary.kind == LegendaryKind.Diabolos) &&
+                       (CheckResonateQ == false || person.Legendary.kind == LegendaryKind.Resonate) &&
+                       (CheckEngageQ == false || person.Legendary.kind == LegendaryKind.Engage)
                        
+                       )
+                    {
+                        FilteredPersons.Add(new PersonViewModel(person));
+                    }
+                }
+            }
+            foreach (var arc in MasterData.EnemyArcs.Reverse())
+            {
+                foreach (IPerson person in arc.data.list)
+                {
+                    if ((WeaponTypeTogglers[(int)person.WeaponType].SelectedQ || WeaponTypeTogglers.All(item => !item.SelectedQ)) && (MoveTypeTogglers.All(item => !item.SelectedQ) || MoveTypeTogglers[(int)person.MoveType].SelectedQ) &&
+                       (SelectedVersion is null || person.Version == SelectedVersion) &&
+                       (CheckDanceQ == false || person.RefresherQ == 1) &&
+                       (CheckPairQ == false || person.Legendary.kind == LegendaryKind.Pair) &&
+                       (CheckTwinWorldQ == false || person.Legendary.kind == LegendaryKind.TwinWorld) &&
+                       (CheckFlowerBudQ == false || person.Legendary.kind == LegendaryKind.FlowerBud) &&
+                       (CheckDiabolosWeaponQ == false || person.Legendary.kind == LegendaryKind.Diabolos) &&
+                       (CheckResonateQ == false || person.Legendary.kind == LegendaryKind.Resonate) &&
+                       (CheckEngageQ == false || person.Legendary.kind == LegendaryKind.Engage)
+
                        )
                     {
                         FilteredPersons.Add(new PersonViewModel(person));
@@ -84,9 +104,16 @@ namespace FEHagemu.ViewModels
             FilteredPersons.Clear();
             foreach (var arc in MasterData.PersonArcs.Reverse())
             {
-                foreach (var person in arc.data.list)
+                foreach (IPerson person in arc.data.list)
                 {
-                    if (person.origins == pvm.person.origins && person.sort_value == pvm.person.sort_value) FilteredPersons.Add(new PersonViewModel(person));
+                    if (person.Origins == pvm.person.Origins && person.SortValue == pvm.person.SortValue) FilteredPersons.Add(new PersonViewModel(person));
+                }
+            }
+            foreach (var arc in MasterData.EnemyArcs.Reverse())
+            {
+                foreach (IPerson person in arc.data.list)
+                {
+                    if (person.Origins == pvm.person.Origins && person.SortValue == pvm.person.SortValue) FilteredPersons.Add(new PersonViewModel(person));
                 }
             }
         }
@@ -94,20 +121,22 @@ namespace FEHagemu.ViewModels
 
     public partial class PersonViewModel : ViewModelBase
     {
-        public Person person;
+        public IPerson person;
         public string[] skills;
-        public PersonViewModel(Person p)
+        public PersonViewModel(IPerson p)
         {
             person = p;
             skills = new string[7];
-            skills[0] = p.skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.Weapon)) ?? string.Empty;
-            skills[1] = p.skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.Assist)) ?? string.Empty;
-            skills[2] = p.skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.Special)) ?? string.Empty;
-            skills[3] = p.skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.A)) ?? string.Empty;
-            skills[4] = p.skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.B)) ?? string.Empty;
-            skills[5] = p.skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.C)) ?? string.Empty;
-            skills[6] = p.skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.X)) ?? string.Empty;
-            
+            if (p is Enemy e) { skills[0] = e.top_weapon; } else
+            {
+                skills[0] = p.Skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.Weapon)) ?? string.Empty;
+                skills[1] = p.Skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.Assist)) ?? string.Empty;
+                skills[2] = p.Skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.Special)) ?? string.Empty;
+                skills[3] = p.Skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.A)) ?? string.Empty;
+                skills[4] = p.Skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.B)) ?? string.Empty;
+                skills[5] = p.Skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.C)) ?? string.Empty;
+                skills[6] = p.Skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.X)) ?? string.Empty;
+            }
         }
 
         IImage GetSkillImage(int index)
@@ -116,28 +145,28 @@ namespace FEHagemu.ViewModels
             var s = MasterData.GetSkill(skills[index]);
             return s is not null ? MasterData.GetSkillIcon((int)s.icon) : MasterData.GetSkillIcon(0);
         }
-        public string Name => MasterData.GetMessage("M" + person.id);
-        public bool DiabolosWeaponQ => person.legendary.kind == LegendaryKind.Diabolos;
-        public bool FlowerBudQ => person.legendary.kind == LegendaryKind.FlowerBud;
-        public bool ResonateQ => person.legendary.kind == LegendaryKind.Resonate;
-        public bool LegendaryQ => person.legendary.kind == LegendaryKind.LegendaryOrMythic;
-        public bool PairQ => person.legendary.kind == LegendaryKind.Pair;
-        public bool TwinWorldQ => person.legendary.kind == LegendaryKind.TwinWorld;
-        public bool EngageQ => person.legendary.kind == LegendaryKind.Engage;
-        public bool DanceQ => person.refresherQ == 1;
-        public Task<Bitmap> Face => MasterData.GetFaceAsync(person.face);
+        public string Name => MasterData.GetMessage("M" + person.Id);
+        public bool DiabolosWeaponQ => person.Legendary.kind == LegendaryKind.Diabolos;
+        public bool FlowerBudQ => person.Legendary.kind == LegendaryKind.FlowerBud;
+        public bool ResonateQ => person.Legendary.kind == LegendaryKind.Resonate;
+        public bool LegendaryQ => person.Legendary.kind == LegendaryKind.LegendaryOrMythic;
+        public bool PairQ => person.Legendary.kind == LegendaryKind.Pair;
+        public bool TwinWorldQ => person.Legendary.kind == LegendaryKind.TwinWorld;
+        public bool EngageQ => person.Legendary.kind == LegendaryKind.Engage;
+        public bool DanceQ => person.RefresherQ == 1;
+        public Task<Bitmap> Face => MasterData.GetFaceAsync(person.Face);
 
         public string Title
         {
             get
             {
-                string body = MasterData.StripIdPrefix(person.id, out string prefix);
+                string body = MasterData.StripIdPrefix(person.Id, out string prefix);
                 return MasterData.GetMessage("M" + prefix + "HONOR_" + body);
             }
         }
 
-        public IImage MoveIcon => MasterData.GetMoveIcon((int)person.move_type);
-        public IImage WeaponIcon => MasterData.GetWeaponIcon((int)person.weapon_type);
+        public IImage MoveIcon => MasterData.GetMoveIcon((int)person.MoveType);
+        public IImage WeaponIcon => MasterData.GetWeaponIcon((int)person.WeaponType);
         public IImage AIcon => GetSkillImage(0);
         public IImage BIcon => GetSkillImage(1);
         public IImage CIcon => GetSkillImage(2);
