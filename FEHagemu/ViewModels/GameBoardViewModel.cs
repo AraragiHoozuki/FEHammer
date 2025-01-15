@@ -127,7 +127,10 @@ namespace FEHagemu.ViewModels
         {
             if (ClonedUnit is not null)
             {
-                cell.AddUnit(ClonedUnit);
+                var to_paste = ClonedUnit.Clone();
+                cell.AddUnit(to_paste);
+                to_paste.pos.x = cell.X;
+                to_paste.pos.y = cell.Y;
             }
         }
 
@@ -356,7 +359,7 @@ namespace FEHagemu.ViewModels
         [RelayCommand]
         public void CloneUnit(GameBoardViewModel gb)
         {
-            gb.ClonedUnit = unit.Clone();
+            gb.ClonedUnit = unit;
         }
 
         [RelayCommand]

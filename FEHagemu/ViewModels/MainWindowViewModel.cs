@@ -72,10 +72,17 @@ namespace FEHagemu.ViewModels
                         string name = s.name;
                         string description = s.description;
                         string id_name = MasterData.StripIdPrefix(s.id, out _);
+                        bool useBuiltinDescription = true;
                         if (!id_name.Contains("MOD")) id_name = id_name + "MOD";
                         s.id = "SID_" + id_name;
-                        s.name = $"MSID_{id_name}";
-                        s.description = $"MSID_H_{id_name}";
+                        if (!s.name.StartsWith("MSID_")) {
+                            s.name = $"MSID_{id_name}";
+                        }
+                        if (!s.description.StartsWith("MSID_H_"))
+                        {
+                            s.description = $"MSID_H_{id_name}";
+                            useBuiltinDescription = false;
+                        }
 
                         var found = MasterData.GetSkill(s.id);
                         if (found is not null)
@@ -89,7 +96,7 @@ namespace FEHagemu.ViewModels
                             {
                                 MasterData.AddSkill(skill_arc, s);
                                 MasterData.AddMessage(msg_arc, s.name, name);
-                                MasterData.AddMessage(msg_arc, s.description, description);
+                                if (!useBuiltinDescription) MasterData.AddMessage(msg_arc, s.description, description);
                                 skill_modified = true;
                             }
                         }
@@ -97,7 +104,7 @@ namespace FEHagemu.ViewModels
                         {
                             MasterData.AddSkill(skill_arc, s);
                             MasterData.AddMessage(msg_arc, s.name, name);
-                            MasterData.AddMessage(msg_arc, s.description, description);
+                            if (!useBuiltinDescription) MasterData.AddMessage(msg_arc, s.description, description);
                             skill_modified = true;
                         }
 
