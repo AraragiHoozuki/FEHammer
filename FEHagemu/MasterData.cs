@@ -75,15 +75,18 @@ namespace FEHagemu
 
             files = Directory.GetFiles(SKL_PATH, DATAEXT);
             SkillArcs = new HSDArc<SkillList>[files.Length];
+            
             for (int i = 0; i < files.Length; i++)
             {
                 SkillArcs[i] = new HSDArc<SkillList>(files[i]);
                 for (int j = 0; j < SkillArcs[i].data.list.Length; j += 1)
                 {
                     SkillDict.Add(SkillArcs[i].data.list[j].id, SkillArcs[i].data.list[j]);
-                }
+                    
+                };
             }
             
+
             files = Directory.GetFiles(MSG_PATH, DATAEXT);
             MsgArcs = new HSDArc<MessageList>[files.Length];
             for (int i = 0; i < files.Length; i++)
@@ -95,8 +98,7 @@ namespace FEHagemu
                     MsgDict.Add(MsgArcs[i].data.list[j], MsgArcs[i].data.list[j + 1]);
                 }
             }
-            
-            
+
             InitImage();
             return true;
         }

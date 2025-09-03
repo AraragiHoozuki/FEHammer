@@ -37,10 +37,7 @@
             <ScrollViewer DockPanel.Dock="Left">
                 <views:GameBoardView DataContext="{Binding GameBoard}" DockPanel.Dock="Left" />
             </ScrollViewer>
-
-            <ScrollViewer DockPanel.Dock="Right">
-                <views:CellPanelView DataContext="{Binding GameBoard.SelectedCell}" />
-            </ScrollViewer>
+            <views:CellPanelView DataContext="{Binding GameBoard.SelectedCell}" DockPanel.Dock="Right" />
         </DockPanel>
     </u:LoadingContainer>
 

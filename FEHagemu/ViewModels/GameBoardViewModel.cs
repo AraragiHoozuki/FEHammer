@@ -1,4 +1,6 @@
-﻿using Avalonia.Media;
+﻿using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -6,6 +8,7 @@ using FEHagemu.HSDArchive;
 using FEHagemu.Views;
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,9 +28,15 @@ namespace FEHagemu.ViewModels
         uint resizeX = 1;
         [ObservableProperty]
         uint resizeY = 1;
+        public string? FieldId {get=> mapData?.field.id; set {
+                mapData.field.id = value;
+                FieldBackground = MasterData.GetFieldBackground(mapData.field.id);
+                OnPropertyChanged();
+            } }
         [ObservableProperty]
         Bitmap? fieldBackground;
         SRPGMap? mapData;
+        
         public Unit? ClonedUnit { get; set; }
 
         public GameBoardViewModel(SRPGMap map)
@@ -70,8 +79,33 @@ namespace FEHagemu.ViewModels
                 Cells[(int)h - 1 - pos.y][pos.x].IsPlayerSlot = true;
             }
             FieldBackground = MasterData.GetFieldBackground(map.field.id);
+            OnPropertyChanged(nameof(FieldId));
         }
-
+        [RelayCommand]
+        async Task ChangeField()
+        {
+            if (mapData is null) return;
+            var mainWindow = Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+            if (mainWindow is not null)
+            {
+                var files = await mainWindow.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions()
+                {
+                    Title = "Open Field Image",
+                    AllowMultiple = false
+                });
+                if (files.Count > 0)
+                {
+                    string id = Path.GetFileNameWithoutExtension(files[0].Name);
+                    string path = Path.Combine(MasterData.FIELD_PATH, $"{id}.jpg");
+                    string path2 = Path.Combine(MasterData.FIELD_PATH, $"{id}.png");
+                    if (!File.Exists(path) && !File.Exists(path2))
+                    {
+                        File.Copy(files[0].Path.AbsolutePath, Path.Combine(MasterData.FIELD_PATH, files[0].Name));
+                    }
+                    FieldId = id;
+                }
+            }
+        }
         public void ReCreateField(uint w, uint h)
         {
             if (mapData is null) return;
@@ -252,6 +286,7 @@ namespace FEHagemu.ViewModels
         public string Face => MasterData.GetPerson(unit.id_tag)?.Face ?? string.Empty;
 
         public Task<Bitmap> FaceImg => MasterData.GetFaceAsync(Face);
+        public byte LV { get=> unit.lv; set { unit.lv = value; RefreshStats(unit.lv); OnPropertyChanged(); } }
         public ushort HP { get => unit.stats.hp; set { unit.stats.hp = value; OnPropertyChanged(); } }
         public ushort ATK { get => unit.stats.atk; set { unit.stats.atk = value; OnPropertyChanged(); } }
         public ushort SPD { get => unit.stats.spd; set { unit.stats.spd = value; OnPropertyChanged(); } }
@@ -276,6 +311,12 @@ namespace FEHagemu.ViewModels
         public byte MoveGroup { get => unit.movement_group; set { unit.movement_group = value; OnPropertyChanged(); } }
         public byte MoveDelay { get => unit.movement_delay; set { unit.movement_delay = value; OnPropertyChanged(); } }
         public byte IsReturning { get => unit.tetherQ; set { unit.tetherQ = value; OnPropertyChanged(); } }
+        public string SpawnCheck { get => unit.spawn_check; set { unit.spawn_check = value; OnPropertyChanged(); } }
+        public byte SpawnCount { get => unit.spawn_count; set { unit.spawn_count = value; OnPropertyChanged(); } }
+        public byte SpawnTurns { get => unit.spawn_turns; set { unit.spawn_turns = value; OnPropertyChanged(); } }
+        public byte SpawnTargetRemain { get => unit.spawn_target_remain; set { unit.spawn_target_remain = value; OnPropertyChanged(); } }
+        public byte SpawnTargetKills { get => unit.spawn_target_kills; set { unit.spawn_target_kills = value; OnPropertyChanged(); } }
+
         public bool IsEnemy
         {
             get => unit.enemyQ == 1; set
@@ -307,10 +348,23 @@ namespace FEHagemu.ViewModels
         SkillViewModel? legendarySkill;
         public bool HasLegendarySkillQ => LegendarySkill is not null;
 
+        private void RefreshStats(int lv)
+        {
+            var p = MasterData.GetPerson(Id);
+            if (p is null) return;
+            int[] stats = p.CalcStats(lv, 10, -1, -1);
+            DefaultHP = HP = (ushort)stats[0];
+            DefaultATK = ATK = (ushort)stats[1];
+            DefaultSPD = SPD = (ushort)stats[2];
+            DefaultDEF = DEF = (ushort)stats[3];
+            DefaultRES = RES = (ushort)stats[4];
+        }
+
         [RelayCommand]
         public async Task ChangeSkill(SkillViewModel svm)
         {
             var vm = new SkillSelectorViewModel();
+            if (svm.skill is not null && svm.WeaponQ) vm.SearchText = svm.Name;
             vm.SelectSlot(svm.Index);
             bool? result = await Dialog.ShowCustomModal<SkillSelectorView, SkillSelectorViewModel, bool?>(vm, null, new DialogOptions()
             {
@@ -360,6 +414,12 @@ namespace FEHagemu.ViewModels
         public void CloneUnit(GameBoardViewModel gb)
         {
             gb.ClonedUnit = unit;
+        }
+        [RelayCommand]
+        public async Task CopyId()
+        {
+            var mainWindow = Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+            await mainWindow?.Clipboard?.SetTextAsync(Id);
         }
 
         [RelayCommand]

@@ -12,34 +12,41 @@
     d:DesignWidth="800"
     x:DataType="vm:BoardCellViewModel"
     mc:Ignorable="d">
-    <StackPanel Name="CellPanel" Spacing="2">
-        <Grid
-            Margin="2"
-            HorizontalAlignment="Stretch"
-            ColumnDefinitions="*,*">
-            <u:EnumSelector
-                Margin="4,0,4,0"
-                HorizontalAlignment="Stretch"
-                DisplayDescription="True"
-                EnumType="{Binding Terrains}"
-                Value="{Binding Terrain}" />
-            <ToggleSwitch
-                Grid.Column="1"
-                HorizontalAlignment="Left"
-                IsChecked="{Binding IsPlayerSlot}"
-                OffContent="Not Deploy Location"
-                OnContent="Deploy Location" />
-        </Grid>
+    <Grid RowDefinitions="*,64">
+        <ScrollViewer>
+            <StackPanel Name="CellPanel" Spacing="2">
+
+                <Grid
+                    Margin="2"
+                    HorizontalAlignment="Stretch"
+                    ColumnDefinitions="*,*">
+                    <u:EnumSelector
+                        Margin="4,0,4,0"
+                        HorizontalAlignment="Stretch"
+                        DisplayDescription="True"
+                        EnumType="{Binding Terrains}"
+                        Value="{Binding Terrain}" />
+                    <ToggleSwitch
+                        Grid.Column="1"
+                        HorizontalAlignment="Left"
+                        IsChecked="{Binding IsPlayerSlot}"
+                        OffContent="Not Deploy Location"
+                        OnContent="Deploy Location" />
+                </Grid>
 
 
-        <ItemsControl ItemsSource="{Binding Units}">
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <views:BoardUnitView DataContext="{Binding}" />
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-        <Grid ColumnDefinitions="*,*">
+                <ItemsControl ItemsSource="{Binding Units}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <views:BoardUnitView DataContext="{Binding}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+
+            </StackPanel>
+        </ScrollViewer>
+        <Grid Grid.Row="1" ColumnDefinitions="*,*">
             <Button
                 Grid.Column="0"
                 Command="{Binding AddUnitCommand}"
@@ -52,7 +59,7 @@
                 Content="Paste Unit"
                 Theme="{DynamicResource SolidButton}" />
         </Grid>
+    </Grid>
 
-    </StackPanel>
 
 </UserControl>

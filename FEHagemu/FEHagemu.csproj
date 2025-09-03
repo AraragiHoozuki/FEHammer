@@ -49,6 +49,9 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.0" />
     <PackageReference Include="Irihi.Ursa" Version="1.2.0" />
     <PackageReference Include="Irihi.Ursa.Themes.Semi" Version="1.2.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.13.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="4.13.0" />
     <PackageReference Include="Semi.Avalonia" Version="11.1.0.3" />
   </ItemGroup>
 
@@ -56,5 +59,11 @@
 
   <ItemGroup>
     <UpToDateCheckInput Remove="Views\SkillToolTipPanel.axaml" />
+  </ItemGroup>
+
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\HSDArcSourceGenerator\HSDArcSourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 </Project>

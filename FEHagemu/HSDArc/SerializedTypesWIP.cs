@@ -557,7 +557,15 @@ namespace FEHagemu.HSDArchive
         public byte unknown_byte1;
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x3D)]
         public byte seer_snare_availableQ;
-        [HSDHelper(Type = HSDBinType.Unknown, Size = 9)]
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x3C)]
+        public byte unknown_810_byte;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x27)]
+        public byte bitmask_80noTeleport_40unk_20resDefLower_10moveIn2_8spdFake7_4counterBrave_2brave_1counter;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0xD0)]
+        public byte bitmask_80bypass_20resFake5_10denyResDefLower_8noTeleportBig_4moveIn2_2mapDamage80Cut_1raven;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x9D)]
+        public byte bitmask_8vantage_2noDefendHand;
+        [HSDHelper(Type = HSDBinType.Unknown, Size = 5)]
         public byte[] ver_810_new;
 
         public string Name => MasterData.GetMessage(name); 

@@ -5,6 +5,8 @@ VisualStudioVersion = 17.10.34607.79
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FEHagemu", "FEHagemu\FEHagemu.csproj", "{77FB32E4-AFF4-4CEE-8B6A-5E6ED3209598}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HSDArcSourceGenerator", "HSDArcSourceGenerator\HSDArcSourceGenerator.csproj", "{3258474B-EC3D-458C-AF20-36757F4F192B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{77FB32E4-AFF4-4CEE-8B6A-5E6ED3209598}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77FB32E4-AFF4-4CEE-8B6A-5E6ED3209598}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77FB32E4-AFF4-4CEE-8B6A-5E6ED3209598}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3258474B-EC3D-458C-AF20-36757F4F192B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3258474B-EC3D-458C-AF20-36757F4F192B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3258474B-EC3D-458C-AF20-36757F4F192B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3258474B-EC3D-458C-AF20-36757F4F192B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

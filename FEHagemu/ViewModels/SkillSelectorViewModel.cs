@@ -117,7 +117,7 @@ namespace FEHagemu.ViewModels
         }
         bool CheckSlot(Skill sk)
         {
-            return (int)sk.category == SelectedSkillSlot?.Index;
+            return ((int)sk.category == SelectedSkillSlot?.Index)|| (SelectedSkillSlot?.Index > (int)SkillCategory.S);
         }
         bool CheckCheckers(Skill sk)
         {

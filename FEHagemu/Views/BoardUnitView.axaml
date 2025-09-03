@@ -57,6 +57,28 @@
                     <Setter Property="FontFamily" Value="Consolas" />
                 </Style>
             </StackPanel.Styles>
+            <Grid ColumnDefinitions="*,64">
+                <TextBox
+                    HorizontalContentAlignment="Right"
+                    InnerLeftContent="ID"
+                    IsEnabled="False"
+                    Text="{Binding Id}" />
+                <Button
+                    Grid.Column="1"
+                    Command="{Binding CopyIdCommand}"
+                    Content="Copy" />
+            </Grid>
+            <u:NumericIntUpDown
+                HorizontalContentAlignment="Right"
+                InnerLeftContent="LV"
+                Maximum="99"
+                Minimum="0"
+                Step="1"
+                Value="{Binding LV}">
+                <u:NumericIntUpDown.InnerRightContent>
+                    <TextBlock Foreground="Green" Text="+10" />
+                </u:NumericIntUpDown.InnerRightContent>
+            </u:NumericIntUpDown>
             <u:NumericIntUpDown
                 HorizontalContentAlignment="Right"
                 InnerLeftContent="HP"
@@ -109,34 +131,6 @@
                 </Button>
             </StackPanel>
 
-            <u:NumericIntUpDown
-                HorizontalContentAlignment="Right"
-                InnerLeftContent="Intial Special CD"
-                Maximum="255"
-                Minimum="0"
-                Step="1"
-                Value="{Binding CD}" />
-            <u:NumericIntUpDown
-                HorizontalContentAlignment="Right"
-                InnerLeftContent="Start Turn"
-                Maximum="255"
-                Minimum="0"
-                Step="1"
-                Value="{Binding StartTurn}" />
-            <u:NumericIntUpDown
-                HorizontalContentAlignment="Right"
-                InnerLeftContent="Move Group"
-                Maximum="255"
-                Minimum="0"
-                Step="1"
-                Value="{Binding MoveGroup}" />
-            <u:NumericIntUpDown
-                HorizontalContentAlignment="Right"
-                InnerLeftContent="Move Delay"
-                Maximum="255"
-                Minimum="0"
-                Step="1"
-                Value="{Binding MoveDelay}" />
 
             <CheckBox
                 Padding="4"
@@ -149,7 +143,7 @@
                 IsChecked="{Binding IsReturning}"
                 Theme="{DynamicResource CardCheckBox}"
                 ToolTip.Tip="如果勾选，则该单位在检测不到周围有敌方时，会返回初始位置" />
-
+            <Separator Margin="0,4,0,4" />
             <ItemsControl HorizontalAlignment="Stretch" ItemsSource="{Binding Skills}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
@@ -180,7 +174,67 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-
+            <Separator Margin="0,4,0,4" />
+            <u:NumericIntUpDown
+                HorizontalContentAlignment="Right"
+                InnerLeftContent="Intial Special CD"
+                Maximum="255"
+                Minimum="0"
+                Step="1"
+                Value="{Binding CD}" />
+            <u:NumericIntUpDown
+                HorizontalContentAlignment="Right"
+                InnerLeftContent="Start Turn"
+                Maximum="255"
+                Minimum="0"
+                Step="1"
+                Value="{Binding StartTurn}" />
+            <u:NumericIntUpDown
+                HorizontalContentAlignment="Right"
+                InnerLeftContent="Move Group"
+                Maximum="255"
+                Minimum="0"
+                Step="1"
+                Value="{Binding MoveGroup}" />
+            <u:NumericIntUpDown
+                HorizontalContentAlignment="Right"
+                InnerLeftContent="Move Delay"
+                Maximum="255"
+                Minimum="0"
+                Step="1"
+                Value="{Binding MoveDelay}" />
+            <TextBox
+                HorizontalContentAlignment="Right"
+                InnerLeftContent="SpawnCheck"
+                Text="{Binding SpawnCheck}" />
+            <u:NumericIntUpDown
+                HorizontalContentAlignment="Right"
+                InnerLeftContent="CheckRemain"
+                Maximum="255"
+                Minimum="0"
+                Step="1"
+                Value="{Binding SpawnTargetRemain}" />
+            <u:NumericIntUpDown
+                HorizontalContentAlignment="Right"
+                InnerLeftContent="CheckKills"
+                Maximum="255"
+                Minimum="0"
+                Step="1"
+                Value="{Binding SpawnTargetKills}" />
+            <u:NumericIntUpDown
+                HorizontalContentAlignment="Right"
+                InnerLeftContent="SpawnCount"
+                Maximum="255"
+                Minimum="0"
+                Step="1"
+                Value="{Binding SpawnCount}" />
+            <u:NumericIntUpDown
+                HorizontalContentAlignment="Right"
+                InnerLeftContent="SpawnTurn"
+                Maximum="255"
+                Minimum="0"
+                Step="1"
+                Value="{Binding SpawnTurns}" />
 
         </StackPanel>
 

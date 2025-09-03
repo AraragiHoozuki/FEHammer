@@ -13,7 +13,7 @@
     x:DataType="vm:GameBoardViewModel"
     mc:Ignorable="d">
     <Grid RowDefinitions="Auto,Auto">
-        <Grid HorizontalAlignment="Stretch" ColumnDefinitions="Auto,*,*">
+        <Grid HorizontalAlignment="Stretch" ColumnDefinitions="Auto,*,*,Auto,Auto">
             <Button
                 Classes="Warning"
                 Command="{Binding ResizeMapCommand}"
@@ -33,6 +33,15 @@
                 Minimum="0"
                 ShowButtonSpinner="False"
                 Value="{Binding ResizeY}" />
+            <TextBox
+                Grid.Column="3"
+                InnerLeftContent="Field"
+                IsEnabled="False"
+                Text="{Binding FieldId}" />
+            <Button
+                Grid.Column="4"
+                Command="{Binding ChangeFieldCommand}"
+                Content="Change Field" />
         </Grid>
         <ItemsControl Grid.Row="1" ItemsSource="{Binding Cells}">
             <ItemsControl.Background>

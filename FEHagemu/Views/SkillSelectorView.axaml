@@ -18,6 +18,7 @@
         <TextBox
             Name="SearchBar"
             HorizontalAlignment="Stretch"
+            Classes="ClearButton"
             InnerLeftContent="Name"
             Text="{Binding SearchText}" />
         <u:MultiComboBox

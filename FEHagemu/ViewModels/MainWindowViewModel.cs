@@ -13,9 +13,6 @@ using Ursa.Controls;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
-using System.Collections.Generic;
-using System;
-using Avalonia.Threading;
 
 namespace FEHagemu.ViewModels
 {
@@ -133,6 +130,8 @@ namespace FEHagemu.ViewModels
                 }
             }
         }
+
+        
 
         [ObservableProperty]
         BoardUnitViewModel? selectedUnit;
