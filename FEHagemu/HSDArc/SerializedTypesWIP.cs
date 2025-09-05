@@ -1,20 +1,101 @@
-﻿using Avalonia.Automation.Peers;
-using FEHagemu.HSDArchive;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
+using System.Reflection;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace FEHagemu.HSDArchive
 {
-    public enum WeaponType
+    public class FlagsEnumConverterFactory : JsonConverterFactory
+    {
+        public override bool CanConvert(Type typeToConvert)
+        {
+            return typeToConvert.IsEnum && typeToConvert.IsDefined(typeof(FlagsAttribute));
+        }
+
+        public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+        {
+            return (JsonConverter)Activator.CreateInstance(
+                typeof(FlagsEnumConverter<>).MakeGenericType(typeToConvert),
+                BindingFlags.Instance | BindingFlags.Public,
+                binder: null,
+                args: null,
+                culture: null);
+        }
+
+        // 实际的转换器逻辑在这个内部类中
+        private class FlagsEnumConverter<T> : JsonConverter<T> where T : struct, Enum
+        {
+            private readonly Dictionary<string, T> _nameToValueMap = new();
+            private readonly Dictionary<T, string> _valueToNameMap = new();
+
+            public FlagsEnumConverter()
+            {
+                var enumValues = Enum.GetValues<T>();
+                var enumNames = Enum.GetNames<T>();
+
+                for (int i = 0; i < enumValues.Length; i++)
+                {
+                    // 只处理单个bit的flag，忽略复合值和None=0
+                    var intValue = Convert.ToUInt64(enumValues[i]);
+                    if (intValue != 0 && (intValue & (intValue - 1)) == 0)
+                    {
+                        _nameToValueMap[enumNames[i]] = enumValues[i];
+                        _valueToNameMap[enumValues[i]] = enumNames[i];
+                    }
+                }
+            }
+
+            // 序列化 (Enum -> JSON)
+            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+            {
+                writer.WriteStartObject();
+                foreach (var kvp in _nameToValueMap)
+                {
+                    writer.WriteBoolean(kvp.Key, value.HasFlag(kvp.Value));
+                }
+                writer.WriteEndObject();
+            }
+
+            // 反序列化 (JSON -> Enum)
+            public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                if (reader.TokenType != JsonTokenType.StartObject)
+                    throw new JsonException("Expected StartObject token");
+
+                long enumValue = 0;
+
+                while (reader.Read())
+                {
+                    if (reader.TokenType == JsonTokenType.EndObject)
+                        break;
+
+                    if (reader.TokenType == JsonTokenType.PropertyName)
+                    {
+                        string propName = reader.GetString();
+                        reader.Read();
+                        bool isSet = reader.GetBoolean();
+
+                        if (isSet && _nameToValueMap.TryGetValue(propName, out T flag))
+                        {
+                            enumValue |= Convert.ToInt64(flag);
+                        }
+                    }
+                }
+
+                return (T)Enum.ToObject(typeof(T), enumValue);
+            }
+        }
+    }
+    public enum WeaponType : byte
     {
         Sword, Lance, Axe, RedBow, BlueBow, GreenBow, ColorlessBow, RedDagger, BlueDagger,
         GreenDagger, ColorlessDagger, RedTome, BlueTome, GreenTome, ColorlessTome, Staff, RedBreath, BlueBreath, GreenBreath,
         ColorlessBreath, RedBeast, BlueBeast, GreenBeast, ColorlessBeast
     };
     public enum Element : byte { None, Fire, Thunder, Wind, Light, Dark };
-    public enum MoveType { Infantry, Armored, Cavalry, Flying };
+    public enum MoveType : byte { Infantry, Armored, Cavalry, Flying };
 
     public enum Origins
     {
@@ -50,6 +131,8 @@ namespace FEHagemu.HSDArchive
 
         public int Stat(int index, int hone = 0, int level = 40);
         public int[] CalcStats(int level, int merge, int honeIndex, int flawIndex);
+
+        public bool IsEnemy { get; }
         
     }
     public class Person : IPerson
@@ -190,13 +273,15 @@ namespace FEHagemu.HSDArchive
         public uint DragonflowerNumber => dragonflower_num;
 
         public LegendaryInfo Legendary => legendary;
+
+        public bool IsEnemy => false;
     }
     public class Enemy : IPerson
     {
         [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
         public string id;
         [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
-        public string romman;
+        public string roman;
         [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
         public string face;
         [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
@@ -323,6 +408,7 @@ namespace FEHagemu.HSDArchive
             }
             return res;
         }
+        public bool IsEnemy => true;
     }
     public enum LegendaryKind : byte
     {
@@ -335,11 +421,11 @@ namespace FEHagemu.HSDArchive
         Resonate = 6,
         Engage
     }
-    public enum LegendaryElement
+    public enum LegendaryElement : byte
     {
         None, Fire, Water, Wind, Earth, Light, Dark, Astra, Anima
     }
-    public struct LegendaryInfo
+    public class LegendaryInfo
     {
         [HSDHelper(Type = HSDBinType.String, StringType = StringType.ID, IsPtr = true)]
         public string btn_skill_id; // 8 bytes
@@ -494,23 +580,28 @@ namespace FEHagemu.HSDArchive
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x0EBEF25B)]
         public uint shield_mov;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x005A02AF)]
-        public uint weak_wep;
+        public uint weak_wep; //使得自己会受到“持有对应武器克制能力敌人”的克制，如此处填龙，则敌人的克制龙可以克制自己
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0xB269B819)]
-        public uint weak_mov;
+        public uint weak_mov; //使得自己会受到“持有对应移动克制能力敌人”的克制
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x647F9eCD)]
-        public uint got_weak_wep;
+        public uint got_weak_wep; //使自己会受到对应武器敌人的克制
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0xB7064176)]
-        public uint got_weak_mov;
+        public uint got_weak_mov; //使自己会受到对应移动种类敌人的克制
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x494E2629)]
         public uint adaptive_wep;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0xEE6CEF2E)]
         public uint adaptive_mov;
-        [HSDHelper(Type = HSDBinType.Unknown, Size = 8)]
-        public byte[] unknown;
-        [HSDHelper(Type = HSDBinType.Unknown, Size = 4)]
-        public byte[] unknown_wep;
-        [HSDHelper(Type = HSDBinType.Unknown, Size = 4)]
-        public byte[] unknown_mov;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 2, Key = 0x029C)]
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public SkillFlags flags;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 2, Key = 0x68F6)]
+        public ushort unknown0;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0xC49E0D1E)]
+        public uint unknown1;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x3128991D)]
+        public uint unknown2;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x63B8544C)]
+        public uint unknown3;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x9C776648)]
         public uint timing;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x72B07325)]
@@ -560,11 +651,14 @@ namespace FEHagemu.HSDArchive
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x3C)]
         public byte unknown_810_byte;
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x27)]
-        public byte bitmask_80noTeleport_40unk_20resDefLower_10moveIn2_8spdFake7_4counterBrave_2brave_1counter;
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public SkillFlags2 flags2;
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0xD0)]
-        public byte bitmask_80bypass_20resFake5_10denyResDefLower_8noTeleportBig_4moveIn2_2mapDamage80Cut_1raven;
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public SkillFlags3 flags3;
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x9D)]
-        public byte bitmask_8vantage_2noDefendHand;
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public SkillFlags4 flags4;
         [HSDHelper(Type = HSDBinType.Unknown, Size = 5)]
         public byte[] ver_810_new;
 
@@ -586,7 +680,62 @@ namespace FEHagemu.HSDArchive
         Transform,
         Engage
     }
-
+    [Flags]
+    public enum SkillFlags : ushort
+    {
+        FollowAttack = 1,
+        OpponentNoFollowAttack = 2,
+        NegateFollowAttackEffect1 = 4,
+        NegateFollowAttackEffect2 = 8,
+        NegateEnemyOugiCountChangeAdd = 0x10,
+        NegateSelfOugiCountChangeMinus = 0x20,
+        SelfOugiCountChangeAdd = 0x40,
+        EnemyOugiCountChangeMinus = 0x80,
+        NoNormalPercentDamageCutOnOugi = 0x100,
+        HalveNormalPercentDamageCut = 0x200,
+        DragonEye = 0x400,
+        OugiCountBeforeFirstAttack = 0x800,
+        OugiCountBeforeFirstFollowAttack = 0x1000,
+        Desperate = 0x2000,
+        OugiCountBeforeFirstAttack_WhenAttackOugiEquipped = 0x4000,
+        EnemyOugiDecountBeforeFirstAttack_WhenAttackOugiEquipped = 0x8000
+    }
+    [Flags]
+    public enum SkillFlags2 : byte
+    {
+        DistantCounter = 1,
+        AttackTwiceWhenInitiateAttack = 2,
+        AttackTwiceWhenEnemyInitiateAttack = 4,
+        FakeSpeed7 = 8,
+        CanMove2SpacesAroundAlliesWithin2Spaces = 0x10,
+        CalculateDamageUsingLowerOfDefRes = 0x20,
+        NoAttackOrderChange_WIP = 0x40,
+        PreventTeleport_2Spaces = 0x80
+    }
+    [Flags]
+    public enum SkillFlags3 : byte
+    {
+        Raven = 1,
+        MapDamage80PercentCut = 2,
+        AlliesWithin2SpacesFreelyMove = 4,
+        PreventTeleport_4Spaces = 8,
+        NegateCalculateDamageUsingLowerOfDefRes = 0x10,
+        FakeRes5 = 0x20,
+        SkillFlag3_0x40_WIP = 0x40,
+        Pass = 0x80
+    }
+    [Flags]
+    public enum SkillFlags4 : byte
+    {
+        SkillFlags4_0x1_WIP = 1,
+        NoDefenderHand = 2,
+        DestroyFence = 4,
+        Vantage_WIP = 8,
+        SkillFlags4_0x10_WIP = 0x10,
+        SkillFlags4_0x20_WIP = 0x20,
+        SkillFlags4_0x40_WIP = 0x40,
+        SkillFlags4_0x80_WIP = 0x80
+    }
     public struct SkillLimit
     {
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x0EBDB832)]

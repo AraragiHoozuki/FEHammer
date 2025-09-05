@@ -9,7 +9,7 @@
     xmlns:views="clr-namespace:FEHagemu.Views"
     xmlns:vm="using:FEHagemu.ViewModels"
     Name="PersonSelectorDialog"
-    Width="450"
+    Width="500"
     d:DesignHeight="450"
     d:DesignWidth="800"
     x:DataType="vm:PersonSelectorViewModel"
@@ -139,6 +139,14 @@
                                     Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).ShowSameCharactersCommand}"
                                     CommandParameter="{Binding}"
                                     Header="Show Same Characters" />
+                                <MenuItem
+                                    Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).ExportCommand}"
+                                    CommandParameter="{Binding}"
+                                    Header="Export" />
+                                <MenuItem
+                                    Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).DeleteCommand}"
+                                    CommandParameter="{Binding}"
+                                    Header="Delete Person" />
                             </ContextMenu>
 
                         </Border.ContextMenu>

@@ -57,7 +57,7 @@ namespace FEHagemu.ViewModels
         ObservableCollection<TypeFilterItem> selectedWeaponTypes = [];
 
         [ObservableProperty]
-        ObservableCollection<TypeFilterItem> skillSlotSelectItems = [new TypeFilterItem(0, MasterData.GetSkillIcon(1)), new TypeFilterItem(1, MasterData.GetSkillIcon(2)), new TypeFilterItem(2, MasterData.GetSkillIcon(3)), new TypeFilterItem(3, MasterData.GetABCSXIcon("A")), new TypeFilterItem(4, MasterData.GetABCSXIcon("B")), new TypeFilterItem(5, MasterData.GetABCSXIcon("C")), new TypeFilterItem(6, MasterData.GetABCSXIcon("X")), new TypeFilterItem(7, MasterData.GetABCSXIcon("S"))];
+        ObservableCollection<TypeFilterItem> skillSlotSelectItems = [new TypeFilterItem(0, MasterData.GetSkillIcon(1)), new TypeFilterItem(1, MasterData.GetSkillIcon(2)), new TypeFilterItem(2, MasterData.GetSkillIcon(3)), new TypeFilterItem(3, MasterData.GetABCSXIcon("A")), new TypeFilterItem(4, MasterData.GetABCSXIcon("B")), new TypeFilterItem(5, MasterData.GetABCSXIcon("C")), new TypeFilterItem(6, MasterData.GetABCSXIcon("X")), new TypeFilterItem(7, MasterData.GetABCSXIcon("S")), new TypeFilterItem(9, MasterData.GetSkillIcon(0))];
 
         TypeFilterItem? selectedSkillSlot;
         public TypeFilterItem? SelectedSkillSlot { get => selectedSkillSlot; set
@@ -117,7 +117,7 @@ namespace FEHagemu.ViewModels
         }
         bool CheckSlot(Skill sk)
         {
-            return ((int)sk.category == SelectedSkillSlot?.Index)|| (SelectedSkillSlot?.Index > (int)SkillCategory.S);
+            return ((int)sk.category == SelectedSkillSlot?.Index)|| (SelectedSkillSlot?.Index ==9 && sk.category == SkillCategory.Engage);
         }
         bool CheckCheckers(Skill sk)
         {
@@ -175,7 +175,7 @@ namespace FEHagemu.ViewModels
                 var file = await mainWindow.StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions()
                 {
                     Title = "Export json",
-                    SuggestedFileName = svm.skill?.name
+                    SuggestedFileName = svm.skill?.id,
                 });
                 if (file is not null)
                 {

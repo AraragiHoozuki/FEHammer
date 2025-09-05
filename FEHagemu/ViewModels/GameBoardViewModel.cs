@@ -246,9 +246,9 @@ namespace FEHagemu.ViewModels
                 DefaultDEF = (ushort)stats[3];
                 DefaultRES = (ushort)stats[4];
 
-                var ls = MasterData.GetSkill(p.Legendary.btn_skill_id);
+                var ls = MasterData.GetSkill(p.Legendary?.btn_skill_id);
                 if (ls is not null) {
-                    LegendarySkill = new SkillViewModel(p.Legendary.btn_skill_id, 9);
+                    LegendarySkill = new SkillViewModel(ls.id, 9);
                 }
                 
             }
@@ -400,10 +400,10 @@ namespace FEHagemu.ViewModels
                 DefaultSPD = SPD = (ushort)stats[2];
                 DefaultDEF = DEF = (ushort)stats[3];
                 DefaultRES = RES = (ushort)stats[4];
-                var ls = MasterData.GetSkill(pvm.person.Legendary.btn_skill_id);
+                var ls = MasterData.GetSkill(pvm.person.Legendary?.btn_skill_id);
                 if (ls is not null)
                 {
-                    LegendarySkill = new SkillViewModel(pvm.person.Legendary.btn_skill_id, 9);
+                    LegendarySkill = new SkillViewModel(ls.id, 9);
                 }
                 cell.CallFirstPersonChange();
                 OnPropertyChanged(nameof(DragonFlowerCount));

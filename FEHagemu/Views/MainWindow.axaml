@@ -27,10 +27,15 @@
                     Command="{Binding ImportSkillCommand}"
                     Header="Import Skill"
                     ToolTip.Tip="Right click a skill in skill selector window and export its json, then edit it and import it." />
+                <!--<MenuItem
+                    Command="{Binding ImportPersonCommand}"
+                    Header="Import Person"
+                    ToolTip.Tip="Right click a person in person selector window and export its json, then edit it and import it." />
+                -->
                 <MenuItem
                     Command="{Binding ExportPackageCommand}"
                     Header="Export Package"
-                    ToolTip.Tip="Export a package including imported skills. Copy it to the game data folder." />
+                    ToolTip.Tip="Export a package including imported skills and persons. Copy it to the game data folder." />
                 <MenuItem Header="About" />
             </Menu>
             <u:Divider DockPanel.Dock="Top" />

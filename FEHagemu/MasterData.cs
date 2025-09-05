@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace FEHagemu
@@ -42,7 +43,10 @@ namespace FEHagemu
         public static Bitmap EmptyBitmap = new Bitmap(AssetLoader.Open(new Uri("avares://FEHagemu/Assets/empty.png")));
 
         public static HSDArc<SkillList> ModSkillArc => SkillArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!;
+        public static HSDArc<PersonList> ModPersonArc => PersonArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!;
+        public static HSDArc<EnemyList> ModEnemyArc => EnemyArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!;
         public static HSDArc<MessageList> ModMsgArc => MsgArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!;
+        
 
         public static async Task<bool> LoadAsync()
         {
@@ -193,6 +197,29 @@ namespace FEHagemu
             return null;
         }
 
+        public static HSDArc<PersonList>? GetPersonArc(string pid)
+        {
+            foreach(var arc in PersonArcs)
+            {
+                foreach (var person in arc.data.list)
+                {
+                    if (person.id == pid) return arc;
+                }
+            }
+            return null;
+        }
+        public static HSDArc<EnemyList>? GetEnemyArc(string eid)
+        {
+            foreach (var arc in EnemyArcs)
+            {
+                foreach (var enemy in arc.data.list)
+                {
+                    if (enemy.id == eid) return arc;
+                }
+            }
+            return null;
+        }
+
         public static bool CheckSkillCategory(string id, SkillCategory cat)
         {
             if (id is null) return false;
@@ -218,7 +245,7 @@ namespace FEHagemu
                 arc.data.list[index] = key;
                 arc.data.list[index + 1] = message;
                 arc.data.size = (ulong)arc.data.list.Length/2;
-                MsgDict.Add(key, message);
+                MsgDict.TryAdd(key, message);
             }
         }
 
@@ -243,6 +270,46 @@ namespace FEHagemu
             }
         }
 
+        public static void AddPerson(HSDArc<PersonList> arc, Person p)
+        {
+            int index = Array.FindIndex(arc.data.list, s => s.id == p.id);
+            if (index > -1)
+            {
+                p.id_num = arc.data.list[index].id_num;
+                p.sort_value = arc.data.list[index].sort_value;
+                arc.data.list[index] = p;
+                PersonDict[p.id] = p;
+            }
+            else
+            {
+                p.id_num = PersonDict.Values.MaxBy(sk => sk.id_num)!.id_num + 1;
+                p.sort_value = PersonDict.Values.MaxBy(sk => sk.sort_value)!.sort_value + 1;
+                Array.Resize(ref arc.data.list, arc.data.list.Length + 1);
+                arc.data.list[^1] = p;
+                arc.data.size = (ulong)arc.data.list.Length;
+                PersonDict.Add(p.id, p);
+            }
+        }
+
+        public static void AddEnemy(HSDArc<EnemyList> arc, Enemy e)
+        {
+            int index = Array.FindIndex(arc.data.list, s => s.id == e.id);
+            if (index > -1)
+            {
+                e.id_num = arc.data.list[index].id_num;
+                arc.data.list[index] = e;
+                EnemyDict[e.id] = e;
+            }
+            else
+            {
+                e.id_num = PersonDict.Values.MaxBy(sk => sk.id_num)!.id_num + 1;
+                Array.Resize(ref arc.data.list, arc.data.list.Length + 1);
+                arc.data.list[^1] = e;
+                arc.data.size = (ulong)arc.data.list.Length;
+                EnemyDict.Add(e.id, e);
+            }
+        }
+
         public static void DeleteSkill(HSDArc<SkillList> arc, Skill skill)
         {
             if (!skill.id.Contains("MOD")) return;
@@ -255,6 +322,33 @@ namespace FEHagemu
                 SkillDict.Remove(skill.id);
                 DeleteMessage(ModMsgArc, skill.name);
                 DeleteMessage(ModMsgArc, skill.description);
+            }
+        }
+
+        public static void DeletePerson(HSDArc<PersonList> arc, Person p)
+        {
+            if (!p.id.Contains("MOD")) return;
+            int index = Array.FindIndex(arc.data.list, s => s.id == p.id);
+            if (index > -1)
+            {
+                arc.data.list[index] = arc.data.list[^1];
+                arc.data.list = arc.data.list[..^1];
+                arc.data.size = (ulong)arc.data.list.Length;
+                PersonDict.Remove(p.id);
+                DeleteMessage(ModMsgArc, $"M{p.id}");
+            }
+        }
+        public static void DeleteEnemy(HSDArc<EnemyList> arc, Enemy e)
+        {
+            if (!e.id.Contains("MOD")) return;
+            int index = Array.FindIndex(arc.data.list, s => s.id == e.id);
+            if (index > -1)
+            {
+                arc.data.list[index] = arc.data.list[^1];
+                arc.data.list = arc.data.list[..^1];
+                arc.data.size = (ulong)arc.data.list.Length;
+                EnemyDict.Remove(e.id);
+                DeleteMessage(ModMsgArc, $"M{e.id}");
             }
         }
 

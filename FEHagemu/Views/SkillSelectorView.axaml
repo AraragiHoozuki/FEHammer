@@ -65,7 +65,7 @@
             </u:SelectionList.ItemsPanel>
             <u:SelectionList.ItemTemplate>
                 <DataTemplate>
-                    <Image Width="32" Source="{Binding Icon}" />
+                    <Image Width="24" Source="{Binding Icon}" />
                 </DataTemplate>
             </u:SelectionList.ItemTemplate>
         </u:SelectionList>

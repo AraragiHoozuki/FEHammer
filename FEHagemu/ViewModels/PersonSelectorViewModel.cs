@@ -1,12 +1,19 @@
-﻿using Avalonia.Media;
+﻿using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FEHagemu.HSDArchive;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Unicode;
 using System.Threading.Tasks;
+using Ursa.Controls;
 
 namespace FEHagemu.ViewModels
 {
@@ -64,12 +71,12 @@ namespace FEHagemu.ViewModels
                     if ((WeaponTypeTogglers[(int)person.WeaponType].SelectedQ || WeaponTypeTogglers.All(item => !item.SelectedQ)) && (MoveTypeTogglers.All(item => !item.SelectedQ) || MoveTypeTogglers[(int)person.MoveType].SelectedQ) &&
                        (SelectedVersion is null||person.Version == SelectedVersion) &&
                        (CheckDanceQ == false || person.RefresherQ ==1) &&
-                       (CheckPairQ == false || person.Legendary.kind == LegendaryKind.Pair) &&
-                       (CheckTwinWorldQ == false || person.Legendary.kind == LegendaryKind.TwinWorld) &&
-                       (CheckFlowerBudQ == false || person.Legendary.kind == LegendaryKind.FlowerBud) &&
-                       (CheckDiabolosWeaponQ == false || person.Legendary.kind == LegendaryKind.Diabolos) &&
-                       (CheckResonateQ == false || person.Legendary.kind == LegendaryKind.Resonate) &&
-                       (CheckEngageQ == false || person.Legendary.kind == LegendaryKind.Engage)
+                       (CheckPairQ == false || person.Legendary?.kind == LegendaryKind.Pair) &&
+                       (CheckTwinWorldQ == false || person.Legendary?.kind == LegendaryKind.TwinWorld) &&
+                       (CheckFlowerBudQ == false || person.Legendary?.kind == LegendaryKind.FlowerBud) &&
+                       (CheckDiabolosWeaponQ == false || person.Legendary?.kind == LegendaryKind.Diabolos) &&
+                       (CheckResonateQ == false || person.Legendary?.kind == LegendaryKind.Resonate) &&
+                       (CheckEngageQ == false || person.Legendary?.kind == LegendaryKind.Engage)
                        
                        )
                     {
@@ -117,6 +124,67 @@ namespace FEHagemu.ViewModels
                 }
             }
         }
+
+        [RelayCommand]
+        public async Task Export(PersonViewModel pvm)
+        {
+            string jsonString;
+            if (pvm.person.IsEnemy)
+            {
+                jsonString = JsonSerializer.Serialize((Enemy)pvm.person, new JsonSerializerOptions()
+                {
+                    IncludeFields = true,
+                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                    IgnoreReadOnlyProperties = true,
+                    WriteIndented = true,
+                });
+            } else
+            {
+                jsonString = JsonSerializer.Serialize((Person)pvm.person, new JsonSerializerOptions()
+                {
+                    IncludeFields = true,
+                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                    IgnoreReadOnlyProperties = true,
+                    WriteIndented = true,
+                });
+            }
+            
+            var mainWindow = Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+            if (mainWindow is not null)
+            {
+                var file = await mainWindow.StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions()
+                {
+                    Title = "Export json",
+                    SuggestedFileName = pvm.person?.Id,
+                });
+                if (file is not null)
+                {
+                    await using var stream = await file.OpenWriteAsync();
+                    using var streamWriter = new StreamWriter(stream);
+                    await streamWriter.WriteAsync(jsonString);
+                }
+            }
+        }
+
+        [RelayCommand]
+        public async Task Delete(PersonViewModel pvm)
+        {
+            if (pvm is not null && pvm.person is not null && pvm.person.Id.Contains("MOD"))
+            {
+                if (pvm.person.IsEnemy)
+                {
+                    MasterData.DeleteEnemy(MasterData.ModEnemyArc, (Enemy)pvm.person);
+                } else
+                {
+                    MasterData.DeletePerson(MasterData.ModPersonArc, (Person)pvm.person);
+                }
+                DoSearch();
+            }
+            else
+            {
+                await MessageBox.ShowAsync("Cannot delete built-in person", "Error", MessageBoxIcon.Error, MessageBoxButton.OK);
+            }
+        }
     }
 
     public partial class PersonViewModel : ViewModelBase
@@ -146,13 +214,13 @@ namespace FEHagemu.ViewModels
             return s is not null ? MasterData.GetSkillIcon((int)s.icon) : MasterData.GetSkillIcon(0);
         }
         public string Name => MasterData.GetMessage("M" + person.Id);
-        public bool DiabolosWeaponQ => person.Legendary.kind == LegendaryKind.Diabolos;
-        public bool FlowerBudQ => person.Legendary.kind == LegendaryKind.FlowerBud;
-        public bool ResonateQ => person.Legendary.kind == LegendaryKind.Resonate;
-        public bool LegendaryQ => person.Legendary.kind == LegendaryKind.LegendaryOrMythic;
-        public bool PairQ => person.Legendary.kind == LegendaryKind.Pair;
-        public bool TwinWorldQ => person.Legendary.kind == LegendaryKind.TwinWorld;
-        public bool EngageQ => person.Legendary.kind == LegendaryKind.Engage;
+        public bool DiabolosWeaponQ => person.Legendary?.kind == LegendaryKind.Diabolos;
+        public bool FlowerBudQ => person.Legendary?.kind == LegendaryKind.FlowerBud;
+        public bool ResonateQ => person.Legendary?.kind == LegendaryKind.Resonate;
+        public bool LegendaryQ => person.Legendary?.kind == LegendaryKind.LegendaryOrMythic;
+        public bool PairQ => person.Legendary?.kind == LegendaryKind.Pair;
+        public bool TwinWorldQ => person.Legendary?.kind == LegendaryKind.TwinWorld;
+        public bool EngageQ => person.Legendary?.kind == LegendaryKind.Engage;
         public bool DanceQ => person.RefresherQ == 1;
         public Task<Bitmap> Face => MasterData.GetFaceAsync(person.Face);
 

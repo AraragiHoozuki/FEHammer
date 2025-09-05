@@ -112,6 +112,88 @@ namespace FEHagemu.ViewModels
             }
         }
         [RelayCommand]
+        async Task ImportPerson()
+        {
+            var mainWindow = Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+            if (mainWindow is not null)
+            {
+                var file = await mainWindow.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions()
+                {
+                    Title = "Import person json",
+                    AllowMultiple = false,
+                });
+                if (file.Count > 0)
+                {
+                    await using var stream = await file[0].OpenReadAsync();
+                    using var streamReader = new StreamReader(stream);
+                    string json = await streamReader.ReadToEndAsync();
+                   
+                    var msg_arc = MasterData.MsgArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"));
+                    if (file[0].Name.StartsWith("PID_"))
+                    {
+                        
+                        Person? p = JsonSerializer.Deserialize<Person>(json, new JsonSerializerOptions()
+                        {
+                            IncludeFields = true,
+                            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                            IgnoreReadOnlyProperties = true,
+                        });
+                        
+                        if (p is not null)
+                        {
+                            string pid = p.Id;
+                            var person_arc = MasterData.GetPersonArc(pid);
+                            if (person_arc is not null)
+                            {
+                                MasterData.AddPerson(person_arc, p);
+                                person_arc.Save();
+                                PackageArchive(person_arc);
+                            }
+                        }
+                    } else if (file[0].Name.StartsWith("EID_"))
+                    {
+                        Enemy? p = JsonSerializer.Deserialize<Enemy>(json, new JsonSerializerOptions()
+                        {
+                            IncludeFields = true,
+                            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                            IgnoreReadOnlyProperties = true,
+                        });
+
+                        if (p is not null)
+                        {
+                            string pid = p.Id;
+                            var enemy_arc = MasterData.GetEnemyArc(pid);
+                            if (enemy_arc is not null)
+                            {
+                                MasterData.AddEnemy(enemy_arc, p);
+                                enemy_arc.Save();
+                                PackageArchive(enemy_arc);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void PackageArchive<T>(HSDArc<T> arc) where T : new()
+        {
+            var root = Path.GetDirectoryName(mapArc.FilePath);
+            var assets = Directory.CreateDirectory(root + "\\assets");
+            if (assets != null)
+            {
+
+                DirectoryInfo common = assets.CreateSubdirectory("Common");
+                DirectoryInfo srpg = common.CreateSubdirectory("SRPG");
+                string? folder_name = Path.GetFileName(Path.GetDirectoryName(arc.path));
+                if (folder_name is not null)
+                {
+                    DirectoryInfo folder = srpg.CreateSubdirectory(folder_name);
+                    byte[] buffer = File.ReadAllBytes(arc.path);
+                    File.WriteAllBytes(Path.Combine(folder.FullName,Path.GetFileName(arc.path)), buffer);
+                }
+            }
+        }
+        [RelayCommand]
         async Task OpenMap()
         {
             var mainWindow = Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
@@ -173,6 +255,7 @@ namespace FEHagemu.ViewModels
             mapArc.Save();
             MasterData.ModSkillArc.Save();
             MasterData.ModMsgArc.Save();
+            
             var root = Path.GetDirectoryName(mapArc.FilePath);
             if (Directory.Exists(root)) {
                 byte[] buffer;
@@ -181,6 +264,8 @@ namespace FEHagemu.ViewModels
                     DirectoryInfo common = assets.CreateSubdirectory("Common");
                     DirectoryInfo srpg = common.CreateSubdirectory("SRPG");
                     DirectoryInfo skill = srpg.CreateSubdirectory("Skill");
+                    DirectoryInfo person = srpg.CreateSubdirectory("Person");
+                    DirectoryInfo enemy = srpg.CreateSubdirectory("Enemy");
                     buffer = File.ReadAllBytes(MasterData.SkillArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!.path);
                     File.WriteAllBytes(skill.FullName + "\\Tutorial.bin.lz", buffer);
 
