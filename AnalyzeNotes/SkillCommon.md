@@ -1,5 +1,7 @@
 ## 技能數據解析
-
+### timing
+ - 8: 回合開始時
+ - 67: 我軍及敵軍回合開始時
 ### range_shape 和 skill_range:
  - 0: 自己
  - 1: 自己和周围 skill_range 范围
