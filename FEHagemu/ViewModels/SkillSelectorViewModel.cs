@@ -117,7 +117,7 @@ namespace FEHagemu.ViewModels
         }
         bool CheckSlot(Skill sk)
         {
-            return ((int)sk.category == SelectedSkillSlot?.Index)|| (SelectedSkillSlot?.Index ==9 && sk.category == SkillCategory.Engage);
+            return ((int)sk.category == SelectedSkillSlot?.Index)|| (SelectedSkillSlot?.Index ==9 && (sk.category == SkillCategory.Engage ||sk.category == SkillCategory.Refine));
         }
         bool CheckCheckers(Skill sk)
         {
@@ -166,7 +166,6 @@ namespace FEHagemu.ViewModels
             {
                 IncludeFields = true,
                 Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
-                IgnoreReadOnlyProperties = true,
                 WriteIndented = true,
             });
             var mainWindow = Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;

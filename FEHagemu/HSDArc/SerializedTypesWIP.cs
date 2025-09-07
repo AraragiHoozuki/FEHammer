@@ -595,13 +595,24 @@ namespace FEHagemu.HSDArchive
         [JsonConverter(typeof(FlagsEnumConverterFactory))]
         public SkillFlags flags;
         [HSDHelper(Type = HSDBinType.Atom, Size = 2, Key = 0x68F6)]
-        public ushort unknown0;
-        [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0xC49E0D1E)]
-        public uint unknown1;
-        [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x3128991D)]
-        public uint unknown2;
+        public ushort damage_up;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 2, Key = 0x0D1E)]
+        public ushort damage_down;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 2, Key = 0xC49E)]
+        public ushort heal_after_battle;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x1D)]
+        public byte combat_stats_method;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x99)]
+        public byte combat_stats_method_param;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x28)]
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public StatsFlag neutralize_enemy_bonus;
+        [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x31)]
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public StatsFlag neutralize_self_penalty;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x63B8544C)]
-        public uint unknown3;
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public SkillFlags1 flags1;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x9C776648)]
         public uint timing;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x72B07325)]
@@ -681,6 +692,15 @@ namespace FEHagemu.HSDArchive
         Engage
     }
     [Flags]
+    public enum StatsFlag
+    {
+        WIP = 1,
+        Atk = 2,
+        SPD = 4,
+        DEF = 8,
+        RES = 0x10
+    }
+    [Flags]
     public enum SkillFlags : ushort
     {
         FollowAttack = 1,
@@ -699,6 +719,26 @@ namespace FEHagemu.HSDArchive
         Desperate = 0x2000,
         OugiCountBeforeFirstAttack_WhenAttackOugiEquipped = 0x4000,
         EnemyOugiDecountBeforeFirstAttack_WhenAttackOugiEquipped = 0x8000
+    }
+    [Flags]
+    public enum SkillFlags1 : uint
+    {
+        Heal7OnAttack = 1,
+        OugiCountBeforeFirstAttack_NoBeforeBattleOugi = 2,
+        Miracle = 4,
+        OugiCountBeforeFirstAttack_IncludingBeforeBattleOugi = 8,
+        OugiCountBeforeEnemyFirstAttack = 0x10,
+        OugiCount2BeforeEnemyFirstAttack = 0x20,
+        OugiCountBeforeFollowupAttack = 0x40,
+        OugiCountBeforeFirstAttack_NoAttackTwiceNorFollowup = 0x80,
+        FollowupMikiriWhenSpd5Higher = 0x100,
+        OugiCount2BeforeFirstFollowupAttack = 0x200,
+        OugiCountBeforeBothSideFisrtAttack = 0x400,
+        OugiCountBeforeFirstAttack_And_EnemyOugiDecountBeforeFirstAndDoubleAttack = 0x800,
+        NoAttackOrderChange_WhenDef5Higher = 0x1000,
+        SkillFlags1_0x2000_WIP = 0x2000,
+        NegateCannotCounterAttack = 0x4000,
+        GodSpeedAttack_100Percent_WIP = 0x8000
     }
     [Flags]
     public enum SkillFlags2 : byte

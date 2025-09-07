@@ -99,10 +99,9 @@ namespace FEHagemu
                 for (int j = 0; j < MsgArcs[i].data.list.Length - 1; j += 2)
                 {
                     if (j == MsgArcs[i].data.list.Length - 1) break;
-                    MsgDict.Add(MsgArcs[i].data.list[j], MsgArcs[i].data.list[j + 1]);
+                    MsgDict.TryAdd(MsgArcs[i].data.list[j], MsgArcs[i].data.list[j + 1]);
                 }
             }
-
             InitImage();
             return true;
         }
