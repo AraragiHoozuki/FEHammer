@@ -68,8 +68,8 @@ namespace FEHagemu.HSDArchiveOld
             {
                 var key = type switch
                 {
-                    StringType.ID => XString.IDKey,
-                    StringType.Message => XString.MSGKey,
+                    //StringType.ID => XString.IDKey,
+                    //StringType.Message => XString.MSGKey,
                     _ => XKeys.XKeyId
                 };
                 byte[] decoded = new byte[buffer.Length];
@@ -93,20 +93,20 @@ namespace FEHagemu.HSDArchiveOld
             return ReadStringBuffer(buffer, type);
         }
 
-        public DataPtr<T> ReadPtr<T>() where T : ISerializable, new()
-        {
-            DataPtr<T> ptr = new DataPtr<T>();
-            ptr.offset = ReadUInt64();
-            if (ptr.offset != 0)
-            {
-                long pos = BaseStream.Position;
-                BaseStream.Seek(HSDArcHeader.Size + (long)ptr.offset, SeekOrigin.Begin);
-                ptr.data = new T();
-                ptr.data.Deserialize(this);
-                BaseStream.Seek(pos, SeekOrigin.Begin);
-            }
-            return ptr;
-        }
+        //public DataPtr<T> ReadPtr<T>() where T : ISerializable, new()
+        //{
+        //    DataPtr<T> ptr = new DataPtr<T>();
+        //    ptr.offset = ReadUInt64();
+        //    if (ptr.offset != 0)
+        //    {
+        //        long pos = BaseStream.Position;
+        //        BaseStream.Seek(HSDArcHeader.Size + (long)ptr.offset, SeekOrigin.Begin);
+        //        ptr.data = new T();
+        //        ptr.data.Deserialize(this);
+        //        BaseStream.Seek(pos, SeekOrigin.Begin);
+        //    }
+        //    return ptr;
+        //}
 
         public void Skip(int byte_num)
         {

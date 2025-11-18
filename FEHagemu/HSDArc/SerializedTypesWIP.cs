@@ -692,7 +692,7 @@ namespace FEHagemu.HSDArchive
         Engage
     }
     [Flags]
-    public enum StatsFlag
+    public enum StatsFlag:byte
     {
         WIP = 1,
         Atk = 2,

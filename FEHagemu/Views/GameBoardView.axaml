@@ -43,7 +43,10 @@
                 Command="{Binding ChangeFieldCommand}"
                 Content="Change Field" />
         </Grid>
-        <ItemsControl Grid.Row="1" ItemsSource="{Binding Cells}">
+        <ItemsControl
+            Grid.Row="1"
+            HorizontalAlignment="Center"
+            ItemsSource="{Binding Cells}">
             <ItemsControl.Background>
                 <ImageBrush Source="{Binding FieldBackground}" />
             </ItemsControl.Background>

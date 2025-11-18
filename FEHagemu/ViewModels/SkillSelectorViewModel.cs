@@ -174,7 +174,7 @@ namespace FEHagemu.ViewModels
                 var file = await mainWindow.StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions()
                 {
                     Title = "Export json",
-                    SuggestedFileName = svm.skill?.id,
+                    SuggestedFileName = $"{svm.skill?.id}.json",
                 });
                 if (file is not null)
                 {
@@ -197,7 +197,25 @@ namespace FEHagemu.ViewModels
                 await MessageBox.ShowAsync("Cannot delete built-in skill", "Error", MessageBoxIcon.Error, MessageBoxButton.OK);
             }
         }
-
+        [RelayCommand]
+        void ShowSameAbilitySkills(SkillViewModel svm)
+        {
+            FilteredSkills.Clear();
+            List<SkillViewModel> list = new List<SkillViewModel>();
+            foreach (var arc in MasterData.SkillArcs)
+            {
+                foreach (var skill in arc.data.list)
+                {
+                    if (skill.ability == svm.skill?.ability)
+                    {
+                        list.Add(new SkillViewModel(skill.id, 0));
+                    }
+                    
+                }
+            }
+            list.Sort((x, y) => -x.skill!.sort_value.CompareTo(y.skill!.sort_value));
+            FilteredSkills = new(list);
+        }
 
         public event EventHandler<object?>? RequestClose;
         [RelayCommand]

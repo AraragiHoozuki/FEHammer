@@ -9,21 +9,37 @@ namespace FEHagemu.FEHArchive
 {
     public class FEHArcWriter(Stream output) : BinaryWriter(output)
     {
-        struct FieldAndData {
-            public FieldInfo field;
-            public object data;
-            public int index;
+        private struct PendingPointer
+        {
+            public long PatchOffset; // 需要回填偏移量的文件位置
+            public object Data;      // 要写入的数据对象
+            public FieldInfo Field;  // 对应的字段信息
+            public int Index;        // 如果是数组元素，对应的索引
 
-            public FieldAndData(FieldInfo f, object d, int i = 0)
+            public PendingPointer(long offset, object data, FieldInfo field, int index = -1)
             {
-                field = f; data = d; index = i;
+                PatchOffset = offset;
+                Data = data;
+                Field = field;
+                Index = index;
             }
         }
-        Dictionary<long, FieldAndData> pointers = [];
+        private List<PendingPointer> pendingPointers = new();
         List<long> ptr_offsets = [];
         long pointer_list_offset;
 
         #region New Write Methods
+        private void WriteAtomValue(object value, int size, ulong key)
+        {
+            switch (size)
+            {
+                case 1: Write((byte)((byte)value ^ key)); break;
+                case 2: Write((ushort)((ushort)value ^ key)); break;
+                case 4: Write((uint)((uint)value ^ key)); break;
+                case 8: Write((ulong)((ulong)value ^ key)); break;
+                default: throw new ArgumentException($"Invalid atom size: {size}");
+            }
+        }
         public void WriteAtom(object data, FieldInfo field, HSDHelperAttribute at)
         {
             switch (at.Size)
@@ -51,7 +67,8 @@ namespace FEHagemu.FEHArchive
                 byte[] data = Encoding.UTF8.GetBytes(s);
                 if (type == StringType.Plain) 
                 {
-                    buffer = new byte[(data.Length + 1 + 8) / 8 * 8];
+                    //buffer = new byte[(data.Length + 1 + 8) / 8 * 8];
+                    buffer = new byte[(data.Length + 1 + 7) & ~7];
                     data.CopyTo(buffer, 0);
                 }
                 else
@@ -87,196 +104,175 @@ namespace FEHagemu.FEHArchive
         {
             Write(new byte[at.Size]);
         }
-        public void WriteUnknownBuffer(object data, FieldInfo field)
+        private void WriteFieldDispatch(object value, FieldInfo field, HSDHelperAttribute at)
         {
-            Write((byte[])field.GetValue(data)!);
-        }
-        public void WriteField(object data, FieldInfo field, HSDHelperAttribute at)
-        {
-            if (at.Type == HSDBinType.Atom)
-            {
-                WriteAtom(data, field, at);
-            }
-            else if (at.Type == HSDBinType.Padding)
+            if (at.Type == HSDBinType.Padding)
             {
                 WritePadding(at);
+                return;
             }
-            else if (at.Type == HSDBinType.String)
+            if (value == null) return; 
+            switch (at.Type)
             {
-                WriteXString(data, field, at);
-            }
-            else if (at.Type == HSDBinType.Struct)
-            {
-                WriteStruct(field.GetValue(data)!, false);
-            }
-            else if (at.Type == HSDBinType.Array)
-            {
-                WriteArray(data, field, at);
-            }
-            else if (at.Type == HSDBinType.Unknown)
-            {
-                WriteUnknownBuffer(data, field);
-            }
-            else
-            {
-                throw new Exception($"Field Type {at.Type} cannot be read.");
+                case HSDBinType.Atom:
+                    WriteAtomValue(value, at.Size, at.Key);
+                    break;
+                case HSDBinType.String:
+                    WriteStringBuffer((string)value, at.StringType);
+                    break;
+                case HSDBinType.Struct:
+                    WriteStruct(value, false);
+                    break;
+                case HSDBinType.Array:
+                    WriteArray(value, field, at);
+                    break;
+                case HSDBinType.Unknown:
+                    Write((byte[])value);
+                    break;
+                default:
+                    throw new NotSupportedException($"Unsupported field type: {at.Type}");
             }
         }
-        public void WriteElement(Array arr, HSDHelperAttribute at, int i)
+
+        private void WriteArrayElementDispatch(object element, HSDHelperAttribute at)
         {
-            var eleT = arr.GetType().GetElementType();
-            if (at.ElementType == HSDBinType.Atom)
-            {
-                switch (at.Size)
-                {
-                    case 1:
-                        Write((byte)((byte)arr.GetValue(i)! ^ at.Key));
-                        break;
-                    case 2:
-                        Write((ushort)((ushort)arr.GetValue(i)! ^ at.Key));
-                        break;
-                    case 4:
-                        Write((uint)((uint)arr.GetValue(i)! ^ at.Key));
-                        break;
-                    case 8:
-                        Write((ulong)((ulong)arr.GetValue(i)! ^ at.Key));
-                        break;
-                    default:
-                        throw new Exception($"Size {at.Size} is not valid for X value");
-                }
-            }
-            else if (at.ElementType == HSDBinType.Padding)
+            if (at.ElementType == HSDBinType.Padding)
             {
                 WritePadding(at);
-            }
-            else if (at.ElementType == HSDBinType.String)
-            {
-                WriteStringBuffer((string)arr.GetValue(i)!, at.StringType);
-            }
-            else if (at.ElementType == HSDBinType.Struct)
-            {
-                WriteStruct(arr.GetValue(i)!, false);
-            }
-            else
-            {
-                throw new Exception($"Element Type {at.Type} cannot be read.");
+                return;
             }
 
+            if (element == null) return;
+
+            switch (at.ElementType)
+            {
+                case HSDBinType.Atom:
+                    WriteAtomValue(element, at.Size, at.Key);
+                    break;
+                case HSDBinType.String:
+                    WriteStringBuffer((string)element, at.StringType);
+                    break;
+                case HSDBinType.Struct:
+                    WriteStruct(element, false);
+                    break;
+                default:
+                    throw new NotSupportedException($"Unsupported array element type: {at.ElementType}");
+            }
         }
+
         public void WriteArray(object data, FieldInfo field, HSDHelperAttribute at)
         {
-            if (!field.FieldType.IsArray) throw new Exception($"Use attribute 'Array' for no-Array field {field.Name}");
-            Array arr = (Array)field.GetValue(data)!;
-            int size = arr.Length;
-            for (int i = 0; i < size; i++)
+            Array arr = (Array)data;
+            int length = arr.Length;
+
+            for (int i = 0; i < length; i++)
             {
+                object element = arr.GetValue(i)!;
                 if (at.ElementIsPtr)
                 {
-                    if (arr.GetValue(i) is not null)
+                    bool isNull = element == null;
+                    if (!isNull && at.ElementType == HSDBinType.String && string.IsNullOrEmpty((string)element))
                     {
-                        if (at.ElementType == HSDBinType.String)
-                        {
-                            if (!string.IsNullOrEmpty((string)arr.GetValue(i)!)) 
-                                pointers.Add(BaseStream.Position, new FieldAndData(field, data, i));
-                        }
-                        else
-                        {
-                            pointers.Add(BaseStream.Position, new FieldAndData(field, data, i));
-                        }
+                        isNull = true;
+                    }
+                    if (!isNull)
+                    {
+                        pendingPointers.Add(new PendingPointer(BaseStream.Position, arr, field, i));
                     }
                     Write((ulong)0);
-                } else
-                {
-                    WriteElement(arr, at, i);
                 }
-                
+                else
+                {
+                    WriteArrayElementDispatch(element, at);
+                }
             }
         }
-        public void WriteStruct(object data, bool includePtrs = true)
+        public void WriteStruct(object data, bool processPointersImmediately = true)
         {
+            if (data == null) return;
             Type type = data.GetType();
-            FieldInfo[] fields = type.GetFields();
+            FieldInfo[] fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
             foreach (var field in fields)
             {
-                if (!field.IsPublic)
-                    continue;
                 var at = field.GetCustomAttribute<HSDHelperAttribute>();
-                if (at is not null)
+                if (at == null) continue;
+                object value = field.GetValue(data)!;
+                if (at.IsPtr)
                 {
-                    if (at.Type == HSDBinType.Array)
+                    bool isNull = value == null;
+                    if (!isNull && at.Type == HSDBinType.String && string.IsNullOrEmpty((string)value))
                     {
-                        if (at.IsPtr)
-                        {
-                            if (field.GetValue(data) != null) pointers.Add(BaseStream.Position, new FieldAndData(field, data));
-                            Write((ulong)0);
-                        }
-                        else
-                        {
-                            WriteArray(data, field, at);
-                        }
+                        isNull = true; 
                     }
-                    else
+
+                    if (!isNull)
                     {
-                        if (at.IsPtr)
-                        {
-                            if (field.GetValue(data) is not null) {
-                                if (at.Type == HSDBinType.String)
-                                {
-                                    if (!string.IsNullOrEmpty((string)field.GetValue(data)!)) pointers.Add(BaseStream.Position, new FieldAndData(field, data));
-                                } else
-                                {
-                                    pointers.Add(BaseStream.Position, new FieldAndData(field, data));
-                                }
-                            }
-                            Write((ulong)0);
-                        }
-                        else
-                        {
-                            WriteField(data, field, at);
-                        }
+                        pendingPointers.Add(new PendingPointer(BaseStream.Position, value, field));
                     }
+
+                    Write((ulong)0);
+                }
+                else
+                {
+                    WriteFieldDispatch(value, field, at);
                 }
             }
-            if (includePtrs) WritePtrList();
+
+            if (processPointersImmediately)
+            {
+                ProcessPendingPointers();
+            }
         }
         #endregion
 
-        public void WritePtrList()
+        private void ProcessPendingPointers()
         {
-            var temp = pointers;
-            pointers = new();
-            foreach (var kvp in temp)
+            if (pendingPointers.Count == 0) return;
+
+            var currentBatch = pendingPointers;
+            pendingPointers = [];
+
+            foreach (var ptr in currentBatch)
             {
-                long ptr_offset = kvp.Key;
-                ptr_offsets.Add(ptr_offset);
-                var fd = kvp.Value;
-                var field = fd.field;
-                var data = fd.data;
-                var at = field.GetCustomAttribute<HSDHelperAttribute>()!;
-                if (at.ElementIsPtr) {
-                    Array arr = (Array)field.GetValue(data)!;
-                    UpdatePointer(ptr_offset);
-                    WriteElement(arr, at, fd.index);
+                long targetAddress = BaseStream.Position;
+                ptr_offsets.Add(ptr.PatchOffset);
+                UpdatePointerAddress(ptr.PatchOffset, targetAddress);
+
+                var at = ptr.Field.GetCustomAttribute<HSDHelperAttribute>();
+
+                object dataToWrite;
+                if (ptr.Index != -1)
+                {
+                    dataToWrite = ((Array)ptr.Data).GetValue(ptr.Index)!;
+
+                    if (at.ElementType == HSDBinType.String)
+                        WriteStringBuffer((string)dataToWrite, at.StringType);
+                    else if (at.ElementType == HSDBinType.Struct)
+                        WriteStruct(dataToWrite, false); 
+                    else if (at.ElementType == HSDBinType.Array)
+                        throw new NotSupportedException("Pointer to Array element that is also an Array is ambiguous.");
+                    else
+                        WriteAtomValue(dataToWrite, at.Size, at.Key);
                 }
-                else if (field.FieldType.IsArray)
+                else
                 {
-                    UpdatePointer(ptr_offset);
-                    WriteArray(data, field, at);
-                } else
-                {
-                    UpdatePointer(ptr_offset);
-                    if (field.GetValue(data) != null) WriteField(data, field, at) ;
+                    dataToWrite = ptr.Data;
+                    WriteFieldDispatch(dataToWrite, ptr.Field, at);
                 }
             }
-            if (pointers.Count > 0) WritePtrList();
+
+            if (pendingPointers.Count > 0)
+            {
+                ProcessPendingPointers();
+            }
         }
 
-        public void UpdatePointer(long ptr_offset)
+        private void UpdatePointerAddress(long patchOffset, long targetAddress)
         {
-            long curr = BaseStream.Position;
-            BaseStream.Seek(ptr_offset, SeekOrigin.Begin);
-            Write(curr - HSDArcHeader.Size);
-            BaseStream.Seek(curr, SeekOrigin.Begin);
+            long currentPos = BaseStream.Position;
+            BaseStream.Seek(patchOffset, SeekOrigin.Begin);
+            Write((ulong)(targetAddress - HSDArcHeader.Size));
+            BaseStream.Seek(currentPos, SeekOrigin.Begin);
         }
 
         public void WritePointerOffsets()

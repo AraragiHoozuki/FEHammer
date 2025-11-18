@@ -164,6 +164,10 @@
                                     Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).DeleteCommand}"
                                     CommandParameter="{Binding}"
                                     Header="Delete Skill" />
+                                <MenuItem
+                                    Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).ShowSameAbilitySkillsCommand}"
+                                    CommandParameter="{Binding}"
+                                    Header="Show skills with same ability id" />
                             </ContextMenu>
                         </Border.ContextMenu>
                     </Border>
