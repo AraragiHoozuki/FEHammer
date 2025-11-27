@@ -175,16 +175,11 @@
             </ListBox.ItemTemplate>
 
         </ListBox>
-        <Grid ColumnDefinitions="*,*,*">
+        <Grid ColumnDefinitions="*,*">
             <Button
                 HorizontalAlignment="Stretch"
                 Command="{Binding SelectCommand}"
                 Content="Select" />
-            <Button
-                Grid.Column="1"
-                HorizontalAlignment="Stretch"
-                Command="{Binding UnequipCommand}"
-                Content="Unequip" />
             <Button
                 Grid.Column="2"
                 HorizontalAlignment="Stretch"

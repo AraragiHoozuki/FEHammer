@@ -60,27 +60,36 @@ namespace FEHagemu.ViewModels
             DoSearch();
         }
 
+        private bool IsMatch(IPerson person)
+        {
+            if (SelectedVersion is not null && person.Version != SelectedVersion) return false;
+            bool anyWeaponSelected = WeaponTypeTogglers.Any(x => x.SelectedQ);
+            if (anyWeaponSelected && !WeaponTypeTogglers[(int)person.WeaponType].SelectedQ) return false;
+            bool anyMoveSelected = MoveTypeTogglers.Any(x => x.SelectedQ);
+            if (anyMoveSelected && !MoveTypeTogglers[(int)person.MoveType].SelectedQ) return false;
+            if (CheckDanceQ && person.RefresherQ != 1) return false;
+            var kind = person.Legendary?.kind;
+            if (CheckPairQ && kind != LegendaryKind.Pair) return false;
+            if (CheckTwinWorldQ && kind != LegendaryKind.TwinWorld) return false;
+            if (CheckFlowerBudQ && kind != LegendaryKind.FlowerBud) return false;
+            if (CheckDiabolosWeaponQ && kind != LegendaryKind.Diabolos) return false;
+            if (CheckResonateQ && kind != LegendaryKind.Resonate) return false;
+            if (CheckEngageQ && kind != LegendaryKind.Engage) return false;
+
+            return true;
+        }
+
         [RelayCommand]
         void DoSearch()
         {
-            FilteredPersons.Clear();
+            List<PersonViewModel> newList = new();
             foreach (var arc in MasterData.PersonArcs.Reverse())
             {
                 foreach (IPerson person in arc.data.list)
                 {
-                    if ((WeaponTypeTogglers[(int)person.WeaponType].SelectedQ || WeaponTypeTogglers.All(item => !item.SelectedQ)) && (MoveTypeTogglers.All(item => !item.SelectedQ) || MoveTypeTogglers[(int)person.MoveType].SelectedQ) &&
-                       (SelectedVersion is null||person.Version == SelectedVersion) &&
-                       (CheckDanceQ == false || person.RefresherQ ==1) &&
-                       (CheckPairQ == false || person.Legendary?.kind == LegendaryKind.Pair) &&
-                       (CheckTwinWorldQ == false || person.Legendary?.kind == LegendaryKind.TwinWorld) &&
-                       (CheckFlowerBudQ == false || person.Legendary?.kind == LegendaryKind.FlowerBud) &&
-                       (CheckDiabolosWeaponQ == false || person.Legendary?.kind == LegendaryKind.Diabolos) &&
-                       (CheckResonateQ == false || person.Legendary?.kind == LegendaryKind.Resonate) &&
-                       (CheckEngageQ == false || person.Legendary?.kind == LegendaryKind.Engage)
-                       
-                       )
+                    if (IsMatch(person))
                     {
-                        FilteredPersons.Add(new PersonViewModel(person));
+                        newList.Add(new PersonViewModel(person));
                     }
                 }
             }
@@ -88,22 +97,13 @@ namespace FEHagemu.ViewModels
             {
                 foreach (IPerson person in arc.data.list)
                 {
-                    if ((WeaponTypeTogglers[(int)person.WeaponType].SelectedQ || WeaponTypeTogglers.All(item => !item.SelectedQ)) && (MoveTypeTogglers.All(item => !item.SelectedQ) || MoveTypeTogglers[(int)person.MoveType].SelectedQ) &&
-                       (SelectedVersion is null || person.Version == SelectedVersion) &&
-                       (CheckDanceQ == false || person.RefresherQ == 1) &&
-                       (CheckPairQ == false || person.Legendary.kind == LegendaryKind.Pair) &&
-                       (CheckTwinWorldQ == false || person.Legendary.kind == LegendaryKind.TwinWorld) &&
-                       (CheckFlowerBudQ == false || person.Legendary.kind == LegendaryKind.FlowerBud) &&
-                       (CheckDiabolosWeaponQ == false || person.Legendary.kind == LegendaryKind.Diabolos) &&
-                       (CheckResonateQ == false || person.Legendary.kind == LegendaryKind.Resonate) &&
-                       (CheckEngageQ == false || person.Legendary.kind == LegendaryKind.Engage)
-
-                       )
+                    if (IsMatch(person))
                     {
-                        FilteredPersons.Add(new PersonViewModel(person));
+                        newList.Add(new PersonViewModel(person));
                     }
                 }
             }
+            FilteredPersons = new (newList);
         }
         [RelayCommand]
         void ShowSameCharacters(PersonViewModel pvm)

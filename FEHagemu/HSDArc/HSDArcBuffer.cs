@@ -69,10 +69,10 @@ namespace FEHagemu.HSDArchive
                 writer.WriteStruct(data);
                 writer.WritePointerOffsets();
                 writer.WriteEnd(header.unknown1, header.unknown2, header.magic);
-                byte[] body = ms.ToArray();
-                buffer = new byte[XStart.Length + body.Length];
+                buffer = new byte[XStart.Length + ms.Length];
+                ms.Position = 0;
                 XStart.CopyTo(buffer, 0);
-                body.CopyTo(buffer, XStart.Length);
+                ms.Read(buffer, XStart.Length, (int)ms.Length);
             }
             return buffer;
         }

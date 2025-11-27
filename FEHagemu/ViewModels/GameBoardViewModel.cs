@@ -2,6 +2,7 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FEHagemu.HSDArchive;
@@ -249,6 +250,8 @@ namespace FEHagemu.ViewModels
                 var ls = MasterData.GetSkill(p.Legendary?.btn_skill_id);
                 if (ls is not null) {
                     LegendarySkill = new SkillViewModel(ls.id, 9);
+                } else { 
+                    LegendarySkill = new SkillViewModel(string.Empty, 9);
                 }
                 
             }
@@ -284,8 +287,40 @@ namespace FEHagemu.ViewModels
         [ObservableProperty]
         ObservableCollection<SkillViewModel> skills = [];
         public string Face => MasterData.GetPerson(unit.id_tag)?.Face ?? string.Empty;
-
         public Task<Bitmap> FaceImg => MasterData.GetFaceAsync(Face);
+        public Bitmap LegendaryIcon { get
+            {
+                var p = MasterData.GetPerson(unit.id_tag);
+                string? name = p?.LegendaryIconName;
+                Uri uri;
+                if (!string.IsNullOrEmpty(name))
+                {
+                  uri = new Uri($"avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_{name}.png");
+                } else
+                {
+                  uri = new  Uri($"avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_SeasonNone.png");
+                }
+                return new Bitmap(AssetLoader.Open(uri));
+            } 
+        }
+        public Bitmap LegendaryTypeIcon
+        {
+            get
+            {
+                var p = MasterData.GetPerson(unit.id_tag);
+                string? name = p?.TypeIconName;
+                Uri uri;
+                if (!string.IsNullOrEmpty(name))
+                {
+                    uri = new Uri($"avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_{name}.png");
+                }
+                else
+                {
+                    uri = new Uri($"avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_SeasonNone.png");
+                }
+                return new Bitmap(AssetLoader.Open(uri));
+            }
+        }
         public byte LV { get=> unit.lv; set { unit.lv = value; RefreshStats(unit.lv); OnPropertyChanged(); } }
         public ushort HP { get => unit.stats.hp; set { unit.stats.hp = value; OnPropertyChanged(); } }
         public ushort ATK { get => unit.stats.atk; set { unit.stats.atk = value; OnPropertyChanged(); } }
@@ -345,8 +380,8 @@ namespace FEHagemu.ViewModels
         }
 
         [ObservableProperty]
-        SkillViewModel? legendarySkill;
-        public bool HasLegendarySkillQ => LegendarySkill is not null;
+        SkillViewModel legendarySkill;
+        public bool HasLegendarySkillQ => LegendarySkill.skill is not null;
 
         private void RefreshStats(int lv)
         {
@@ -377,6 +412,11 @@ namespace FEHagemu.ViewModels
             {
                 SetSkill(vm.SelectedSkill.skill!.id, svm.Index);
             }
+        }
+        [RelayCommand]
+        public void DeleteSkill(SkillViewModel svm)
+        {
+            SetSkill(string.Empty, svm.Index); ;
         }
         [RelayCommand]
         public async Task ChangePerson(BoardCellViewModel cell)

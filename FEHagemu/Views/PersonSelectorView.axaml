@@ -15,39 +15,35 @@
     x:DataType="vm:PersonSelectorViewModel"
     mc:Ignorable="d">
     <StackPanel>
-        <Grid ColumnDefinitions="*,*">
-            <ComboBox
-                HorizontalAlignment="Stretch"
-                Classes="ClearButton"
-                ItemsSource="{Binding Versions}"
-                PlaceholderText="Versions"
-                SelectedItem="{Binding SelectedVersion}" />
-            <Border
-                Grid.Column="1"
-                Margin="8,0"
-                HorizontalAlignment="Center"
-                Theme="{StaticResource RadioButtonGroupBorder}">
-                <ItemsControl HorizontalAlignment="Center" ItemsSource="{Binding MoveTypeTogglers}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <ToggleButton
-                                Height="36"
-                                Padding="0"
-                                Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).DoSearchCommand}"
-                                IsChecked="{Binding Path=SelectedQ}">
-                                <Image Source="{Binding Icon}" />
-                            </ToggleButton>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </Border>
-        </Grid>
-
+        <ComboBox
+            HorizontalAlignment="Stretch"
+            Classes="ClearButton"
+            ItemsSource="{Binding Versions}"
+            PlaceholderText="版本"
+            SelectedItem="{Binding SelectedVersion}" />
+        <Border
+            Margin="8,0"
+            HorizontalAlignment="Center"
+            Theme="{StaticResource RadioButtonGroupBorder}">
+            <ItemsControl HorizontalAlignment="Center" ItemsSource="{Binding MoveTypeTogglers}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <ToggleButton
+                            Height="36"
+                            Padding="0"
+                            Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).DoSearchCommand}"
+                            IsChecked="{Binding Path=SelectedQ}">
+                            <Image Source="{Binding Icon}" />
+                        </ToggleButton>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
 
 
         <Border
@@ -113,8 +109,6 @@
                 </ToggleButton>
             </StackPanel>
         </Border>
-
-
 
         <ListBox
             Name="PersonList"

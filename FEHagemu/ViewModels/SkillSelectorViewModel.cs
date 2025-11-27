@@ -228,13 +228,6 @@ namespace FEHagemu.ViewModels
         {
             RequestClose?.Invoke(this, true);
         }
-        [RelayCommand]
-        void Unequip()
-        {
-            RequestClose?.Invoke(this, null);
-        }
-
-        
     }
 
     

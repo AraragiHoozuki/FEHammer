@@ -122,7 +122,7 @@ namespace FEHagemu.HSDArchive
         public string[] Skills { get; }
         public uint Origins { get; }
         public uint SortValue { get; }
-        public uint Version {  get; }
+        public uint Version { get; }
         public byte RefresherQ { get; }
         public MoveType MoveType { get; }
         public WeaponType WeaponType { get; }
@@ -133,6 +133,9 @@ namespace FEHagemu.HSDArchive
         public int[] CalcStats(int level, int merge, int honeIndex, int flawIndex);
 
         public bool IsEnemy { get; }
+
+        public string? LegendaryIconName { get; }
+        public string? TypeIconName { get; }
         
     }
     public class Person : IPerson
@@ -275,6 +278,46 @@ namespace FEHagemu.HSDArchive
         public LegendaryInfo Legendary => legendary;
 
         public bool IsEnemy => false;
+
+        public string? LegendaryIconName
+        {
+            get
+            {
+                if (Legendary is null) return null;
+                if (Legendary.kind == LegendaryKind.LegendaryOrMythic)
+                {
+                    return Legendary.element switch
+                    {
+                        LegendaryElement.Fire => "BlessingFireS",
+                        LegendaryElement.Water => "BlessingWaterS",
+                        LegendaryElement.Wind => "BlessingWindS",
+                        LegendaryElement.Earth => "BlessingEarthS",
+                        LegendaryElement.Light => "BlessingLightS",
+                        LegendaryElement.Dark => "BlessingDarkS",
+                        LegendaryElement.Astra => "BlessingHeavenS",
+                        LegendaryElement.Anima => "BlessingLogicS",
+                        _ => throw new InvalidOperationException($"Legendary Element {Legendary.element} is not valid")
+                    };
+                }
+                return null;
+            }
+        }
+        public string? TypeIconName
+        {
+            get
+            {
+                if (Legendary is null) return null;
+                return Legendary.kind switch {
+                    LegendaryKind.Diabolos => "Diabolos",
+                    LegendaryKind.Engage => "Engage",
+                    LegendaryKind.FlowerBud => "Flower",
+                    LegendaryKind.Pair => "Pair",
+                    LegendaryKind.TwinWorld => "TwinWorld",
+                    LegendaryKind.Resonate => "Resonate",
+                    _ => null
+                };
+            }
+        }
     }
     public class Enemy : IPerson
     {
@@ -409,6 +452,9 @@ namespace FEHagemu.HSDArchive
             return res;
         }
         public bool IsEnemy => true;
+
+        public string? LegendaryIconName => throw new NotImplementedException();
+        public string? TypeIconName => throw new NotImplementedException();
     }
     public enum LegendaryKind : byte
     {
@@ -448,7 +494,7 @@ namespace FEHagemu.HSDArchive
         };
     }
 
-    public struct Stats
+    public class Stats
     {
         [HSDHelper(Type = HSDBinType.Atom, Size = 2, Key = 0xD632)]
         public ushort hp;

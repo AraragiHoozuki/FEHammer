@@ -1,16 +1,20 @@
-﻿using Avalonia.Controls.Shapes;
+﻿using Avalonia;
+using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using FEHagemu.HSDArchive;
 using FEHagemu.HSDArcIO;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Path = System.IO.Path;
 
 namespace FEHagemu
 {
@@ -34,13 +38,13 @@ namespace FEHagemu
         public static HSDArc<PersonList>[] PersonArcs = null!;
         public static HSDArc<EnemyList>[] EnemyArcs = null!;
         public static HSDArc<MessageList>[] MsgArcs = null!;
-        public static Dictionary<string, string> MsgDict = [];
-        public static Dictionary<string, Person> PersonDict = [];
-        public static Dictionary<string, Enemy> EnemyDict = [];
-        public static Dictionary<string, Skill> SkillDict = [];
-        public static Dictionary<string, Bitmap> FaceDict = [];
-        public static Bitmap FallBackFace = new Bitmap(AssetLoader.Open(new Uri($"avares://FEHagemu/Assets/Face/ch00_00_Eclat_F_Avatar01/Face_FC.png")));
-        public static Bitmap EmptyBitmap = new Bitmap(AssetLoader.Open(new Uri("avares://FEHagemu/Assets/empty.png")));
+        public static ConcurrentDictionary<string, string> MsgDict = [];
+        public static ConcurrentDictionary<string, Person> PersonDict = [];
+        public static ConcurrentDictionary<string, Enemy> EnemyDict = [];
+        public static ConcurrentDictionary<string, Skill> SkillDict = [];
+        private static ConcurrentDictionary<string, Bitmap> faceCache = [];
+        public static Bitmap FallBackFace { get; } = new Bitmap(AssetLoader.Open(new Uri($"avares://FEHagemu/Assets/Face/ch00_00_Eclat_F_Avatar01/Face_FC.png")));
+        public static Bitmap EmptyBitmap { get; } = new Bitmap(AssetLoader.Open(new Uri("avares://FEHagemu/Assets/empty.png")));
 
         public static HSDArc<SkillList> ModSkillArc => SkillArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!;
         public static HSDArc<PersonList> ModPersonArc => PersonArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!;
@@ -50,123 +54,215 @@ namespace FEHagemu
 
         public static async Task<bool> LoadAsync()
         {
-            return await Task.Run(Init);
+            try
+            {
+                var t1 = Task.Run(LoadPersons);
+                var t2 = Task.Run(LoadEnemies);
+                var t3 = Task.Run(LoadSkills);
+                var t4 = Task.Run(LoadMessages);
+                await Task.WhenAll(t1, t2, t3, t4);
+                await Task.Run(InitImage);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Load Failed: {ex}");
+                return false;
+            }
         }
-        public static bool Init()
+
+        private static void LoadPersons()
         {
-            string[] files;
-            files = Directory.GetFiles(PERSON_PATH, DATAEXT);
+            var files = Directory.GetFiles(PERSON_PATH, DATAEXT);
             PersonArcs = new HSDArc<PersonList>[files.Length];
-            for (int i = 0; i < files.Length; i++)
+            Parallel.For(0, files.Length, i =>
             {
                 PersonArcs[i] = new HSDArc<PersonList>(files[i]);
-                for (int j = 0; j < PersonArcs[i].data.list.Length; j += 1)
+                foreach (var p in PersonArcs[i].data.list)
                 {
-                    PersonDict.Add(PersonArcs[i].data.list[j].id, PersonArcs[i].data.list[j]);
+                    PersonDict[p.id] = p;
                 }
-            }
-
-            files = Directory.GetFiles(ENEMY_PATH, DATAEXT);
-            EnemyArcs = new HSDArc<EnemyList>[files.Length];
-            for (int i = 0; i < files.Length; i++)
-            {
-                EnemyArcs[i] = new HSDArc<EnemyList>(files[i]);
-                for (int j = 0; j < EnemyArcs[i].data.list.Length; j += 1)
-                {
-                    EnemyDict.Add(EnemyArcs[i].data.list[j].id, EnemyArcs[i].data.list[j]);
-                }
-            }
-
-            files = Directory.GetFiles(SKL_PATH, DATAEXT);
-            SkillArcs = new HSDArc<SkillList>[files.Length];
-            
-            for (int i = 0; i < files.Length; i++)
-            {
-                SkillArcs[i] = new HSDArc<SkillList>(files[i]);
-                for (int j = 0; j < SkillArcs[i].data.list.Length; j += 1)
-                {
-                    SkillDict.Add(SkillArcs[i].data.list[j].id, SkillArcs[i].data.list[j]);
-                    
-                };
-            }
-            
-
-            files = Directory.GetFiles(MSG_PATH, DATAEXT);
-            MsgArcs = new HSDArc<MessageList>[files.Length];
-            for (int i = 0; i < files.Length; i++)
-            {
-                MsgArcs[i] = new HSDArc<MessageList>(files[i]);
-                for (int j = 0; j < MsgArcs[i].data.list.Length - 1; j += 2)
-                {
-                    if (j == MsgArcs[i].data.list.Length - 1) break;
-                    MsgDict.TryAdd(MsgArcs[i].data.list[j], MsgArcs[i].data.list[j + 1]);
-                }
-            }
-            InitImage();
-            return true;
+            });
         }
 
-        public static IImage[] WeaponTypeIcons = null!;
-        public static IImage[] MoveTypeIcons = null!;
-        public static IImage[] OriginTypeIcons = null!;
-
-        
-        static void InitImage()
+        private static void LoadEnemies()
         {
-            STATUS = new Bitmap(UI_PATH + "Status.png");
-            ABCSX_ATLAS = new Bitmap(UI_PATH + "ABCSX.webp");
-            var atlas = (new DirectoryInfo(UI_PATH)).GetFiles("Skill_Passive*.png");
-            ICON_ATLAS = new Bitmap[atlas.Length];
-            for (int i = 0; i < ICON_ATLAS.Length; i++)
+            var files = Directory.GetFiles(ENEMY_PATH, DATAEXT);
+            EnemyArcs = new HSDArc<EnemyList>[files.Length];
+            Parallel.For(0, files.Length, i =>
             {
-                ICON_ATLAS[i] = new Bitmap(UI_PATH + "Skill_Passive" + (i + 1) + ".png");
+                EnemyArcs[i] = new HSDArc<EnemyList>(files[i]);
+                foreach (var e in EnemyArcs[i].data.list)
+                {
+                    EnemyDict[e.id] = e;
+                }
+            });
+        }
+
+        private static void LoadSkills()
+        {
+            var files = Directory.GetFiles(SKL_PATH, DATAEXT);
+            SkillArcs = new HSDArc<SkillList>[files.Length];
+            Parallel.For(0, files.Length, i =>
+            {
+                SkillArcs[i] = new HSDArc<SkillList>(files[i]);
+                foreach (var s in SkillArcs[i].data.list)
+                {
+                    SkillDict[s.id] = s;
+                }
+            });
+        }
+
+        private static void LoadMessages()
+        {
+            var files = Directory.GetFiles(MSG_PATH, DATAEXT);
+            MsgArcs = new HSDArc<MessageList>[files.Length];
+
+            Parallel.For(0, files.Length, i =>
+            {
+                MsgArcs[i] = new HSDArc<MessageList>(files[i]);
+                var list = MsgArcs[i].data.list;
+                for (int j = 0; j < list.Length - 1; j += 2)
+                {
+                    MsgDict[list[j]] = list[j + 1];
+                }
+            });
+        }
+
+        public static IImage[] WeaponTypeIcons { get; private set; } = null!;
+        public static IImage[] MoveTypeIcons { get; private set; } = null!;
+        public static IImage[] OriginTypeIcons { get; private set; } = null!;
+
+
+        private const int SkillAtlasCapacity = 169; // 13行 * 13列
+        private const int SkillGridCols = 13;
+        private const int SkillIconSize = 76;
+
+        private const int WeaponIconSize = 56;
+        private const int WeaponStartY = 261;
+        private const int WeaponStartX = 1;
+
+        private const int MoveIconSize = 56;
+        private const int MoveStartY = 469;
+        private const int MoveStartX = 353;
+
+        private const int OriginWidth = 90;
+        private const int OriginHeight = 88;
+        private const int OriginStartY = 171;
+        private const int OriginStartX = -3;
+        
+        private static readonly Dictionary<int, IImage> skillIconCache = new();
+        private static readonly Dictionary<string, IImage> abcsxCache = new();
+
+        public static void InitImage()
+        {
+            STATUS = new Bitmap(Path.Combine(UI_PATH, "Status.png"));
+            ABCSX_ATLAS = new Bitmap(Path.Combine(UI_PATH, "ABCSX.webp"));
+            var directory = new DirectoryInfo(UI_PATH);
+            var files = directory.GetFiles("Skill_Passive*.png")
+                                 .OrderBy(f => f.Name.Length) 
+                                 .ThenBy(f => f.Name)
+                                 .ToArray();
+            ICON_ATLAS = new Bitmap[files.Length];
+            for (int i = 0; i < files.Length; i++)
+            {
+                ICON_ATLAS[i] = new Bitmap(files[i].FullName);
             }
             WeaponTypeIcons = new IImage[(int)WeaponType.ColorlessBeast + 1];
             MoveTypeIcons = new IImage[(int)MoveType.Flying + 1];
             OriginTypeIcons = new IImage[(int)Origins.Engage + 1];
-            //for (int i = 0; i <= (int)WeaponType.ColorlessBeast; i++) WeaponTypeIcons[i] = GetWeaponIcon(i);
-            //for (int i = 0; i <= (int)MoveType.Flying; i++) MoveTypeIcons[i] = GetMoveIcon(i);
-            //GetABCSXIcon("A");
-            //GetABCSXIcon("B");
-            //GetABCSXIcon("C");
-            //GetABCSXIcon("S");
-            //GetABCSXIcon("X");
+            
         }
 
         public static IImage GetSkillIcon(int id)
         {
-            int pic = id / 169;
-            if (pic > ICON_ATLAS.Length) { pic = 0; id = 1; }
-            int pos = id % 169;
-            int row = pos / 13;
-            int col = pos - row * 13;
-            CroppedBitmap cropped = new(ICON_ATLAS[pic], new Avalonia.PixelRect(col * 76, row * 76, 76, 76));
+            if (skillIconCache.TryGetValue(id, out var cachedImage))
+            {
+                return cachedImage;
+            }
+            if (ICON_ATLAS == null || ICON_ATLAS.Length == 0)
+                throw new InvalidOperationException("Skill Atlases not initialized.");
+
+            int atlasIndex = id / SkillAtlasCapacity;
+            int localIndex = id % SkillAtlasCapacity;
+            if (atlasIndex >= ICON_ATLAS.Length)
+            {
+                atlasIndex = 0;
+                localIndex = 1;
+            }
+            int row = localIndex / SkillGridCols;
+            int col = localIndex % SkillGridCols;
+            var sourceBitmap = ICON_ATLAS[atlasIndex];
+            var rect = new PixelRect(col * SkillIconSize, row * SkillIconSize, SkillIconSize, SkillIconSize);
+            var cropped = new CroppedBitmap(sourceBitmap, rect);
+            skillIconCache[id] = cropped;
             return cropped;
         }
-        public static IImage GetMoveIcon(int id)
-        {
-            if (MoveTypeIcons?[id] is not null) return MoveTypeIcons[id];
-            CroppedBitmap cropped = new(STATUS, new Avalonia.PixelRect(353 + 56 * id, 469, 56, 56));
-            return cropped;
-        }
+
         public static IImage GetWeaponIcon(int id)
         {
-            if (WeaponTypeIcons?[id] is not null) { return WeaponTypeIcons[id]; }
-            CroppedBitmap cropped = new(STATUS, new Avalonia.PixelRect(1 + 56 * id, 261, 56, 56));
-            return cropped;
+            if (id < 0 || id >= WeaponTypeIcons.Length) return null!;
+            if (WeaponTypeIcons[id] is null)
+            {
+                if (STATUS == null) throw new InvalidOperationException("Status Atlas not initialized.");
+                WeaponTypeIcons[id] = new CroppedBitmap(STATUS,
+                    new PixelRect(WeaponStartX + WeaponIconSize * id, WeaponStartY, WeaponIconSize, WeaponIconSize));
+            }
+            return WeaponTypeIcons[id];
         }
+
+        public static IImage GetMoveIcon(int id)
+        {
+            if (id < 0 || id >= MoveTypeIcons.Length) return null!;
+            if (MoveTypeIcons[id] is null)
+            {
+                if (STATUS == null) throw new InvalidOperationException("Status Atlas not initialized.");
+                MoveTypeIcons[id] = new CroppedBitmap(STATUS,
+                    new PixelRect(MoveStartX + MoveIconSize * id, MoveStartY, MoveIconSize, MoveIconSize));
+            }
+            return MoveTypeIcons[id];
+        }
+
         public static IImage GetOriginIcon(int id)
         {
-            if (OriginTypeIcons?[id] is not null) { return OriginTypeIcons[id]; }
-            CroppedBitmap cropped = new(STATUS, new Avalonia.PixelRect(  -3 + 90 * id, 171, 90, 88));
-            return cropped;
+            if (id < 0 || id >= OriginTypeIcons.Length) return null!;
+            if (OriginTypeIcons[id] is null)
+            {
+                if (STATUS == null) throw new InvalidOperationException("Status Atlas not initialized.");
+                OriginTypeIcons[id] = new CroppedBitmap(STATUS,
+                    new PixelRect(OriginStartX + OriginWidth * id, OriginStartY, OriginWidth, OriginHeight));
+            }
+            return OriginTypeIcons[id];
         }
+
         public static IImage GetABCSXIcon(string name)
         {
-            CroppedBitmap cropped = new(ABCSX_ATLAS, new Avalonia.PixelRect(name switch { 
-                "A"=> 0, "B"=> 48, "C"=>96, "S"=>144, "X"=> 192, _ => throw new KeyNotFoundException()
-            }, 0, 48, 48));
+            if (abcsxCache.TryGetValue(name, out var cached)) return cached;
+            if (abcsxCache == null) throw new InvalidOperationException("ABCSX Atlas not initialized.");
+            int xOffset = name switch
+            {
+                "A" => 0,
+                "B" => 48,
+                "C" => 96,
+                "S" => 144,
+                "X" => 192,
+                _ => throw new KeyNotFoundException($"Unknown icon type: {name}")
+            };
+            var cropped = new CroppedBitmap(ABCSX_ATLAS, new PixelRect(xOffset, 0, 48, 48));
+            abcsxCache[name] = cropped; 
             return cropped;
+        }
+
+        public static void Dispose()
+        {
+            STATUS?.Dispose();
+            ABCSX_ATLAS?.Dispose();
+            if (ICON_ATLAS != null)
+            {
+                foreach (var bmp in ICON_ATLAS) bmp.Dispose();
+            }
+            skillIconCache.Clear();
+            abcsxCache.Clear();
         }
         public static string StripIdPrefix(string id, out string prefix)
         {
@@ -265,7 +361,7 @@ namespace FEHagemu
                 Array.Resize(ref arc.data.list, arc.data.list.Length + 1);
                 arc.data.list[^1] = skill;
                 arc.data.size = (ulong)arc.data.list.Length;
-                SkillDict.Add(skill.id, skill);
+                SkillDict.TryAdd(skill.id, skill);
             }
         }
 
@@ -286,7 +382,7 @@ namespace FEHagemu
                 Array.Resize(ref arc.data.list, arc.data.list.Length + 1);
                 arc.data.list[^1] = p;
                 arc.data.size = (ulong)arc.data.list.Length;
-                PersonDict.Add(p.id, p);
+                PersonDict.TryAdd(p.id, p);
             }
         }
 
@@ -305,7 +401,7 @@ namespace FEHagemu
                 Array.Resize(ref arc.data.list, arc.data.list.Length + 1);
                 arc.data.list[^1] = e;
                 arc.data.size = (ulong)arc.data.list.Length;
-                EnemyDict.Add(e.id, e);
+                EnemyDict.TryAdd(e.id, e);
             }
         }
 
@@ -318,7 +414,7 @@ namespace FEHagemu
                 arc.data.list[index] = arc.data.list[^1];
                 arc.data.list = arc.data.list[..^1];
                 arc.data.size = (ulong)arc.data.list.Length;
-                SkillDict.Remove(skill.id);
+                SkillDict.TryRemove(skill.id, out _);
                 DeleteMessage(ModMsgArc, skill.name);
                 DeleteMessage(ModMsgArc, skill.description);
             }
@@ -333,7 +429,7 @@ namespace FEHagemu
                 arc.data.list[index] = arc.data.list[^1];
                 arc.data.list = arc.data.list[..^1];
                 arc.data.size = (ulong)arc.data.list.Length;
-                PersonDict.Remove(p.id);
+                PersonDict.TryRemove(p.id, out _);
                 DeleteMessage(ModMsgArc, $"M{p.id}");
             }
         }
@@ -346,7 +442,7 @@ namespace FEHagemu
                 arc.data.list[index] = arc.data.list[^1];
                 arc.data.list = arc.data.list[..^1];
                 arc.data.size = (ulong)arc.data.list.Length;
-                EnemyDict.Remove(e.id);
+                EnemyDict.TryRemove(e.id, out _);
                 DeleteMessage(ModMsgArc, $"M{e.id}");
             }
         }
@@ -361,29 +457,32 @@ namespace FEHagemu
                 arc.data.list[index+1] = arc.data.list[^1];
                 arc.data.list = arc.data.list[..^2];
                 arc.data.size = (ulong)arc.data.list.Length/2;
-                MsgDict.Remove(key);
+                MsgDict.TryRemove(key, out _);
             }
         }
 
         public async static Task<Bitmap> GetFaceAsync(string face)
         {
             if (face == null) return FallBackFace;
-            if (FaceDict.TryGetValue(face, out Bitmap? result)) return result;
+            if (faceCache.TryGetValue(face, out Bitmap? result)) return result;
             string path = System.IO.Path.Combine(FACE_PATH, face, "Face_FC.png");
             if (File.Exists(path))
             {
                 using (var imageStream = File.OpenRead(path))
                 {
-                    return  await Task.Run(() => {
+                    return await Task.Run(() =>
+                    {
                         var bm = Bitmap.DecodeToWidth(imageStream, 64);
-                        FaceDict.TryAdd(face, bm);
+                        faceCache.TryAdd(face, bm);
                         return bm;
                     });
                 }
-            } else
+            }
+            else
             {
                 return FallBackFace;
             }
+
         }
 
         public static Bitmap GetFieldBackground(string id)
