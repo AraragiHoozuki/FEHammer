@@ -77,9 +77,10 @@ namespace FEHagemu.HSDArchive
             return buffer;
         }
 
-        public void Save()
+        public async System.Threading.Tasks.Task Save()
         {
-            File.WriteAllBytes(FilePath, Cryptor.EncryptAndCompress(Binarize()));
+            byte[] data = Cryptor.EncryptAndCompress(Binarize());
+            await File.WriteAllBytesAsync(FilePath, data);
         }
     }
 }

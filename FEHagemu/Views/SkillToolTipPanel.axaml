@@ -37,14 +37,11 @@
         </StackPanel>
 
 
-        <TextBlock Text="{Binding Description}" />
-        <u:Divider
-            HorizontalContentAlignment="Center"
+        <TextBlock Margin="0,6,0,0" Text="{Binding Description}" />
+        <TextBlock
+            Margin="0,4,0,0"
             Foreground="GreenYellow"
-            IsVisible="{Binding RefinedQ}">
-            锻造
-        </u:Divider>
-        <TextBlock Foreground="GreenYellow" Text="{Binding RefineDescription}" />
+            Text="{Binding RefineDescription}" />
     </StackPanel>
 
 </UserControl>

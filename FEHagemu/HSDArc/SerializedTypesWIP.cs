@@ -284,22 +284,18 @@ namespace FEHagemu.HSDArchive
             get
             {
                 if (Legendary is null) return null;
-                if (Legendary.kind == LegendaryKind.LegendaryOrMythic)
+                return Legendary.element switch
                 {
-                    return Legendary.element switch
-                    {
-                        LegendaryElement.Fire => "BlessingFireS",
-                        LegendaryElement.Water => "BlessingWaterS",
-                        LegendaryElement.Wind => "BlessingWindS",
-                        LegendaryElement.Earth => "BlessingEarthS",
-                        LegendaryElement.Light => "BlessingLightS",
-                        LegendaryElement.Dark => "BlessingDarkS",
-                        LegendaryElement.Astra => "BlessingHeavenS",
-                        LegendaryElement.Anima => "BlessingLogicS",
-                        _ => throw new InvalidOperationException($"Legendary Element {Legendary.element} is not valid")
-                    };
-                }
-                return null;
+                    LegendaryElement.Fire => "BlessingFireS",
+                    LegendaryElement.Water => "BlessingWaterS",
+                    LegendaryElement.Wind => "BlessingWindS",
+                    LegendaryElement.Earth => "BlessingEarthS",
+                    LegendaryElement.Light => "BlessingLightS",
+                    LegendaryElement.Dark => "BlessingDarkS",
+                    LegendaryElement.Astra => "BlessingHeavenS",
+                    LegendaryElement.Anima => "BlessingLogicS",
+                    _ => null
+                };
             }
         }
         public string? TypeIconName
@@ -314,6 +310,7 @@ namespace FEHagemu.HSDArchive
                     LegendaryKind.Pair => "Pair",
                     LegendaryKind.TwinWorld => "TwinWorld",
                     LegendaryKind.Resonate => "Resonate",
+                    LegendaryKind.Savior => "Savior",
                     _ => null
                 };
             }
@@ -453,8 +450,8 @@ namespace FEHagemu.HSDArchive
         }
         public bool IsEnemy => true;
 
-        public string? LegendaryIconName => throw new NotImplementedException();
-        public string? TypeIconName => throw new NotImplementedException();
+        public string? LegendaryIconName => string.Empty;
+        public string? TypeIconName => string.Empty;
     }
     public enum LegendaryKind : byte
     {
@@ -465,7 +462,8 @@ namespace FEHagemu.HSDArchive
         FlowerBud = 4,
         Diabolos = 5,
         Resonate = 6,
-        Engage
+        Engage,
+        Savior = 10,
     }
     public enum LegendaryElement : byte
     {

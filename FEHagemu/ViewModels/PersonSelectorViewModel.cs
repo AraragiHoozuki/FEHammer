@@ -26,13 +26,15 @@ namespace FEHagemu.ViewModels
 
 
         [ObservableProperty]
-        ObservableCollection<TypeFilterItem> weaponTypeTogglers = new(MasterData.WeaponTypeIcons.Select((v, i) => new TypeFilterItem(i, MasterData.GetWeaponIcon(i))));
+        static ObservableCollection<TypeFilterItem> weaponTypeTogglers = new(MasterData.WeaponTypeIcons.Select((v, i) => new TypeFilterItem(i, MasterData.GetWeaponIcon(i))));
         [ObservableProperty]
-        ObservableCollection<TypeFilterItem> moveTypeTogglers = new(MasterData.MoveTypeIcons.Select((v,i) => new TypeFilterItem(i, MasterData.GetMoveIcon(i))));
+        static ObservableCollection<TypeFilterItem> moveTypeTogglers = new(MasterData.MoveTypeIcons.Select((v,i) => new TypeFilterItem(i, MasterData.GetMoveIcon(i))));
         [ObservableProperty]
         ObservableCollection<TypeFilterItem> originTypeTogglers = new(MasterData.OriginTypeIcons.Select((v, i) => new TypeFilterItem(i, MasterData.GetOriginIcon(i))));
         [ObservableProperty]
         bool checkDanceQ;
+        [ObservableProperty]
+        bool checkLegendaryQ;
         [ObservableProperty]
         bool checkPairQ;
         [ObservableProperty]
@@ -45,6 +47,8 @@ namespace FEHagemu.ViewModels
         bool checkResonateQ;
         [ObservableProperty]
         bool checkEngageQ;
+        [ObservableProperty]
+        bool checkSaviorQ;
 
         public static List<uint> Versions { get {
                 return MasterData.PersonArcs.SelectMany(arc => arc.data.list).Select(p => p.version_num).Distinct().Append((uint)65535).OrderDescending().ToList(); } }
@@ -69,12 +73,14 @@ namespace FEHagemu.ViewModels
             if (anyMoveSelected && !MoveTypeTogglers[(int)person.MoveType].SelectedQ) return false;
             if (CheckDanceQ && person.RefresherQ != 1) return false;
             var kind = person.Legendary?.kind;
+            if (CheckLegendaryQ && !(person.Legendary?.element > 0)) return false;
             if (CheckPairQ && kind != LegendaryKind.Pair) return false;
             if (CheckTwinWorldQ && kind != LegendaryKind.TwinWorld) return false;
             if (CheckFlowerBudQ && kind != LegendaryKind.FlowerBud) return false;
             if (CheckDiabolosWeaponQ && kind != LegendaryKind.Diabolos) return false;
             if (CheckResonateQ && kind != LegendaryKind.Resonate) return false;
             if (CheckEngageQ && kind != LegendaryKind.Engage) return false;
+            if (CheckSaviorQ && kind != LegendaryKind.Savior) return false;
 
             return true;
         }
@@ -221,6 +227,7 @@ namespace FEHagemu.ViewModels
         public bool PairQ => person.Legendary?.kind == LegendaryKind.Pair;
         public bool TwinWorldQ => person.Legendary?.kind == LegendaryKind.TwinWorld;
         public bool EngageQ => person.Legendary?.kind == LegendaryKind.Engage;
+        public bool SaviorQ => person.Legendary?.kind == LegendaryKind.Savior;
         public bool DanceQ => person.RefresherQ == 1;
         public Task<Bitmap> Face => MasterData.GetFaceAsync(person.Face);
 

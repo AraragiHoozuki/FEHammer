@@ -2,15 +2,17 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FEHagemu.HSDArchive;
 using FEHagemu.Views;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Ursa.Controls;
@@ -19,26 +21,42 @@ namespace FEHagemu.ViewModels
 {
     public partial class GameBoardViewModel : ViewModelBase
     {
+        private SRPGMap mapData;
+
+        [ObservableProperty] ObservableCollection<ObservableCollection<BoardCellViewModel>> cells = [];
+        [ObservableProperty] BoardCellViewModel? selectedCell;
+        [ObservableProperty] ObservableCollection<BoardUnitViewModel> units = [];
         [ObservableProperty]
-        ObservableCollection<ObservableCollection<BoardCellViewModel>> cells = [];
-        [ObservableProperty]
-        BoardCellViewModel? selectedCell;
-        [ObservableProperty]
-        ObservableCollection<BoardUnitViewModel> units = [];
-        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TotalWidth))]
+        [NotifyPropertyChangedFor(nameof(TotalHeight))] 
         uint resizeX = 1;
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TotalWidth))]
+        [NotifyPropertyChangedFor(nameof(TotalHeight))] 
         uint resizeY = 1;
-        public string? FieldId {get=> mapData?.field.id; set {
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TotalWidth))]
+        [NotifyPropertyChangedFor(nameof(TotalHeight))]
+        [NotifyPropertyChangedFor(nameof(GridTileRect))]
+        private double cellSize = 32;
+        [ObservableProperty]
+        private bool isGridLineVisible = true;
+        [ObservableProperty]
+        private bool isTerrainVisible = false;
+        public double TotalWidth => ResizeX * CellSize;
+        public double TotalHeight => ResizeY * CellSize;
+        public RelativeRect GridTileRect => new(0, 0, CellSize, CellSize, RelativeUnit.Absolute);
+        public string FieldId {get=> mapData.field.id; set {
                 mapData.field.id = value;
                 FieldBackground = MasterData.GetFieldBackground(mapData.field.id);
                 OnPropertyChanged();
             } }
         [ObservableProperty]
         Bitmap? fieldBackground;
-        SRPGMap? mapData;
-        
-        public Unit? ClonedUnit { get; set; }
+
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(PasteUnitCommand))]
+        private Unit? clonedUnit;
 
         public GameBoardViewModel(SRPGMap map)
         {
@@ -47,127 +65,219 @@ namespace FEHagemu.ViewModels
 
         public void SetMap(SRPGMap map)
         {
+            Units.Clear();
             mapData = map;
-            uint w = mapData.field.width; uint h = mapData.field.height;
-            ResizeX = w;
-            ResizeY = h;
-            BoardCellViewModel[][] grids = new BoardCellViewModel[h][];
-            Cells.Clear();
-            for (int i = 0; i < h; i++)
+            ResizeX = mapData.field.width;
+            ResizeY = mapData.field.height;
+            FieldId = mapData.field.id;
+            RebuildCells(ResizeX, ResizeY, resetTerrain: false);
+
+            foreach (var unit in map.map_units)
             {
-                int view_y = (int)(h - i - 1);
-                grids[view_y] = new BoardCellViewModel[w];
-                for (int j = 0; j < w; j++)
+                AddUnit(unit);
+            }
+            foreach (var pos in map.player_positions)
+            {
+                if (TryGetCell(pos.x, pos.y, out var cell))
                 {
-                    grids[view_y][j] = new BoardCellViewModel()
-                    {
-                        Terrain = (TerrainType)mapData.field.terrains[i * w + j].tid,
-                        Y = (ushort)i,
-                        X = (ushort)j,
-                    };
+                    cell.IsPlayerSlot = true;
                 }
-                Cells.Insert(0, new ObservableCollection<BoardCellViewModel>(grids[view_y]));
             }
-            
-            foreach (var unit in mapData.map_units)
-            {
-                var u = new BoardUnitViewModel(unit);
-                Units.Add(u);
-                Cells[(int)h - 1 - unit.pos.y][unit.pos.x].Units.Add(u);
-            }
-            foreach (var pos in mapData.player_positions)
-            {
-                Cells[(int)h - 1 - pos.y][pos.x].IsPlayerSlot = true;
-            }
-            FieldBackground = MasterData.GetFieldBackground(map.field.id);
             OnPropertyChanged(nameof(FieldId));
+            OnPropertyChanged(nameof(FieldBackground));
+        }
+
+        private void RebuildCells(uint w, uint h, bool resetTerrain)
+        {
+            if (mapData == null) return;
+            Cells.Clear();
+            if (resetTerrain)
+            {
+                mapData.field.terrains = new Tile[w * h];
+            }
+
+            for (int uiRow = 0; uiRow < h; uiRow++)
+            {
+                int gameY = (int)(h - 1 - uiRow);
+                var rowCollection = new ObservableCollection<BoardCellViewModel>();
+                for (int gameX = 0; gameX < w; gameX++)
+                {
+                    int terrainIndex = gameY * (int)w + gameX;
+
+                    if (resetTerrain)
+                    {
+                        mapData.field.terrains[terrainIndex] = new Tile { tid = 0 };
+                    }
+
+                    var cellVm = new BoardCellViewModel
+                    {
+                        Terrain = (TerrainType)mapData.field.terrains[terrainIndex].tid,
+                        Y = (ushort)gameY,
+                        X = (ushort)gameX,
+                        Board = this
+                    };
+                    rowCollection.Add(cellVm);
+                }
+                Cells.Add(rowCollection);
+            }
+        }
+        private bool TryGetCell(int x, int y, out BoardCellViewModel cell)
+        {
+            cell = null!;
+            if (mapData == null) return false;
+            int uiRowIndex = (int)mapData.field.height - 1 - y;
+
+            if (uiRowIndex >= 0 && uiRowIndex < Cells.Count)
+            {
+                var row = Cells[uiRowIndex];
+                if (x >= 0 && x < row.Count)
+                {
+                    cell = row[x];
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private BoardUnitViewModel AddUnit(Unit unit)
+        {
+            var uVm = new BoardUnitViewModel(unit);
+            var count = Units.Count;
+            for (int i = 0; i < count; i++)
+            {
+                var existingUnit = Units[i];
+                if (existingUnit.unit.pos.y < uVm.unit.pos.y ||
+                    (existingUnit.unit.pos.y == uVm.unit.pos.y && existingUnit.unit.pos.x <= uVm.unit.pos.x))
+                {
+                    continue;
+                }
+                Units.Insert(i, uVm);
+                if (TryGetCell(unit.pos.x, unit.pos.y, out var cell))
+                {
+                    cell.CallFirstPersonChange();
+                }
+                return uVm;
+            }
+            Units.Add(uVm);
+            if (TryGetCell(unit.pos.x, unit.pos.y, out var cell2)) {
+                cell2.CallFirstPersonChange();
+            }
+            return uVm;
         }
         [RelayCommand]
-        async Task ChangeField()
+        private void AddNewUnit()
         {
-            if (mapData is null) return;
-            var mainWindow = Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
-            if (mainWindow is not null)
+            if (SelectedCell != null)
             {
-                var files = await mainWindow.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions()
+                var unit = Unit.Create(SelectedCell.X, SelectedCell.Y);
+                AddUnit(unit).IsHighlighted = true;
+            }
+        }
+        public BoardUnitViewModel? GetFirstUnitByXY(int x, int y)
+        {
+            foreach (var u in Units)
+            {
+                if (u.unit.pos.x == x && u.unit.pos.y == y)
                 {
-                    Title = "Open Field Image",
-                    AllowMultiple = false
-                });
-                if (files.Count > 0)
+                    return u;
+                }
+            }
+            return null;
+        }
+        public IEnumerable<BoardUnitViewModel> GetUnitsByXY(int x, int y)
+        {
+            foreach (var u in Units)
+            {
+                if (u.unit.pos.x == x && u.unit.pos.y == y)
                 {
-                    string id = Path.GetFileNameWithoutExtension(files[0].Name);
-                    string path = Path.Combine(MasterData.FIELD_PATH, $"{id}.jpg");
-                    string path2 = Path.Combine(MasterData.FIELD_PATH, $"{id}.png");
-                    if (!File.Exists(path) && !File.Exists(path2))
-                    {
-                        File.Copy(files[0].Path.AbsolutePath, Path.Combine(MasterData.FIELD_PATH, files[0].Name));
-                    }
-                    FieldId = id;
+                    yield return u;
                 }
             }
         }
-        public void ReCreateField(uint w, uint h)
+
+        [RelayCommand]
+        private async Task ChangeField()
         {
-            if (mapData is null) return;
-            Cells.Clear();
-            mapData.field.width = w;
-            mapData.field.height = h;
-            mapData.field.terrains = new Tile[w * h];
-            BoardCellViewModel[][] grids = new BoardCellViewModel[h][];
-            for (int i = 0; i < h; i++)
+            if (mapData == null) return;
+            var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (mainWindow == null) return;
+            var files = await mainWindow.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-                int view_y = (int)(h - i - 1);
-                grids[view_y] = new BoardCellViewModel[w];
-                for (int j = 0; j < w; j++)
+                Title = "Open Field Image",
+                AllowMultiple = false,
+                FileTypeFilter = [FilePickerFileTypes.ImageAll]
+            });
+            if (files.Count > 0)
+            {
+                var file = files[0];
+                string originalName = file.Name;
+                string id = Path.GetFileNameWithoutExtension(originalName);
+                if (!Directory.Exists(MasterData.FIELD_PATH))
                 {
-                    mapData.field.terrains[i * w + j] = new Tile() { tid = 0 };
-                    grids[view_y][j] = new BoardCellViewModel()
-                    {
-                        Terrain = (TerrainType)0,
-                        Y = (ushort)i,
-                        X = (ushort)j,
-                    };
+                    Directory.CreateDirectory(MasterData.FIELD_PATH);
                 }
-                Cells.Insert(0, new ObservableCollection<BoardCellViewModel>(grids[view_y]));
+                string targetPath = Path.Combine(MasterData.FIELD_PATH, originalName);
+                if (!File.Exists(targetPath))
+                {
+                    await using var sourceStream = await file.OpenReadAsync();
+                    using var destStream = File.Create(targetPath);
+                    await sourceStream.CopyToAsync(destStream);
+                }
+                FieldId = id;
             }
-            //foreach (var unit in mapData.map_units)
-            //{
-            //    var u = new BoardUnitViewModel(unit);
-            //    Units.Add(u);
-            //    Cells[(int)h - 1 - unit.pos.y][unit.pos.x].Units.Add(u);
-            //}
         }
         [RelayCommand]
         public void SelectCell(BoardCellViewModel cell)
         {
             if (SelectedCell == cell)
             {
-                cell.IsSelected = false;
-                SelectedCell = null;
                 return;
             }
             if (SelectedCell is not null) SelectedCell.IsSelected = false;
             cell.IsSelected = true;
             SelectedCell = cell;
+            foreach (var u in Units)
+            {
+                u.IsHighlighted = (u.unit.pos.x == cell.X && u.unit.pos.y == cell.Y);
+            }
         }
         [RelayCommand]
         public void ResizeMap()
         {
-            ReCreateField(ResizeX, ResizeY);
+            if (mapData == null) return;
+            mapData.field.width = ResizeX;
+            mapData.field.height = ResizeY;
+            RebuildCells(ResizeX, ResizeY, resetTerrain: true);
+            Units.Clear();
+        }
+
+        [RelayCommand]
+        private void CloneUnit(BoardUnitViewModel buvm)
+        {
+            ClonedUnit = buvm.unit;
         }
 
         [RelayCommand(CanExecute = nameof(HasUnitCloned))]
-        public void PasteUnit(BoardCellViewModel cell)
+        private void PasteUnit()
         {
-            if (ClonedUnit is not null)
+            if (ClonedUnit != null && SelectedCell != null)
             {
                 var to_paste = ClonedUnit.Clone();
-                cell.AddUnit(to_paste);
-                to_paste.pos.x = cell.X;
-                to_paste.pos.y = cell.Y;
+                to_paste.pos.x = SelectedCell.X;
+                to_paste.pos.y = SelectedCell.Y;
+                AddUnit(to_paste).IsHighlighted = true;
             }
         }
+        [RelayCommand]
+        private void DeleteUnit(BoardUnitViewModel buvm)
+        {
+            Units.Remove(buvm);
+            if (TryGetCell(buvm.unit.pos.x, buvm.unit.pos.y, out var cell))
+            {
+                cell.CallFirstPersonChange();
+            }
+        }
+
 
         bool HasUnitCloned => ClonedUnit is not null;
     }
@@ -176,10 +286,15 @@ namespace FEHagemu.ViewModels
     {
         public static Type Terrains => typeof(TerrainType);
         [ObservableProperty]
-        ushort x;
+        private GameBoardViewModel board;
         [ObservableProperty]
-        ushort y;
+        private ushort x;
         [ObservableProperty]
+        private ushort y;
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TerrainKanji))]
+        [NotifyPropertyChangedFor(nameof(TerrainKanjiColor))]
+        [NotifyPropertyChangedFor(nameof(TerrainColorHex))]
         TerrainType terrain;
         [ObservableProperty]
         bool isSelected = false;
@@ -187,39 +302,176 @@ namespace FEHagemu.ViewModels
         bool isPlayerSlot = false;
         [ObservableProperty]
         public ObservableCollection<BoardUnitViewModel> units = [];
-        
-        public string FirstUnitFace => Units.Count > 0 ? Units[0].Face : string.Empty;
 
-        public Task<Bitmap>? CellFace => Units.Count > 0 ? Units[0].FaceImg :  Task.Run(()=>MasterData.EmptyBitmap);
+        public string TerrainKanji => Terrain switch {
+            // 基础地形
+            TerrainType.Outdoor => "平",
+            TerrainType.Indoor => "平",
+            TerrainType.Desert => "平",
+            TerrainType.Forest => "林",
+            TerrainType.Mountain => "山",
+            TerrainType.Lava => "熔",
+            TerrainType.Wall => "墙",
+            TerrainType.Bridge => "平",
+            TerrainType.Inaccessible => "禁",
+
+            TerrainType.River => "水",
+            TerrainType.Sea => "水",
+            TerrainType.IndoorWater => "水",
+
+            TerrainType.OutdoorBreakable => "破",
+            TerrainType.OutdoorBreakable2 => "破",
+            TerrainType.IndoorBreakable => "破",
+            TerrainType.IndoorBreakable2 => "破",
+            TerrainType.DesertBreakable => "破",
+            TerrainType.DesertBreakable2 => "破",
+            TerrainType.BridgeBreakable => "破", 
+            TerrainType.BridgeBreakable2 => "破",
+
+            // 防御地形 (Defensive)
+            // 合并：OutdoorDefensive, ForestDefensive, IndoorDefensive
+            TerrainType.OutdoorDefensive => "防",
+            TerrainType.ForestDefensive => "防",
+            TerrainType.IndoorDefensive => "防",
+
+            // 壕沟 (Trench)
+            // 合并：OutdoorTrench, IndoorTrench
+            TerrainType.OutdoorTrench => "壕",
+            TerrainType.IndoorTrench => "壕",
+
+            // 防御壕沟 (DefensiveTrench)
+            // 合并：OutdoorDefensiveTrench, IndoorDefensiveTrench
+            TerrainType.OutdoorDefensiveTrench => "防壕",
+            TerrainType.IndoorDefensiveTrench => "防壕",
+
+            // 基地与营地
+            TerrainType.PlayerFortress => "城", // 己方基地
+            TerrainType.EnemyFortress => "敌城", // 敌方基地
+
+            // 营地 (Camp)
+            // 合并：PlayerCamp, EnemyCamp, OutdoorPlayerCamp, IndoorPlayerCamp
+            TerrainType.PlayerCamp => "营",
+            TerrainType.EnemyCamp => "敌营",
+            TerrainType.OutdoorPlayerCamp => "营",
+            TerrainType.IndoorPlayerCamp => "敌营",
+
+            // 建筑 (Structure)
+            // 合并：PlayerStructure, EnemyStructure
+            TerrainType.PlayerStructure => "构",
+            TerrainType.EnemyStructure => "敌构",
+            _ => "?"
+        };
+
+        public string TerrainColorHex => Terrain switch
+            {
+                // 基础地形
+                TerrainType.Outdoor => "#A2CD5A", // YellowGreen
+                TerrainType.Indoor => "#D3D3D3",  // LightGray
+                TerrainType.Desert => "#F4A460",  // SandyBrown
+                TerrainType.Forest => "#006400",  // DarkGreen
+                TerrainType.Mountain => "#A9A9A9", // DarkGray
+                TerrainType.Lava => "#CD5C5C",    // IndianRed
+                TerrainType.Wall => "#8B4513",    // SaddleBrown
+                TerrainType.Bridge => "#BC8F8F",  // RosyBrown
+                TerrainType.Inaccessible => "#000000", // Black
+
+                // 水域
+                TerrainType.River => "#4682B4",     // SteelBlue
+                TerrainType.Sea => "#1E90FF",       // DodgerBlue
+                TerrainType.IndoorWater => "#ADD8E6", // LightBlue
+
+                // 可破坏地形 (统一用 LightSalmon, 除了 OutdoorBreakable2)
+                TerrainType.OutdoorBreakable => "#FFA07A", // LightSalmon (破)
+                TerrainType.OutdoorBreakable2 => "#FFD700", // Gold (脆)
+                TerrainType.IndoorBreakable => "#FFA07A",
+                TerrainType.IndoorBreakable2 => "#FFA07A",
+                TerrainType.DesertBreakable => "#FFA07A",
+                TerrainType.DesertBreakable2 => "#FFA07A",
+                TerrainType.BridgeBreakable => "#FFA07A",
+                TerrainType.BridgeBreakable2 => "#FFA07A",
+
+                // 防御地形
+                TerrainType.OutdoorDefensive => "#6B8E23", // OliveDrab
+                TerrainType.ForestDefensive => "#6B8E23",
+                TerrainType.IndoorDefensive => "#6B8E23",
+
+                // 壕沟
+                TerrainType.OutdoorTrench => "#B8860B", // DarkGoldenrod
+                TerrainType.IndoorTrench => "#B8860B",
+
+                // 防御壕沟
+                TerrainType.OutdoorDefensiveTrench => "#808000", // Olive
+                TerrainType.IndoorDefensiveTrench => "#808000",
+
+                // 基地与营地/建筑 (绿色/蓝色 vs 红色/深红)
+                TerrainType.PlayerFortress => "#00FF00",  // Lime (城)
+                TerrainType.EnemyFortress => "#FF0000",   // Red (敌城)
+
+                TerrainType.PlayerCamp => "#3CB371",      // MediumSeaGreen (营)
+                TerrainType.EnemyCamp => "#DC143C",       // Crimson (敌营)
+                TerrainType.OutdoorPlayerCamp => "#3CB371",
+                TerrainType.IndoorPlayerCamp => "#DC143C", // 注意：根据您的汉字，此为敌营颜色
+
+                TerrainType.PlayerStructure => "#4169E1", // RoyalBlue (构)
+                TerrainType.EnemyStructure => "#8B0000",  // DarkRed (敌构)
+
+                _ => "#FFFFFF" // 默认白色，如果出现未定义的枚举值
+            };
+
+        public string TerrainKanjiColor
+        {
+            get
+            {
+                // 1. 移除可能的前缀 #
+                string hex = TerrainColorHex.TrimStart('#');
+
+                // 2. 将Hex转换为RGB分量 (R, G, B)
+                if (hex.Length != 6)
+                {
+                    // 确保是有效的RGB Hex
+                    return "#000000";
+                }
+
+                try
+                {
+                    int r = Convert.ToInt32(hex.Substring(0, 2), 16);
+                    int g = Convert.ToInt32(hex.Substring(2, 2), 16);
+                    int b = Convert.ToInt32(hex.Substring(4, 2), 16);
+
+                    // 3. 计算感知亮度 (Perceived Luminance)
+                    // 这个公式是一个简化的感知亮度公式，它考虑了人眼对绿色最敏感、对蓝色最不敏感的特性。
+                    // 亮度值范围通常是 0 到 255。
+                    double luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+
+                    // 4. 根据亮度阈值决定字体颜色
+                    // 如果亮度低于中值 (128)，则认为是深色背景，应使用白色字体。
+                    // 如果亮度高于或等于中值，则认为是浅色背景，应使用黑色字体。
+                    const double Threshold = 128;
+
+                    if (luminance < Threshold)
+                    {
+                        return "#FFFFFF"; // 深色背景 -> 白色文字
+                    }
+                    else
+                    {
+                        return "#000000"; // 浅色背景 -> 黑色文字
+                    }
+                }
+                catch
+                {
+                    // 转换失败，返回默认黑色
+                    return "#000000";
+                }
+            }
+        }
+
+        public string FirstUnitFace => Board.GetFirstUnitByXY(X, Y)?.Face ?? string.Empty;
+
+        public Task<Bitmap>? CellFace => Board.GetFirstUnitByXY(X, Y)?.FaceImg ??  Task.Run(()=>MasterData.EmptyBitmap);
         public string TerrainDotClass => Terrain switch { 
             TerrainType.Lava or TerrainType.Sea or TerrainType.Mountain or TerrainType.IndoorWater or TerrainType.River => "Secondary",
             _ => "Success"
         };
-
-        [RelayCommand]
-        public void AddUnit()
-        {
-            var u = Unit.Create(X, Y);
-            Units.Add(new BoardUnitViewModel(u));
-            OnPropertyChanged(nameof(FirstUnitFace));
-            OnPropertyChanged(nameof(CellFace));
-            
-        }
-
-        public void AddUnit(Unit u)
-        {
-            Units.Add(new BoardUnitViewModel(u));
-            OnPropertyChanged(nameof(FirstUnitFace));
-            OnPropertyChanged(nameof(CellFace));
-        }
-
-        [RelayCommand]
-        public void DeleteUnit(BoardUnitViewModel u) 
-        {
-            Units.Remove(u);
-            OnPropertyChanged(nameof(FirstUnitFace));
-            OnPropertyChanged(nameof(CellFace));
-        }
 
         public void CallFirstPersonChange()
         {
@@ -230,6 +482,9 @@ namespace FEHagemu.ViewModels
 
     public partial class BoardUnitViewModel : ViewModelBase
     {
+        public readonly Unit unit;
+        [ObservableProperty]
+        public bool isHighlighted = false;
         public BoardUnitViewModel(Unit u)
         {
             unit = u;
@@ -237,27 +492,7 @@ namespace FEHagemu.ViewModels
             {
                 skills.Add(new SkillViewModel(unit.skills[i], i));
             }
-            var p = MasterData.GetPerson(unit.id_tag);
-            if (p != null)
-            {
-                int[] stats = p.CalcStats(40, 10, -1, -1);
-                DefaultHP = (ushort)stats[0];
-                DefaultATK = (ushort)stats[1];
-                DefaultSPD = (ushort)stats[2];
-                DefaultDEF = (ushort)stats[3];
-                DefaultRES = (ushort)stats[4];
-
-                var ls = MasterData.GetSkill(p.Legendary?.btn_skill_id);
-                if (ls is not null) {
-                    LegendarySkill = new SkillViewModel(ls.id, 9);
-                } else { 
-                    LegendarySkill = new SkillViewModel(string.Empty, 9);
-                }
-                
-            }
-            
-
-
+            RefreshUnitData();
         }
 
         public string Name => MasterData.GetMessage($"M{unit.id_tag}");
@@ -268,11 +503,7 @@ namespace FEHagemu.ViewModels
             {
                 unit.id_tag = value ?? string.Empty;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(Name));
-                OnPropertyChanged(nameof(Title));
-                OnPropertyChanged(nameof(MoveIcon));
-                OnPropertyChanged(nameof(WeaponIcon));
-                OnPropertyChanged(nameof(Face));
+                RefreshUnitData();
             }
         }
         public ShortPosition Position => unit.pos;
@@ -292,15 +523,7 @@ namespace FEHagemu.ViewModels
             {
                 var p = MasterData.GetPerson(unit.id_tag);
                 string? name = p?.LegendaryIconName;
-                Uri uri;
-                if (!string.IsNullOrEmpty(name))
-                {
-                  uri = new Uri($"avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_{name}.png");
-                } else
-                {
-                  uri = new  Uri($"avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_SeasonNone.png");
-                }
-                return new Bitmap(AssetLoader.Open(uri));
+                return MasterData.GetLegendaryIcon(name);
             } 
         }
         public Bitmap LegendaryTypeIcon
@@ -309,16 +532,7 @@ namespace FEHagemu.ViewModels
             {
                 var p = MasterData.GetPerson(unit.id_tag);
                 string? name = p?.TypeIconName;
-                Uri uri;
-                if (!string.IsNullOrEmpty(name))
-                {
-                    uri = new Uri($"avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_{name}.png");
-                }
-                else
-                {
-                    uri = new Uri($"avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_SeasonNone.png");
-                }
-                return new Bitmap(AssetLoader.Open(uri));
+                return MasterData.GetLegendaryIcon(name);
             }
         }
         public byte LV { get=> unit.lv; set { unit.lv = value; RefreshStats(unit.lv); OnPropertyChanged(); } }
@@ -339,8 +553,7 @@ namespace FEHagemu.ViewModels
         [ObservableProperty]
         public ushort defaultRES;
 
-        public uint DragonFlowerCount { get { var p = MasterData.GetPerson(unit.id_tag); return p.DragonflowerNumber; } }
-
+        public uint DragonFlowerCount { get { var p = MasterData.GetPerson(unit.id_tag); return p?.DragonflowerNumber ?? 0; } }
         public byte CD { get => unit.cd; set { unit.cd = value; OnPropertyChanged(); } }
         public byte StartTurn { get => unit.start_turn; set { unit.start_turn = value; OnPropertyChanged(); } }
         public byte MoveGroup { get => unit.movement_group; set { unit.movement_group = value; OnPropertyChanged(); } }
@@ -360,7 +573,7 @@ namespace FEHagemu.ViewModels
                 OnPropertyChanged();
             }
         }
-        public readonly Unit unit;
+        
 
         public IImage? WeaponIcon
         {
@@ -380,10 +593,36 @@ namespace FEHagemu.ViewModels
         }
 
         [ObservableProperty]
-        SkillViewModel legendarySkill;
-        public bool HasLegendarySkillQ => LegendarySkill.skill is not null;
+        SkillViewModel? legendarySkill;
+        public bool HasLegendarySkillQ => LegendarySkill?.skill is not null;
 
-        private void RefreshStats(int lv)
+        private void RefreshUnitData()
+        {
+            OnPropertyChanged(nameof(FaceImg));
+            OnPropertyChanged(nameof(Name));
+            OnPropertyChanged(nameof(Title));
+            OnPropertyChanged(nameof(MoveIcon));
+            OnPropertyChanged(nameof(WeaponIcon));
+            OnPropertyChanged(nameof(Face));
+            OnPropertyChanged(nameof(DragonFlowerCount));
+            OnPropertyChanged(nameof(HasLegendarySkillQ));
+            OnPropertyChanged(nameof(DragonFlowerCount));
+            OnPropertyChanged(nameof(LegendaryIcon));
+            OnPropertyChanged(nameof(LegendaryTypeIcon));
+
+
+            var p = MasterData.GetPerson(unit.id_tag);
+            if (p?.Legendary?.btn_skill_id is { } lsId && MasterData.GetSkill(lsId) is { } ls)
+            {
+                LegendarySkill = new SkillViewModel(ls.id, 9);
+            }
+            else
+            {
+                LegendarySkill = new SkillViewModel(string.Empty, 9);
+            }
+            RefreshStats();
+        }
+        private void RefreshStats(int lv = 40)
         {
             var p = MasterData.GetPerson(Id);
             if (p is null) return;
@@ -434,32 +673,17 @@ namespace FEHagemu.ViewModels
                 {
                     SetSkill(pvm.skills[i], i);
                 }
-                int[] stats = pvm.person.CalcStats(40, 10, -1, -1);
-                DefaultHP = HP = (ushort)stats[0];
-                DefaultATK = ATK = (ushort)stats[1];
-                DefaultSPD = SPD = (ushort)stats[2];
-                DefaultDEF = DEF = (ushort)stats[3];
-                DefaultRES = RES = (ushort)stats[4];
-                var ls = MasterData.GetSkill(pvm.person.Legendary?.btn_skill_id);
-                if (ls is not null)
-                {
-                    LegendarySkill = new SkillViewModel(ls.id, 9);
-                }
                 cell.CallFirstPersonChange();
-                OnPropertyChanged(nameof(DragonFlowerCount));
-                OnPropertyChanged(nameof(HasLegendarySkillQ));
             }
         }
-        [RelayCommand]
-        public void CloneUnit(GameBoardViewModel gb)
-        {
-            gb.ClonedUnit = unit;
-        }
+        
         [RelayCommand]
         public async Task CopyId()
         {
-            var mainWindow = Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
-            await mainWindow?.Clipboard?.SetTextAsync(Id);
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow.Clipboard: { } clipboard })
+            {
+                await clipboard.SetTextAsync(Id);
+            }
         }
 
         [RelayCommand]

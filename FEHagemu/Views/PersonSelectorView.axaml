@@ -89,6 +89,9 @@
                     IsChecked="{Binding CheckDanceQ}">
                     <Image Height="30" Source="avares://FEHagemu/Assets/Icon/Icon_Dance.png" />
                 </ToggleButton>
+                <ToggleButton IsChecked="{Binding CheckLegendaryQ}">
+                    <Image Source="avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_BlessingFireS.png" />
+                </ToggleButton>
                 <ToggleButton IsChecked="{Binding CheckPairQ}">
                     <Image Source="avares://FEHagemu/Assets/Icon/Icon_Pair.png" />
                 </ToggleButton>
@@ -106,6 +109,9 @@
                 </ToggleButton>
                 <ToggleButton IsChecked="{Binding CheckEngageQ}">
                     <Image Source="avares://FEHagemu/Assets/Icon/Icon_Engage_s.png" />
+                </ToggleButton>
+                <ToggleButton IsChecked="{Binding CheckSaviorQ}">
+                    <Image Source="avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_Savior.png" />
                 </ToggleButton>
             </StackPanel>
         </Border>
@@ -170,6 +176,7 @@
                             <Image IsVisible="{Binding DiabolosWeaponQ}" Source="avares://FEHagemu/Assets/Icon/Icon_Diabolos_m.png" />
                             <Image IsVisible="{Binding ResonateQ}" Source="avares://FEHagemu/Assets/Icon/Icon_Resonate_s.png" />
                             <Image IsVisible="{Binding EngageQ}" Source="avares://FEHagemu/Assets/Icon/Icon_Engage_s.png" />
+                            <Image IsVisible="{Binding SaviorQ}" Source="avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_Savior.png" />
                         </StackPanel>
                     </Border>
                 </DataTemplate>

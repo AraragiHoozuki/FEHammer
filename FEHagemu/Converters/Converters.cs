@@ -7,7 +7,7 @@ using FEHagemu.HSDArchive;
 using Avalonia.Platform;
 using Avalonia.Media.Imaging;
 
-namespace FEHagemu
+namespace FEHagemu.Converters
 {
     public class SkillIconConverter : IValueConverter
     {
@@ -88,4 +88,23 @@ namespace FEHagemu
             throw new NotSupportedException();
         }
     }
+
+    public class WeaponIconConverter : IValueConverter
+    {
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        {
+            if (value is int index)
+            {
+                return MasterData.GetWeaponIcon(index);
+            }
+            return null;
+        }
+
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+
 }

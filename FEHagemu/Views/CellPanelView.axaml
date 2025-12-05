@@ -46,19 +46,6 @@
 
             </StackPanel>
         </ScrollViewer>
-        <Grid Grid.Row="1" ColumnDefinitions="*,*">
-            <Button
-                Grid.Column="0"
-                Command="{Binding AddUnitCommand}"
-                Content="Add Unit"
-                Theme="{DynamicResource SolidButton}" />
-            <Button
-                Grid.Column="1"
-                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.PasteUnitCommand}"
-                CommandParameter="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.SelectedCell}"
-                Content="Paste Unit"
-                Theme="{DynamicResource SolidButton}" />
-        </Grid>
     </Grid>
 
 

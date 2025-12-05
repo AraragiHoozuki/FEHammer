@@ -43,7 +43,7 @@ namespace FEHagemu
         public static ConcurrentDictionary<string, Enemy> EnemyDict = [];
         public static ConcurrentDictionary<string, Skill> SkillDict = [];
         private static ConcurrentDictionary<string, Bitmap> faceCache = [];
-        public static Bitmap FallBackFace { get; } = new Bitmap(AssetLoader.Open(new Uri($"avares://FEHagemu/Assets/Face/ch00_00_Eclat_F_Avatar01/Face_FC.png")));
+        public static Bitmap FallBackFace { get; } = new Bitmap(AssetLoader.Open(new Uri($"avares://FEHagemu/Assets/Face/None.png")));
         public static Bitmap EmptyBitmap { get; } = new Bitmap(AssetLoader.Open(new Uri("avares://FEHagemu/Assets/empty.png")));
 
         public static HSDArc<SkillList> ModSkillArc => SkillArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!;
@@ -251,6 +251,30 @@ namespace FEHagemu
             var cropped = new CroppedBitmap(ABCSX_ATLAS, new PixelRect(xOffset, 0, 48, 48));
             abcsxCache[name] = cropped; 
             return cropped;
+        }
+
+        private static readonly Dictionary<string, Bitmap> legendaryIconCache = new();
+
+        public static Bitmap GetLegendaryIcon(string? iconName)
+        {
+            string targetName = !string.IsNullOrEmpty(iconName) ? iconName : "SeasonNone";
+            if (legendaryIconCache.TryGetValue(targetName, out var cachedBitmap))
+            {
+                return cachedBitmap;
+            }
+            try
+            {
+                var uri = new Uri($"avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_{targetName}.png");
+                using var stream = AssetLoader.Open(uri);
+                var newBitmap = new Bitmap(stream);
+
+                legendaryIconCache[targetName] = newBitmap;
+                return newBitmap;
+            }
+            catch
+            {
+                return legendaryIconCache.GetValueOrDefault("SeasonNone")!;
+            }
         }
 
         public static void Dispose()
@@ -468,15 +492,13 @@ namespace FEHagemu
             string path = System.IO.Path.Combine(FACE_PATH, face, "Face_FC.png");
             if (File.Exists(path))
             {
-                using (var imageStream = File.OpenRead(path))
+                return await Task.Run(() =>
                 {
-                    return await Task.Run(() =>
-                    {
-                        var bm = Bitmap.DecodeToWidth(imageStream, 64);
-                        faceCache.TryAdd(face, bm);
-                        return bm;
-                    });
-                }
+                    using var stream = File.OpenRead(path);
+                    var bm = Bitmap.DecodeToWidth(stream, 64);
+                    faceCache.TryAdd(face, bm);
+                    return bm;
+                });
             }
             else
             {

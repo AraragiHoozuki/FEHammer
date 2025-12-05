@@ -2,6 +2,7 @@
     x:Class="FEHagemu.Views.GameBoardView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:FEHagemu.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:FEHagemu"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -12,96 +13,107 @@
     d:DesignWidth="800"
     x:DataType="vm:GameBoardViewModel"
     mc:Ignorable="d">
-    <Grid RowDefinitions="Auto,Auto">
-        <Grid HorizontalAlignment="Stretch" ColumnDefinitions="Auto,*,*,Auto,Auto">
-            <Button
-                Classes="Warning"
-                Command="{Binding ResizeMapCommand}"
-                Content="Resize Map"
-                Theme="{DynamicResource SolidButton}" />
+    <Grid RowDefinitions="Auto,*">
+        <StackPanel>
             <u:NumericUIntUpDown
-                Grid.Column="1"
-                InnerLeftContent="X"
-                Maximum="48"
-                Minimum="0"
+                Name="CellSize"
+                InnerLeftContent="CellSize"
+                IsVisible="False"
+                Maximum="64"
+                Minimum="8"
                 ShowButtonSpinner="False"
-                Value="{Binding ResizeX}" />
-            <u:NumericUIntUpDown
-                Grid.Column="2"
-                InnerLeftContent="Y"
-                Maximum="48"
-                Minimum="0"
-                ShowButtonSpinner="False"
-                Value="{Binding ResizeY}" />
-            <TextBox
-                Grid.Column="3"
-                InnerLeftContent="Field"
-                IsEnabled="False"
-                Text="{Binding FieldId}" />
-            <Button
-                Grid.Column="4"
-                Command="{Binding ChangeFieldCommand}"
-                Content="Change Field" />
-        </Grid>
-        <ItemsControl
+                Value="{Binding CellSize}" />
+        </StackPanel>
+
+        <Viewbox
             Grid.Row="1"
-            HorizontalAlignment="Center"
-            ItemsSource="{Binding Cells}">
-            <ItemsControl.Background>
-                <ImageBrush Source="{Binding FieldBackground}" />
-            </ItemsControl.Background>
-            <ItemsControl.Resources>
-                <local:FaceConverter x:Key="FaceConverter" />
-            </ItemsControl.Resources>
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <StackPanel Orientation="Vertical" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <ItemsControl ItemsSource="{Binding}">
+            Stretch="Uniform"
+            StretchDirection="Both">
+            <Border Margin="4" BoxShadow="0 0 5 2 DarkGray">
+                <Panel Width="{Binding TotalWidth}" Height="{Binding TotalHeight}">
+                    <Image
+                        Source="{Binding FieldBackground}"
+                        Stretch="Fill"
+                        ZIndex="0" />
+                    <ItemsControl ItemsSource="{Binding Cells}" ZIndex="1">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal" />
+                                <StackPanel Orientation="Vertical" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid>
-                                    <Border
-                                        Padding="1"
-                                        BorderBrush="LawnGreen"
-                                        BorderThickness="4"
-                                        CornerRadius="4"
-                                        IsVisible="{Binding IsPlayerSlot}" />
-                                    <Border
-                                        Padding="1"
-                                        BorderBrush="Black"
-                                        BorderThickness="0.5"
-                                        CornerRadius="4">
-                                        <ToggleButton
-                                            Width="48"
-                                            Height="48"
-                                            Padding="0"
-                                            Classes="Primary"
-                                            Command="{Binding #GameBoard.((vm:GameBoardViewModel)DataContext).SelectCell}"
-                                            CommandParameter="{Binding}"
-                                            IsChecked="{Binding IsSelected}">
-                                            <!--<Image Source="{Binding FirstUnitFace, Converter={StaticResource FaceConverter}}"/>-->
-                                            <Image Source="{Binding CellFace^}" />
-                                        </ToggleButton>
-                                    </Border>
+                                <ItemsControl ItemsSource="{Binding}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
 
-                                </Grid>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="vm:BoardCellViewModel">
+                                            <Grid Width="{Binding #CellSize.Value}" Height="{Binding #CellSize.Value}">
 
 
+                                                <Image
+                                                    Margin="2,2,2,2"
+                                                    IsHitTestVisible="False"
+                                                    Source="{Binding CellFace^}" />
+                                                <Border
+                                                    Background="{Binding TerrainColorHex}"
+                                                    BorderThickness="2"
+                                                    CornerRadius="2"
+                                                    IsVisible="{Binding $parent[UserControl].((vm:GameBoardViewModel)DataContext).IsTerrainVisible}"
+                                                    Opacity="0.5">
+                                                    <TextBlock
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        Foreground="{Binding TerrainKanjiColor}"
+                                                        Text="{Binding TerrainKanji}" />
+                                                </Border>
+
+
+                                                <Panel Background="Transparent" PointerPressed="OnCellPointerPressed">
+                                                    <Border
+                                                        Background="Green"
+                                                        IsVisible="{Binding IsPlayerSlot}"
+                                                        Opacity="0.5" />
+                                                    <Image
+                                                        IsHitTestVisible="False"
+                                                        IsVisible="{Binding IsSelected}"
+                                                        Source="avares://FEHagemu/Assets/UI/MapCellCursor.png"
+                                                        Stretch="Fill" />
+                                                </Panel>
+
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+
+                    <Border IsHitTestVisible="False" IsVisible="{Binding IsGridLineVisible}">
+                        <Border.Background>
+                            <VisualBrush
+                                DestinationRect="{Binding GridTileRect}"
+                                SourceRect="{Binding GridTileRect}"
+                                Stretch="None"
+                                TileMode="Tile">
+                                <VisualBrush.Visual>
+                                    <Border
+                                        Width="{Binding #CellSize.Value}"
+                                        Height="{Binding #CellSize.Value}"
+                                        BorderBrush="#80FFFFFF"
+                                        BorderThickness="1" />
+                                </VisualBrush.Visual>
+                            </VisualBrush>
+                        </Border.Background>
+                    </Border>
+                </Panel>
+            </Border>
+
+        </Viewbox>
 
 
     </Grid>

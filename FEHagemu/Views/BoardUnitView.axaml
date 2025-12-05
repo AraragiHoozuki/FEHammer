@@ -2,6 +2,8 @@
     x:Class="FEHagemu.Views.BoardUnitView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:behaviors="using:FEHagemu.Behaviors"
+    xmlns:converters="using:FEHagemu.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:FEHagemu"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -14,21 +16,16 @@
     mc:Ignorable="d">
     <Border
         Margin="2"
-        BorderBrush="Black"
+        behaviors:AutoScrollHelper.IsHighlighted="{Binding IsHighlighted}"
+        BorderBrush="Gray"
         BorderThickness="1"
-        BoxShadow="5 5 10 0 DarkGray"
+        BoxShadow="5 5 4 0 DarkGray"
+        Classes.highlighted="{Binding IsHighlighted}"
         CornerRadius="3">
         <Expander Name="UnitPanelExpander">
             <Expander.Header>
-                <Grid
-                    Margin="0,0,8,0"
-                    ColumnDefinitions="Auto,240"
-                    RowDefinitions="*,*">
-                    <Grid
-                        Grid.Row="0"
-                        Grid.RowSpan="2"
-                        Width="64"
-                        Height="64">
+                <Grid Margin="0,0,8,0" ColumnDefinitions="Auto,*,Auto">
+                    <Grid Grid.Row="0" Height="48">
                         <Image Source="avares://FEHagemu/Assets/UI/FaceFrameBack.png" />
                         <Image Margin="4" Source="{Binding FaceImg^}" />
                         <Image Source="avares://FEHagemu/Assets/UI/FaceFrame.png" />
@@ -65,26 +62,25 @@
                             Source="{Binding LegendaryTypeIcon}" />
                     </StackPanel>
                     <StackPanel
-                        Grid.Row="1"
-                        Grid.Column="1"
-                        HorizontalAlignment="Center"
+                        Grid.Column="2"
+                        HorizontalAlignment="Right"
                         Orientation="Horizontal">
                         <u:IconButton
                             HorizontalAlignment="Right"
                             Classes="Success"
-                            Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).ChangePersonCommand}"
+                            Command="{Binding ChangePersonCommand}"
                             CommandParameter="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.SelectedCell}"
                             Icon="{StaticResource SemiIconEdit}" />
                         <u:IconButton
                             HorizontalAlignment="Right"
                             Classes="Success"
-                            Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).CloneUnitCommand}"
-                            CommandParameter="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard}"
+                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.CloneUnitCommand}"
+                            CommandParameter="{Binding}"
                             Icon="{StaticResource SemiIconCopy}" />
                         <u:IconButton
                             HorizontalAlignment="Right"
                             Classes="Danger"
-                            Command="{Binding $parent[UserControl;1].((vm:BoardCellViewModel)DataContext).DeleteUnitCommand}"
+                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.DeleteUnitCommand}"
                             CommandParameter="{Binding}"
                             Icon="{StaticResource SemiIconDelete}" />
                     </StackPanel>
@@ -93,7 +89,7 @@
             </Expander.Header>
             <StackPanel Spacing="1">
                 <StackPanel.Resources>
-                    <local:SkillIconConverter x:Key="SkillIconConverter" />
+                    <converters:SkillIconConverter x:Key="SkillIconConverter" />
                 </StackPanel.Resources>
                 <StackPanel.Styles>
                     <Style Selector=":is(u|NumericUpDown)">
@@ -190,6 +186,19 @@
 
                 <u:Divider HorizontalContentAlignment="Center">技能</u:Divider>
                 <ItemsControl HorizontalAlignment="Stretch" ItemsSource="{Binding Skills}">
+                    <ItemsControl.Styles>
+                        <Style Selector="Image">
+                            <Setter Property="RenderTransform" Value="rotate(0)" />
+                            <Setter Property="Transitions">
+                                <Transitions>
+                                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.3" />
+                                </Transitions>
+                            </Setter>
+                        </Style>
+                        <Style Selector="Image:pointerover">
+                            <Setter Property="RenderTransform" Value="rotate(360deg)" />
+                        </Style>
+                    </ItemsControl.Styles>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border

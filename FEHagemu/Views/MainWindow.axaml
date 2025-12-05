@@ -2,6 +2,7 @@
     x:Class="FEHagemu.Views.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:behaviors="using:FEHagemu.Behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:u="https://irihi.tech/ursa"
@@ -9,42 +10,109 @@
     xmlns:vm="using:FEHagemu.ViewModels"
     Title="FEHagemu"
     Height="600"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
     x:DataType="vm:MainWindowViewModel"
     Icon="/Assets/favicon.ico"
-    SizeToContent="Width"
     mc:Ignorable="d">
-    <u:LoadingContainer
-        VerticalContentAlignment="Top"
-        IsLoading="{Binding LoadingQ}"
-        LoadingMessage="Loading...">
-        <DockPanel>
-            <Menu DockPanel.Dock="Top">
-                <MenuItem Command="{Binding OpenMapCommand}" Header="Open Map" />
-                <MenuItem Command="{Binding SaveMapCommand}" Header="Save Map" />
+    <Grid RowDefinitions="Auto,Auto,*">
+        <Menu>
+            <MenuItem Header="文件">
+                <MenuItem Command="{Binding OpenMapCommand}" Header="打开地图" />
+                <MenuItem Command="{Binding SaveMapCommand}" Header="保存地图" />
+
+            </MenuItem>
+            <MenuItem Header="数据">
+                <MenuItem Command="{Binding ImportSkillCommand}" Header="导入技能" />
+                <MenuItem Command="{Binding ExportPackageCommand}" Header="导出数据包" />
+            </MenuItem>
+            <MenuItem Header="地图">
+                <MenuItem Command="{Binding GameBoard.ResizeMapCommand}" Header="变更地图大小" />
+                <MenuItem Command="{Binding GameBoard.ChangeFieldCommand}" Header="变更地图背景" />
                 <MenuItem
-                    Command="{Binding ImportSkillCommand}"
-                    Header="Import Skill"
-                    ToolTip.Tip="Right click a skill in skill selector window and export its json, then edit it and import it." />
-                <!--<MenuItem
+                    Header="显示地图网格"
+                    IsChecked="{Binding GameBoard.IsGridLineVisible, Mode=TwoWay}"
+                    ToggleType="CheckBox" />
+                <MenuItem
+                    Header="显示地形"
+                    IsChecked="{Binding GameBoard.IsTerrainVisible, Mode=TwoWay}"
+                    ToggleType="CheckBox" />
+            </MenuItem>
+
+
+            <!--<MenuItem
                     Command="{Binding ImportPersonCommand}"
                     Header="Import Person"
                     ToolTip.Tip="Right click a person in person selector window and export its json, then edit it and import it." />
-                -->
-                <MenuItem
-                    Command="{Binding ExportPackageCommand}"
-                    Header="Export Package"
-                    ToolTip.Tip="Export a package including imported skills and persons. Copy it to the game data folder." />
-                <MenuItem Header="About" />
-            </Menu>
-            <u:Divider DockPanel.Dock="Top" />
-            <ScrollViewer DockPanel.Dock="Left">
-                <views:GameBoardView DataContext="{Binding GameBoard}" DockPanel.Dock="Left" />
+            -->
+
+            <MenuItem Header="About" />
+        </Menu>
+        <u:Divider Grid.Row="1" />
+        <Grid
+            Grid.Row="2"
+            ColumnDefinitions="*, 4, *"
+            RowDefinitions="Auto,*">
+            <views:GameBoardView Grid.RowSpan="2" DataContext="{Binding GameBoard}" />
+            <GridSplitter
+                Grid.RowSpan="2"
+                Grid.Column="1"
+                Background="Black"
+                ResizeDirection="Columns" />
+            <!--<views:CellPanelView Grid.Column="2" DataContext="{Binding GameBoard.SelectedCell}" />-->
+            <Grid />
+            <Border
+                Grid.Column="2"
+                Margin="0,4,0,8"
+                Padding="4,6,4,4"
+                BoxShadow="0 4 5 2 DarkGray">
+                <StackPanel Orientation="Horizontal" Spacing="2">
+                    <StackPanel.Styles>
+                        <Style Selector=":is(u|NumericUpDown)">
+                            <Setter Property="FontFamily" Value="Consolas" />
+                        </Style>
+                    </StackPanel.Styles>
+                    <TextBlock VerticalAlignment="Center" Text="地形: " />
+                    <u:EnumSelector
+                        Margin="4,0,4,0"
+                        DisplayDescription="True"
+                        EnumType="{Binding GameBoard.SelectedCell.Terrains}"
+                        Value="{Binding GameBoard.SelectedCell.Terrain}" />
+                    <u:Divider Orientation="Vertical" />
+                    <ToggleSwitch
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        IsChecked="{Binding GameBoard.SelectedCell.IsPlayerSlot}"
+                        OffContent="非出击位置"
+                        OnContent="出击位置" />
+                    <u:Divider Orientation="Vertical" />
+                    <u:IconButton
+                        Classes="Success"
+                        Command="{Binding GameBoard.AddNewUnitCommand}"
+                        Icon="{StaticResource SemiIconUserAdd}" />
+                    <u:IconButton
+                        Classes="Success"
+                        Command="{Binding GameBoard.PasteUnitCommand}"
+                        Icon="{StaticResource SemiIconCopyAdd}" />
+                </StackPanel>
+            </Border>
+
+            <ScrollViewer Grid.Row="1" Grid.Column="2">
+                <ItemsControl ItemsSource="{Binding GameBoard.Units}">
+                    <ItemsControl.Styles>
+                        <Style Selector="Border.highlighted">
+                            <Setter Property="Background" Value="#39B1C771" />
+                        </Style>
+                    </ItemsControl.Styles>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <views:BoardUnitView DataContext="{Binding}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </ScrollViewer>
-            <views:CellPanelView DataContext="{Binding GameBoard.SelectedCell}" DockPanel.Dock="Right" />
-        </DockPanel>
-    </u:LoadingContainer>
+
+        </Grid>
+
+    </Grid>
 
 
 </Window>

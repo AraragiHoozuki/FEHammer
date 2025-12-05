@@ -22,11 +22,13 @@
             InnerLeftContent="Name"
             Text="{Binding SearchText}" />
         <u:MultiComboBox
+            Name="WeaponTypeFilterSelector"
             Width="{x:Static x:Double.NaN}"
             HorizontalAlignment="Stretch"
             ItemsSource="{Binding WeaponTypeComboItems}"
             SelectedItems="{Binding SelectedWeaponTypes}"
             Watermark="Please Select">
+            <u:MultiComboBox.ItemsPanel />
             <u:MultiComboBox.ItemTemplate>
                 <DataTemplate>
                     <Image Width="24" Source="{Binding Icon}" />

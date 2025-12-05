@@ -208,7 +208,13 @@ namespace FEHagemu.ViewModels
                 {
                     mapArc = new HSDArc<SRPGMap>(files[0].Path.AbsolutePath);
                     mapData = mapArc.data;
-                    GameBoard = new GameBoardViewModel(mapData);
+                    if (GameBoard is not null)
+                    {
+                        GameBoard.SetMap(mapData);
+                    } else {
+                        GameBoard = new GameBoardViewModel(mapData);
+                    }
+                        
                 }
             }
         }
@@ -233,7 +239,7 @@ namespace FEHagemu.ViewModels
                 y2 = 0
             }).ToArray();
             mapData.player_count = (uint)mapData.player_positions.Length;
-            mapData.map_units = GameBoard.Cells.SelectMany(cell => cell).SelectMany(cell => cell.Units).Select(uvm => uvm.unit).ToArray();
+            mapData.map_units = GameBoard.Units.Select(uvm => uvm.unit).ToArray();
             mapData.unit_count = (uint)mapData.map_units.Length;
             uint w = mapData.field.width; uint h = mapData.field.height;
             for (int i = 0; i < h; i++)
@@ -244,17 +250,15 @@ namespace FEHagemu.ViewModels
                     mapData.field.terrains[i * w + j].tid = (byte)GameBoard.Cells[view_y][j].Terrain;
                 }
             }
-            mapArc.Save();
-            MasterData.ModSkillArc.Save();
-            MasterData.ModMsgArc.Save();
+            await mapArc.Save();
+            await MasterData.ModSkillArc.Save();
+            await MasterData.ModMsgArc.Save();
         }
         [RelayCommand]
-        void ExportPackage()
+        async Task ExportPackage()
         {
             if (mapArc is null || GameBoard is null) return;
-            mapArc.Save();
-            MasterData.ModSkillArc.Save();
-            MasterData.ModMsgArc.Save();
+            await SaveMap();
             
             var root = Path.GetDirectoryName(mapArc.FilePath);
             if (Directory.Exists(root)) {
@@ -288,7 +292,7 @@ namespace FEHagemu.ViewModels
                         writer.WriteEnd(mapArc.header.unknown1, mapArc.header.unknown2, mapArc.header.magic);
                         buffer = mapArc.XStart.Concat(ms.ToArray()).ToArray();
                     }
-                    File.WriteAllBytes(srpg_map.FullName + "\\" + Path.GetFileName(mapArc.FilePath), Cryptor.EncryptAndCompress(buffer));
+                    await File.WriteAllBytesAsync(srpg_map.FullName + "\\" + Path.GetFileName(mapArc.FilePath), Cryptor.EncryptAndCompress(buffer));
                 }
             }
             
