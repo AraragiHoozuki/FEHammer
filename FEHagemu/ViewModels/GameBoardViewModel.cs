@@ -1,8 +1,10 @@
 ﻿using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FEHagemu.HSDArchive;
@@ -269,8 +271,10 @@ namespace FEHagemu.ViewModels
             }
         }
         [RelayCommand]
-        private void DeleteUnit(BoardUnitViewModel buvm)
+        private async Task DeleteUnit(BoardUnitViewModel buvm)
         {
+            buvm.IsRemoving = true;
+            await Task.Delay(300);
             Units.Remove(buvm);
             if (TryGetCell(buvm.unit.pos.x, buvm.unit.pos.y, out var cell))
             {
@@ -484,7 +488,9 @@ namespace FEHagemu.ViewModels
     {
         public readonly Unit unit;
         [ObservableProperty]
-        public bool isHighlighted = false;
+        private bool isHighlighted = false;
+        [ObservableProperty]
+        private bool isRemoving = false;
         public BoardUnitViewModel(Unit u)
         {
             unit = u;
@@ -492,7 +498,7 @@ namespace FEHagemu.ViewModels
             {
                 skills.Add(new SkillViewModel(unit.skills[i], i));
             }
-            RefreshUnitData();
+            RefreshUnitData(false);
         }
 
         public string Name => MasterData.GetMessage($"M{unit.id_tag}");
@@ -506,6 +512,7 @@ namespace FEHagemu.ViewModels
                 RefreshUnitData();
             }
         }
+
         public ShortPosition Position => unit.pos;
         public string Title
         {
@@ -535,12 +542,16 @@ namespace FEHagemu.ViewModels
                 return MasterData.GetLegendaryIcon(name);
             }
         }
-        public byte LV { get=> unit.lv; set { unit.lv = value; RefreshStats(unit.lv); OnPropertyChanged(); } }
+        [ObservableProperty] private int merge = 0;
+        partial void OnMergeChanged(int value) => RefreshStats();
+        [ObservableProperty] private int lV = 1;
+        partial void OnLVChanged(int value) => RefreshStats();
         public ushort HP { get => unit.stats.hp; set { unit.stats.hp = value; OnPropertyChanged(); } }
         public ushort ATK { get => unit.stats.atk; set { unit.stats.atk = value; OnPropertyChanged(); } }
         public ushort SPD { get => unit.stats.spd; set { unit.stats.spd = value; OnPropertyChanged(); } }
         public ushort DEF { get => unit.stats.def; set { unit.stats.def = value; OnPropertyChanged(); } }
         public ushort RES { get => unit.stats.res; set { unit.stats.res = value; OnPropertyChanged(); } }
+        public int Total { get => HP + ATK + SPD + DEF + RES; }
 
         [ObservableProperty]
         public ushort defaultHP;
@@ -552,8 +563,8 @@ namespace FEHagemu.ViewModels
         public ushort defaultDEF;
         [ObservableProperty]
         public ushort defaultRES;
-
-        public uint DragonFlowerCount { get { var p = MasterData.GetPerson(unit.id_tag); return p?.DragonflowerNumber ?? 0; } }
+        [ObservableProperty]
+        public uint dragonFlowerCount;
         public byte CD { get => unit.cd; set { unit.cd = value; OnPropertyChanged(); } }
         public byte StartTurn { get => unit.start_turn; set { unit.start_turn = value; OnPropertyChanged(); } }
         public byte MoveGroup { get => unit.movement_group; set { unit.movement_group = value; OnPropertyChanged(); } }
@@ -596,7 +607,7 @@ namespace FEHagemu.ViewModels
         SkillViewModel? legendarySkill;
         public bool HasLegendarySkillQ => LegendarySkill?.skill is not null;
 
-        private void RefreshUnitData()
+        private void RefreshUnitData(bool needRefreshStats = true)
         {
             OnPropertyChanged(nameof(FaceImg));
             OnPropertyChanged(nameof(Name));
@@ -604,14 +615,12 @@ namespace FEHagemu.ViewModels
             OnPropertyChanged(nameof(MoveIcon));
             OnPropertyChanged(nameof(WeaponIcon));
             OnPropertyChanged(nameof(Face));
-            OnPropertyChanged(nameof(DragonFlowerCount));
             OnPropertyChanged(nameof(HasLegendarySkillQ));
             OnPropertyChanged(nameof(DragonFlowerCount));
             OnPropertyChanged(nameof(LegendaryIcon));
             OnPropertyChanged(nameof(LegendaryTypeIcon));
-
-
             var p = MasterData.GetPerson(unit.id_tag);
+            DragonFlowerCount = p?.DragonflowerNumber ?? 0;
             if (p?.Legendary?.btn_skill_id is { } lsId && MasterData.GetSkill(lsId) is { } ls)
             {
                 LegendarySkill = new SkillViewModel(ls.id, 9);
@@ -620,18 +629,49 @@ namespace FEHagemu.ViewModels
             {
                 LegendarySkill = new SkillViewModel(string.Empty, 9);
             }
-            RefreshStats();
+            if (unit.true_lv > 40)
+            {
+                lV = 40;
+                merge = unit.true_lv - 40;
+            } else
+            {
+                lV = unit.true_lv;
+                merge = 0;
+            }
+            if (needRefreshStats) { 
+                RefreshStats(); 
+            } else
+            {
+                RefreshDefaultStats();
+            }
         }
-        private void RefreshStats(int lv = 40)
+        private void RefreshStats()
         {
+            unit.lv = (byte)LV;
+            unit.true_lv = (byte)(LV + Merge);
             var p = MasterData.GetPerson(Id);
             if (p is null) return;
-            int[] stats = p.CalcStats(lv, 10, -1, -1);
+            int[] stats = p.CalcStats(LV, Merge, -1, -1);
             DefaultHP = HP = (ushort)stats[0];
             DefaultATK = ATK = (ushort)stats[1];
             DefaultSPD = SPD = (ushort)stats[2];
             DefaultDEF = DEF = (ushort)stats[3];
             DefaultRES = RES = (ushort)stats[4];
+            OnPropertyChanged(nameof(Total));
+        }
+        private void RefreshDefaultStats()
+        {
+            unit.lv = (byte)LV;
+            unit.true_lv = (byte)(LV + Merge);
+            var p = MasterData.GetPerson(Id);
+            if (p is null) return;
+            int[] stats = p.CalcStats(LV, Merge, -1, -1);
+            DefaultHP = (ushort)stats[0];
+            DefaultATK = (ushort)stats[1];
+            DefaultSPD = (ushort)stats[2];
+            DefaultDEF = (ushort)stats[3];
+            DefaultRES = (ushort)stats[4];
+            OnPropertyChanged(nameof(Total));
         }
 
         [RelayCommand]
@@ -640,14 +680,13 @@ namespace FEHagemu.ViewModels
             var vm = new SkillSelectorViewModel();
             if (svm.skill is not null && svm.WeaponQ) vm.SearchText = svm.Name;
             vm.SelectSlot(svm.Index);
-            bool? result = await Dialog.ShowCustomModal<SkillSelectorView, SkillSelectorViewModel, bool?>(vm, null, new DialogOptions()
+            var result = await Dialog.ShowModal(new SkillSelectorView(), vm, null, new DialogOptions()
             {
-                Title = "Select Skill"
+                Title = "选择技能",
+                CanResize = true,
+                StartupLocation = WindowStartupLocation.CenterScreen
             });
-            if (result is null)
-            {
-                SetSkill(string.Empty, svm.Index);
-            } else if (result.Value && vm.SelectedSkill is not null)
+            if (result == DialogResult.OK && vm.SelectedSkill is not null)
             {
                 SetSkill(vm.SelectedSkill.skill!.id, svm.Index);
             }
@@ -664,7 +703,9 @@ namespace FEHagemu.ViewModels
             var res = await Dialog.ShowModal(new PersonSelectorView(), vm, null, new DialogOptions()
             {
                 Button = DialogButton.OKCancel,
-                Title = "Select Person"
+                Title = "选择角色",
+                CanResize = true,
+                StartupLocation = WindowStartupLocation.CenterScreen
             });
             if (res == DialogResult.OK && vm.SelectedPerson is not null) {
                 var pvm = vm.SelectedPerson;
@@ -723,11 +764,31 @@ namespace FEHagemu.ViewModels
         public bool isSelected = false;
         [ObservableProperty]
         public int index = 0;
+        public ObservableCollection<IImage> NotEquippables { get; } = [];
 
         public SkillViewModel(string id, int i)
         {
             skill = MasterData.GetSkill(id);
             Index = i;
+            LoadNotEquippables();
+        }
+
+        public SkillViewModel(Skill s)
+        {
+            skill = s;
+            LoadNotEquippables();
+        }
+
+        private void LoadNotEquippables()
+        {
+            if (skill is null) return;
+            for (int i = 0; i < (int)WeaponType.ColorlessBeast + 1; i++) { 
+                if (((uint)skill.wep_equip & (1u << i)) == 0) NotEquippables.Add(MasterData.GetWeaponIcon(i));
+            }
+            for (int i = 0; i < (int)MoveType.Flying + 1; i++)
+            {
+                if (((uint)skill.mov_equip & (1u << i)) == 0) NotEquippables.Add(MasterData.GetMoveIcon(i));
+            }
         }
         public IImage Icon => MasterData.GetSkillIcon(skill is null ? 0 : (int)skill.icon);
         public string Name => MasterData.GetMessage(skill?.name ?? string.Empty);

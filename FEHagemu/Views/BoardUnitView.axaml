@@ -14,315 +14,363 @@
     d:DesignWidth="800"
     x:DataType="vm:BoardUnitViewModel"
     mc:Ignorable="d">
-    <Border
-        Margin="2"
-        behaviors:AutoScrollHelper.IsHighlighted="{Binding IsHighlighted}"
-        BorderBrush="Gray"
-        BorderThickness="1"
-        BoxShadow="5 5 4 0 DarkGray"
-        Classes.highlighted="{Binding IsHighlighted}"
-        CornerRadius="3">
-        <Expander Name="UnitPanelExpander">
-            <Expander.Header>
-                <Grid Margin="0,0,8,0" ColumnDefinitions="Auto,*,Auto">
-                    <Grid Grid.Row="0" Height="48">
-                        <Image Source="avares://FEHagemu/Assets/UI/FaceFrameBack.png" />
-                        <Image Margin="4" Source="{Binding FaceImg^}" />
-                        <Image Source="avares://FEHagemu/Assets/UI/FaceFrame.png" />
-                    </Grid>
-                    <StackPanel
-                        Grid.Column="1"
-                        HorizontalAlignment="Center"
-                        Orientation="Horizontal">
-                        <TextBlock
-                            Margin="4,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Classes="H2"
-                            Text="{Binding Name}" />
-                        <Image
-                            Height="24"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Source="{Binding WeaponIcon}" />
-                        <Image
-                            Height="20"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Source="{Binding MoveIcon}" />
-                        <Image
-                            Height="24"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Source="{Binding LegendaryIcon}" />
-                        <Image
-                            Height="24"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Source="{Binding LegendaryTypeIcon}" />
-                    </StackPanel>
-                    <StackPanel
-                        Grid.Column="2"
-                        HorizontalAlignment="Right"
-                        Orientation="Horizontal">
-                        <u:IconButton
-                            HorizontalAlignment="Right"
-                            Classes="Success"
-                            Command="{Binding ChangePersonCommand}"
-                            CommandParameter="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.SelectedCell}"
-                            Icon="{StaticResource SemiIconEdit}" />
-                        <u:IconButton
-                            HorizontalAlignment="Right"
-                            Classes="Success"
-                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.CloneUnitCommand}"
-                            CommandParameter="{Binding}"
-                            Icon="{StaticResource SemiIconCopy}" />
-                        <u:IconButton
-                            HorizontalAlignment="Right"
-                            Classes="Danger"
-                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.DeleteUnitCommand}"
-                            CommandParameter="{Binding}"
-                            Icon="{StaticResource SemiIconDelete}" />
-                    </StackPanel>
+    <UserControl.Styles>
+        <Style Selector="LayoutTransformControl.removing">
+            <Style.Animations>
+                <Animation
+                    Easing="CubicEaseOut"
+                    FillMode="Forward"
+                    Duration="0:0:0.3">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="1" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="1" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="0" />
+                        <Setter Property="ScaleTransform.ScaleY" Value="0" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+    </UserControl.Styles>
+    <LayoutTransformControl Classes.removing="{Binding IsRemoving}">
 
-                </Grid>
-            </Expander.Header>
-            <StackPanel Spacing="1">
-                <StackPanel.Resources>
-                    <converters:SkillIconConverter x:Key="SkillIconConverter" />
-                </StackPanel.Resources>
-                <StackPanel.Styles>
-                    <Style Selector=":is(u|NumericUpDown)">
-                        <Setter Property="FontFamily" Value="Consolas" />
-                    </Style>
-                </StackPanel.Styles>
-                <u:Divider HorizontalContentAlignment="Center">基础信息</u:Divider>
-                <Grid ColumnDefinitions="*,Auto">
+        <Border
+            Margin="2"
+            behaviors:AutoScrollHelper.IsHighlighted="{Binding IsHighlighted}"
+            BorderBrush="Gray"
+            BorderThickness="1"
+            BoxShadow="5 5 4 0 DarkGray"
+            Classes.highlighted="{Binding IsHighlighted}"
+            Classes.removing="{Binding IsRemoving}"
+            ClipToBounds="True"
+            CornerRadius="3">
+            <Expander Name="UnitPanelExpander">
+                <Expander.Header>
+                    <Grid Margin="0,0,8,0" ColumnDefinitions="Auto,*,Auto">
+                        <Grid Grid.Row="0" Height="48">
+                            <Image Source="avares://FEHagemu/Assets/UI/FaceFrameBack.png" />
+                            <Image Margin="4" Source="{Binding FaceImg^}" />
+                            <Image Source="avares://FEHagemu/Assets/UI/FaceFrame.png" />
+                        </Grid>
+                        <StackPanel
+                            Grid.Column="1"
+                            HorizontalAlignment="Center"
+                            Orientation="Horizontal">
+                            <TextBlock
+                                Margin="4,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Classes="H2"
+                                Text="{Binding Name}" />
+                            <Image
+                                Height="24"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Source="{Binding WeaponIcon}" />
+                            <Image
+                                Height="20"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Source="{Binding MoveIcon}" />
+                            <Image
+                                Height="24"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Source="{Binding LegendaryIcon}" />
+                            <Image
+                                Height="24"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Source="{Binding LegendaryTypeIcon}" />
+                        </StackPanel>
+                        <StackPanel
+                            Grid.Column="2"
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal">
+                            <u:IconButton
+                                HorizontalAlignment="Right"
+                                Classes="Success"
+                                Command="{Binding ChangePersonCommand}"
+                                CommandParameter="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.SelectedCell}"
+                                Icon="{StaticResource SemiIconEdit}" />
+                            <u:IconButton
+                                HorizontalAlignment="Right"
+                                Classes="Success"
+                                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.CloneUnitCommand}"
+                                CommandParameter="{Binding}"
+                                Icon="{StaticResource SemiIconCopy}" />
+                            <u:IconButton
+                                HorizontalAlignment="Right"
+                                Classes="Danger"
+                                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.DeleteUnitCommand}"
+                                CommandParameter="{Binding}"
+                                Icon="{StaticResource SemiIconDelete}" />
+                        </StackPanel>
+
+                    </Grid>
+                </Expander.Header>
+                <StackPanel Spacing="1">
+                    <StackPanel.Resources>
+                        <converters:SkillIconConverter x:Key="SkillIconConverter" />
+                    </StackPanel.Resources>
+                    <StackPanel.Styles>
+                        <Style Selector=":is(u|NumericUpDown)">
+                            <Setter Property="FontFamily" Value="Consolas" />
+                        </Style>
+                    </StackPanel.Styles>
+                    <u:Divider HorizontalContentAlignment="Center">基础信息</u:Divider>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBox
+                            HorizontalContentAlignment="Right"
+                            InnerLeftContent="ID"
+                            IsEnabled="False"
+                            Text="{Binding Id}" />
+                        <u:IconButton
+                            Grid.Column="1"
+                            Command="{Binding CopyIdCommand}"
+                            Icon="{StaticResource SemiIconCopy}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*">
+                        <CheckBox
+                            Content="作为敌军"
+                            IsChecked="{Binding IsEnemy}"
+                            Theme="{DynamicResource CardCheckBox}" />
+                        <CheckBox
+                            Grid.Column="1"
+                            Content="返回原位"
+                            IsChecked="{Binding IsReturning}"
+                            Theme="{DynamicResource CardCheckBox}"
+                            ToolTip.Tip="如果勾选，则该单位在检测不到周围有敌方时，会返回初始位置" />
+                    </Grid>
+                    <u:Divider HorizontalContentAlignment="Center" Content="{Binding Total, StringFormat='属性({0})'}" />
+                    <Grid ColumnDefinitions="*,*">
+                        <u:NumericIntUpDown
+                            HorizontalContentAlignment="Right"
+                            InnerLeftContent="LV"
+                            Maximum="40"
+                            Minimum="1"
+                            Step="1"
+                            Value="{Binding LV}" />
+                        <u:NumericIntUpDown
+                            Grid.Column="1"
+                            HorizontalContentAlignment="Right"
+                            Foreground="Green"
+                            InnerLeftContent="+"
+                            Maximum="99"
+                            Minimum="0"
+                            Step="1"
+                            Value="{Binding Merge}" />
+                    </Grid>
+
+                    <u:NumericIntUpDown
+                        HorizontalContentAlignment="Right"
+                        InnerLeftContent="HP"
+                        InnerRightContent="{Binding DefaultHP}"
+                        Minimum="0"
+                        Step="1"
+                        Value="{Binding HP}" />
+                    <u:NumericIntUpDown
+                        HorizontalContentAlignment="Right"
+                        InnerLeftContent="ATK"
+                        InnerRightContent="{Binding DefaultATK}"
+                        Maximum="99"
+                        Minimum="0"
+                        Step="1"
+                        Value="{Binding ATK}" />
+                    <u:NumericIntUpDown
+                        HorizontalContentAlignment="Right"
+                        InnerLeftContent="SPD"
+                        InnerRightContent="{Binding DefaultSPD}"
+                        Maximum="99"
+                        Minimum="0"
+                        Step="1"
+                        Value="{Binding SPD}" />
+                    <u:NumericIntUpDown
+                        HorizontalContentAlignment="Right"
+                        InnerLeftContent="DEF"
+                        InnerRightContent="{Binding DefaultDEF}"
+                        Maximum="99"
+                        Minimum="0"
+                        Step="1"
+                        Value="{Binding DEF}" />
+                    <u:NumericIntUpDown
+                        HorizontalContentAlignment="Right"
+                        InnerLeftContent="RES"
+                        InnerRightContent="{Binding DefaultRES}"
+                        Maximum="99"
+                        Minimum="0"
+                        Step="1"
+                        Value="{Binding RES}" />
+                    <Grid Margin="0,6,0,6" ColumnDefinitions="*,*">
+                        <Button
+                            Grid.Column="0"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).ResetStatsCommand}"
+                            Content="重置当前等级属性" />
+                        <Button
+                            Grid.Column="1"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).ApplyFlowersCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Text="应用神龙之花" />
+                                <u:NumericIntUpDown
+                                    HorizontalAlignment="Right"
+                                    InnerLeftContent="数量："
+                                    Minimum="0"
+                                    ShowButtonSpinner="False"
+                                    Step="1"
+                                    Value="{Binding DragonFlowerCount}" />
+                            </StackPanel>
+                        </Button>
+
+
+                    </Grid>
+
+                    <u:Divider HorizontalContentAlignment="Center">技能</u:Divider>
+                    <ItemsControl HorizontalAlignment="Stretch" ItemsSource="{Binding Skills}">
+                        <ItemsControl.Styles>
+                            <Style Selector="Image">
+                                <Setter Property="RenderTransform" Value="rotate(0)" />
+                                <Setter Property="Transitions">
+                                    <Transitions>
+                                        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.3" />
+                                    </Transitions>
+                                </Setter>
+                            </Style>
+                            <Style Selector="Image:pointerover">
+                                <Setter Property="RenderTransform" Value="rotate(360deg)" />
+                            </Style>
+                        </ItemsControl.Styles>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border
+                                    Margin="2"
+                                    Padding="0"
+                                    BorderBrush="Black"
+                                    BorderThickness="0.2"
+                                    BoxShadow="2 2 4 2 DarkGray"
+                                    CornerRadius="4">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <Button
+                                            Grid.Column="0"
+                                            Padding="1"
+                                            Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).ChangeSkillCommand}"
+                                            CommandParameter="{Binding}">
+                                            <Image Height="30" Source="{Binding Path=Icon}" />
+                                        </Button>
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            FontSize="16"
+                                            Text="{Binding Name}" />
+                                        <u:IconButton
+                                            Grid.Column="2"
+                                            Padding="1"
+                                            HorizontalAlignment="Right"
+                                            Classes="Danger"
+                                            Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).DeleteSkillCommand}"
+                                            CommandParameter="{Binding}"
+                                            Icon="{StaticResource SemiIconClear}" />
+                                    </Grid>
+                                    <ToolTip.Tip>
+                                        <views:SkillToolTipPanel />
+                                    </ToolTip.Tip>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Border
+                        Margin="2"
+                        Padding="0"
+                        Background="LightGray"
+                        BorderBrush="SeaGreen"
+                        BorderThickness="1.5"
+                        CornerRadius="4"
+                        IsVisible="{Binding HasLegendarySkillQ}">
+                        <Grid ColumnDefinitions="Auto,Auto">
+                            <Image Height="30" Source="{Binding Path=LegendarySkill.Icon}" />
+                            <TextBlock
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                FontSize="16"
+                                Text="{Binding Path=LegendarySkill.Name}" />
+                        </Grid>
+                        <ToolTip.Tip>
+                            <views:SkillToolTipPanel DataContext="{Binding Path=LegendarySkill}" />
+                        </ToolTip.Tip>
+                    </Border>
+                    <Separator Margin="0,4,0,4" />
+                    <u:NumericIntUpDown
+                        HorizontalContentAlignment="Right"
+                        InnerLeftContent="Intial Special CD"
+                        Maximum="255"
+                        Minimum="0"
+                        Step="1"
+                        Value="{Binding CD}" />
+                    <u:NumericIntUpDown
+                        HorizontalContentAlignment="Right"
+                        InnerLeftContent="Start Turn"
+                        Maximum="255"
+                        Minimum="0"
+                        Step="1"
+                        Value="{Binding StartTurn}" />
+                    <u:NumericIntUpDown
+                        HorizontalContentAlignment="Right"
+                        InnerLeftContent="Move Group"
+                        Maximum="255"
+                        Minimum="0"
+                        Step="1"
+                        Value="{Binding MoveGroup}" />
+                    <u:NumericIntUpDown
+                        HorizontalContentAlignment="Right"
+                        InnerLeftContent="Move Delay"
+                        Maximum="255"
+                        Minimum="0"
+                        Step="1"
+                        Value="{Binding MoveDelay}" />
                     <TextBox
                         HorizontalContentAlignment="Right"
-                        InnerLeftContent="ID"
-                        IsEnabled="False"
-                        Text="{Binding Id}" />
-                    <u:IconButton
-                        Grid.Column="1"
-                        Command="{Binding CopyIdCommand}"
-                        Icon="{StaticResource SemiIconCopy}" />
-                </Grid>
-                <Grid ColumnDefinitions="*,*">
-                    <CheckBox
-                        Content="作为敌军"
-                        IsChecked="{Binding IsEnemy}"
-                        Theme="{DynamicResource CardCheckBox}" />
-                    <CheckBox
-                        Grid.Column="1"
-                        Content="返回原位"
-                        IsChecked="{Binding IsReturning}"
-                        Theme="{DynamicResource CardCheckBox}"
-                        ToolTip.Tip="如果勾选，则该单位在检测不到周围有敌方时，会返回初始位置" />
-                </Grid>
-                <u:Divider HorizontalContentAlignment="Center">属性</u:Divider>
-                <u:NumericIntUpDown
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="LV"
-                    Maximum="99"
-                    Minimum="0"
-                    Step="1"
-                    Value="{Binding LV}">
-                    <u:NumericIntUpDown.InnerRightContent>
-                        <TextBlock Foreground="Green" Text="+10" />
-                    </u:NumericIntUpDown.InnerRightContent>
-                </u:NumericIntUpDown>
-                <u:NumericIntUpDown
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="HP"
-                    InnerRightContent="{Binding DefaultHP}"
-                    Maximum="99"
-                    Minimum="0"
-                    Step="1"
-                    Value="{Binding HP}" />
-                <u:NumericIntUpDown
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="ATK"
-                    InnerRightContent="{Binding DefaultATK}"
-                    Maximum="99"
-                    Minimum="0"
-                    Step="1"
-                    Value="{Binding ATK}" />
-                <u:NumericIntUpDown
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="SPD"
-                    InnerRightContent="{Binding DefaultSPD}"
-                    Maximum="99"
-                    Minimum="0"
-                    Step="1"
-                    Value="{Binding SPD}" />
-                <u:NumericIntUpDown
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="DEF"
-                    InnerRightContent="{Binding DefaultDEF}"
-                    Maximum="99"
-                    Minimum="0"
-                    Step="1"
-                    Value="{Binding DEF}" />
-                <u:NumericIntUpDown
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="RES"
-                    InnerRightContent="{Binding DefaultRES}"
-                    Maximum="99"
-                    Minimum="0"
-                    Step="1"
-                    Value="{Binding RES}" />
-                <Grid Margin="0,6,0,6" ColumnDefinitions="*,*">
-                    <Button
-                        Grid.Column="0"
-                        Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).ResetStatsCommand}"
-                        Content="重置当前等级属性" />
-                    <Button Grid.Column="1" Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).ApplyFlowersCommand}">
-                        <u:Badge HorizontalAlignment="Center" Header="{Binding DragonFlowerCount}">
-                            <TextBlock Text="应用神龙之花" />
-                        </u:Badge>
-                    </Button>
-                </Grid>
+                        InnerLeftContent="SpawnCheck"
+                        Text="{Binding SpawnCheck}" />
+                    <u:NumericIntUpDown
+                        HorizontalContentAlignment="Right"
+                        InnerLeftContent="CheckRemain"
+                        Maximum="255"
+                        Minimum="0"
+                        Step="1"
+                        Value="{Binding SpawnTargetRemain}" />
+                    <u:NumericIntUpDown
+                        HorizontalContentAlignment="Right"
+                        InnerLeftContent="CheckKills"
+                        Maximum="255"
+                        Minimum="0"
+                        Step="1"
+                        Value="{Binding SpawnTargetKills}" />
+                    <u:NumericIntUpDown
+                        HorizontalContentAlignment="Right"
+                        InnerLeftContent="SpawnCount"
+                        Maximum="255"
+                        Minimum="0"
+                        Step="1"
+                        Value="{Binding SpawnCount}" />
+                    <u:NumericIntUpDown
+                        HorizontalContentAlignment="Right"
+                        InnerLeftContent="SpawnTurn"
+                        Maximum="255"
+                        Minimum="0"
+                        Step="1"
+                        Value="{Binding SpawnTurns}" />
 
-                <u:Divider HorizontalContentAlignment="Center">技能</u:Divider>
-                <ItemsControl HorizontalAlignment="Stretch" ItemsSource="{Binding Skills}">
-                    <ItemsControl.Styles>
-                        <Style Selector="Image">
-                            <Setter Property="RenderTransform" Value="rotate(0)" />
-                            <Setter Property="Transitions">
-                                <Transitions>
-                                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.3" />
-                                </Transitions>
-                            </Setter>
-                        </Style>
-                        <Style Selector="Image:pointerover">
-                            <Setter Property="RenderTransform" Value="rotate(360deg)" />
-                        </Style>
-                    </ItemsControl.Styles>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border
-                                Margin="2"
-                                Padding="0"
-                                BorderBrush="Black"
-                                BorderThickness="0.2"
-                                BoxShadow="2 2 4 2 DarkGray"
-                                CornerRadius="4">
-                                <Grid ColumnDefinitions="Auto,*,Auto">
-                                    <Button
-                                        Grid.Column="0"
-                                        Padding="1"
-                                        Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).ChangeSkillCommand}"
-                                        CommandParameter="{Binding}">
-                                        <Image Height="30" Source="{Binding Path=Icon}" />
-                                    </Button>
-                                    <TextBlock
-                                        Grid.Column="1"
-                                        VerticalAlignment="Center"
-                                        FontSize="16"
-                                        Text="{Binding Name}" />
-                                    <u:IconButton
-                                        Grid.Column="2"
-                                        Padding="1"
-                                        HorizontalAlignment="Right"
-                                        Classes="Danger"
-                                        Command="{Binding #UnitPanelExpander.((vm:BoardUnitViewModel)DataContext).DeleteSkillCommand}"
-                                        CommandParameter="{Binding}"
-                                        Icon="{StaticResource SemiIconClear}" />
-                                </Grid>
-                                <ToolTip.Tip>
-                                    <views:SkillToolTipPanel />
-                                </ToolTip.Tip>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <Border
-                    Margin="2"
-                    Padding="0"
-                    Background="LightGray"
-                    BorderBrush="SeaGreen"
-                    BorderThickness="1.5"
-                    CornerRadius="4"
-                    IsVisible="{Binding HasLegendarySkillQ}">
-                    <Grid ColumnDefinitions="Auto,Auto">
-                        <Image Height="30" Source="{Binding Path=LegendarySkill.Icon}" />
-                        <TextBlock
-                            Grid.Column="1"
-                            VerticalAlignment="Center"
-                            FontSize="16"
-                            Text="{Binding Path=LegendarySkill.Name}" />
-                    </Grid>
-                    <ToolTip.Tip>
-                        <views:SkillToolTipPanel DataContext="{Binding Path=LegendarySkill}" />
-                    </ToolTip.Tip>
-                </Border>
-                <Separator Margin="0,4,0,4" />
-                <u:NumericIntUpDown
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="Intial Special CD"
-                    Maximum="255"
-                    Minimum="0"
-                    Step="1"
-                    Value="{Binding CD}" />
-                <u:NumericIntUpDown
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="Start Turn"
-                    Maximum="255"
-                    Minimum="0"
-                    Step="1"
-                    Value="{Binding StartTurn}" />
-                <u:NumericIntUpDown
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="Move Group"
-                    Maximum="255"
-                    Minimum="0"
-                    Step="1"
-                    Value="{Binding MoveGroup}" />
-                <u:NumericIntUpDown
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="Move Delay"
-                    Maximum="255"
-                    Minimum="0"
-                    Step="1"
-                    Value="{Binding MoveDelay}" />
-                <TextBox
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="SpawnCheck"
-                    Text="{Binding SpawnCheck}" />
-                <u:NumericIntUpDown
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="CheckRemain"
-                    Maximum="255"
-                    Minimum="0"
-                    Step="1"
-                    Value="{Binding SpawnTargetRemain}" />
-                <u:NumericIntUpDown
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="CheckKills"
-                    Maximum="255"
-                    Minimum="0"
-                    Step="1"
-                    Value="{Binding SpawnTargetKills}" />
-                <u:NumericIntUpDown
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="SpawnCount"
-                    Maximum="255"
-                    Minimum="0"
-                    Step="1"
-                    Value="{Binding SpawnCount}" />
-                <u:NumericIntUpDown
-                    HorizontalContentAlignment="Right"
-                    InnerLeftContent="SpawnTurn"
-                    Maximum="255"
-                    Minimum="0"
-                    Step="1"
-                    Value="{Binding SpawnTurns}" />
+                </StackPanel>
 
-            </StackPanel>
+            </Expander>
+        </Border>
 
-        </Expander>
-    </Border>
+    </LayoutTransformControl>
 
 
 

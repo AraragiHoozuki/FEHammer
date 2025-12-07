@@ -94,8 +94,60 @@ namespace FEHagemu.HSDArchive
         GreenDagger, ColorlessDagger, RedTome, BlueTome, GreenTome, ColorlessTome, Staff, RedBreath, BlueBreath, GreenBreath,
         ColorlessBreath, RedBeast, BlueBeast, GreenBeast, ColorlessBeast
     };
+    [Flags]
+    public enum WeaponTypeFlags : uint
+    {
+        None = 0,
+
+        // 物理近战 (0-2)
+        Sword = 1 << 0,  // 1
+        Lance = 1 << 1,  // 2
+        Axe = 1 << 2,  // 4
+
+        // 弓 (3-6)
+        RedBow = 1 << 3,  // 8
+        BlueBow = 1 << 4,  // 16
+        GreenBow = 1 << 5,  // 32
+        ColorlessBow = 1 << 6,  // 64
+
+        // 暗器 (7-10)
+        RedDagger = 1 << 7,  // 128
+        BlueDagger = 1 << 8,  // 256
+        GreenDagger = 1 << 9,  // 512
+        ColorlessDagger = 1 << 10, // 1024
+        // 魔道书 (11-14)
+        RedTome = 1 << 11,
+        BlueTome = 1 << 12,
+        GreenTome = 1 << 13,
+        ColorlessTome = 1 << 14,
+
+        // 杖 (15)
+        Staff = 1 << 15,
+
+        // 龙石/吐息 (16-19)
+        RedBreath = 1 << 16,
+        BlueBreath = 1 << 17,
+        GreenBreath = 1 << 18,
+        ColorlessBreath = 1 << 19,
+
+        // 兽 (20-23)
+        RedBeast = 1 << 20,
+        BlueBeast = 1 << 21,
+        GreenBeast = 1 << 22,
+        ColorlessBeast = 1 << 23,
+    }
     public enum Element : byte { None, Fire, Thunder, Wind, Light, Dark };
     public enum MoveType : byte { Infantry, Armored, Cavalry, Flying };
+    [Flags]
+    public enum MoveTypeFlags : uint
+    {
+        None = 0,
+
+        Infantry = 1 << 0, // 1  (步行)
+        Armored = 1 << 1, // 2  (重装)
+        Cavalry = 1 << 2, // 4  (骑马)
+        Flying = 1 << 3, // 8  (飞行)
+    }
 
     public enum Origins
     {
@@ -118,6 +170,7 @@ namespace FEHagemu.HSDArchive
     public interface IPerson
     {
         public string Id { get; }
+        public uint IdNum { get; }
         public string Face { get; }
         public string[] Skills { get; }
         public uint Origins { get; }
@@ -207,7 +260,7 @@ namespace FEHagemu.HSDArchive
 
             for (int mt = 0; mt < merge; mt++)
             {
-                switch (mt)
+                switch (mt % 10)
                 {
                     case 0:
                         res[order.Skip(0).First().Index] += 1;
@@ -262,6 +315,7 @@ namespace FEHagemu.HSDArchive
         public uint SortValue => sort_value;
 
         public string Id => id;
+        public uint IdNum => id_num;
 
         public string Face => face;
 
@@ -366,7 +420,7 @@ namespace FEHagemu.HSDArchive
         public uint Origins => 0;
         public uint SortValue => 0;
         public string Id => id;
-
+        public uint IdNum => id_num;
         public string Face => face;
 
         public uint Version => 65535;
@@ -398,7 +452,7 @@ namespace FEHagemu.HSDArchive
 
             for (int mt = 0; mt < merge; mt++)
             {
-                switch (mt)
+                switch (mt % 10)
                 {
                     case 0:
                         res[order.Skip(0).First().Index] += 1;
@@ -580,9 +634,11 @@ namespace FEHagemu.HSDArchive
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0xC6DF2173)]
         public uint icon;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x35B99828)]
-        public uint wep_equip;
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public WeaponTypeFlags wep_equip;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0xAB2818EB)]
-        public uint mov_equip;
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public MoveTypeFlags mov_equip;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0xC031F669)]
         public uint sp_cost;
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0xBC)]
@@ -616,25 +672,35 @@ namespace FEHagemu.HSDArchive
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0xFC)]
         public byte refine_sort_id;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x23BE3D43)]
-        public uint effective_wep;
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public WeaponTypeFlags effective_wep;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x823FDAEB)]
-        public uint effective_mov;
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public MoveTypeFlags effective_mov;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0xAABAB743)]
-        public uint shield_wep;
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public WeaponTypeFlags shield_wep;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x0EBEF25B)]
-        public uint shield_mov;
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public MoveTypeFlags shield_mov;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x005A02AF)]
-        public uint weak_wep; //使得自己会受到“持有对应武器克制能力敌人”的克制，如此处填龙，则敌人的克制龙可以克制自己
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public WeaponTypeFlags weak_wep; //使得自己会受到“持有对应武器克制能力敌人”的克制，如此处填龙，则敌人的克制龙可以克制自己
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0xB269B819)]
-        public uint weak_mov; //使得自己会受到“持有对应移动克制能力敌人”的克制
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public MoveTypeFlags weak_mov; //使得自己会受到“持有对应移动克制能力敌人”的克制
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x647F9eCD)]
-        public uint got_weak_wep; //使自己会受到对应武器敌人的克制
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public WeaponTypeFlags got_weak_wep; //使自己会受到对应武器敌人的克制
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0xB7064176)]
-        public uint got_weak_mov; //使自己会受到对应移动种类敌人的克制
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public MoveTypeFlags got_weak_mov; //使自己会受到对应移动种类敌人的克制
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x494E2629)]
-        public uint adaptive_wep;
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public WeaponTypeFlags adaptive_wep;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0xEE6CEF2E)]
-        public uint adaptive_mov;
+        [JsonConverter(typeof(FlagsEnumConverterFactory))]
+        public MoveTypeFlags adaptive_mov;
         [HSDHelper(Type = HSDBinType.Atom, Size = 2, Key = 0x029C)]
         [JsonConverter(typeof(FlagsEnumConverterFactory))]
         public SkillFlags flags;

@@ -252,8 +252,32 @@ namespace FEHagemu
             abcsxCache[name] = cropped; 
             return cropped;
         }
+        private static readonly Dictionary<string, Bitmap> otherIconCache = new();
+        public static Bitmap GetOtherIcon(string iconName)
+        {
+            string targetName = !string.IsNullOrEmpty(iconName) ? iconName : "Icon_Chance";
+            if (otherIconCache.TryGetValue(targetName, out var cachedBitmap))
+            {
+                return cachedBitmap;
+            }
+            try
+            {
+                var uri = new Uri($"avares://FEHagemu/Assets/UI/Icon/{targetName}.png");
+                using var stream = AssetLoader.Open(uri);
+                var newBitmap = new Bitmap(stream);
+
+                otherIconCache[targetName] = newBitmap;
+                return newBitmap;
+            }
+            catch
+            {
+                return otherIconCache.GetValueOrDefault("Icon_Chance")!;
+            }
+        }
 
         private static readonly Dictionary<string, Bitmap> legendaryIconCache = new();
+
+        
 
         public static Bitmap GetLegendaryIcon(string? iconName)
         {

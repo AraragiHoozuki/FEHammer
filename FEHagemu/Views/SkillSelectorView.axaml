@@ -9,121 +9,116 @@
     xmlns:views="clr-namespace:FEHagemu.Views"
     xmlns:vm="using:FEHagemu.ViewModels"
     Name="SkillSelectDialog"
-    Width="450"
-    d:DesignHeight="450"
+    MaxWidth="500"
+    MaxHeight="800"
+    d:DesignHeight="500"
     d:DesignWidth="800"
     x:DataType="vm:SkillSelectorViewModel"
     mc:Ignorable="d">
-    <StackPanel Margin="24,64,24,12" Spacing="4">
-        <TextBox
-            Name="SearchBar"
-            HorizontalAlignment="Stretch"
-            Classes="ClearButton"
-            InnerLeftContent="Name"
-            Text="{Binding SearchText}" />
-        <u:MultiComboBox
-            Name="WeaponTypeFilterSelector"
-            Width="{x:Static x:Double.NaN}"
-            HorizontalAlignment="Stretch"
-            ItemsSource="{Binding WeaponTypeComboItems}"
-            SelectedItems="{Binding SelectedWeaponTypes}"
-            Watermark="Please Select">
-            <u:MultiComboBox.ItemsPanel />
-            <u:MultiComboBox.ItemTemplate>
-                <DataTemplate>
-                    <Image Width="24" Source="{Binding Icon}" />
-                </DataTemplate>
-            </u:MultiComboBox.ItemTemplate>
-            <u:MultiComboBox.SelectedItemTemplate>
-                <DataTemplate x:DataType="vm:TypeFilterItem">
-                    <Image Width="18" Source="{Binding Icon}" />
-                </DataTemplate>
-            </u:MultiComboBox.SelectedItemTemplate>
-            <u:MultiComboBox.PopupInnerTopContent>
-                <Grid Margin="0" ColumnDefinitions="*,*">
-                    <Button
-                        HorizontalAlignment="Stretch"
-                        Command="{Binding SelectAllWeaponFiltersCommand}"
-                        Content="Select All"
-                        Theme="{DynamicResource BorderlessButton}" />
-                    <Button
-                        Grid.Column="1"
-                        HorizontalAlignment="Stretch"
-                        Command="{Binding ClearWeaponFiltersCommand}"
-                        Content="Unselect All"
-                        Theme="{DynamicResource BorderlessButton}" />
-                </Grid>
-            </u:MultiComboBox.PopupInnerTopContent>
-        </u:MultiComboBox>
-        <u:SelectionList
-            HorizontalAlignment="Center"
-            ItemsSource="{Binding SkillSlotSelectItems}"
-            SelectedItem="{Binding SelectedSkillSlot}"
-            SelectionChanged="">
-            <u:SelectionList.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <StackPanel Orientation="Horizontal" />
-                </ItemsPanelTemplate>
-            </u:SelectionList.ItemsPanel>
-            <u:SelectionList.ItemTemplate>
-                <DataTemplate>
-                    <Image Width="24" Source="{Binding Icon}" />
-                </DataTemplate>
-            </u:SelectionList.ItemTemplate>
-        </u:SelectionList>
-        <Grid HorizontalAlignment="Stretch" ColumnDefinitions="24,24,*,24">
-            <TextBlock VerticalAlignment="Center" Text="SP: " />
-            <TextBlock
-                Grid.Column="1"
-                Width="24"
-                VerticalAlignment="Center"
-                Text="{Binding #SPRangeSlider.LowerValue}" />
-            <u:RangeSlider
-                Name="SPRangeSlider"
-                Grid.Column="2"
+    <UserControl.Resources>
+        <DataTemplate x:Key="FilterIconTemplate" x:DataType="vm:FilterItemBase">
+            <ToggleButton
+                Width="40"
+                Height="40"
+                Padding="2"
+                CornerRadius="4"
+                IsChecked="{Binding IsSelected}">
+                <Image
+                    Width="32"
+                    Height="32"
+                    Source="{Binding Icon}" />
+            </ToggleButton>
+        </DataTemplate>
+
+        <ItemsPanelTemplate x:Key="WrapPanelTemplate">
+            <WrapPanel HorizontalAlignment="Center" Orientation="Horizontal" />
+        </ItemsPanelTemplate>
+    </UserControl.Resources>
+    <Grid RowDefinitions="Auto, *">
+        <StackPanel Margin="10" Spacing="2">
+            <TextBox
+                Name="SearchBar"
                 HorizontalAlignment="Stretch"
-                IsSnapToTick="True"
-                LowerValue="{Binding MinSp}"
-                Maximum="500"
-                Minimum="0"
-                TickPlacement="Outside"
-                Ticks="0,200,240,300,500"
-                UpperValue="{Binding MaxSp}" />
-            <TextBlock
-                Grid.Column="3"
-                Width="24"
-                Margin="12,0,0,0"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Center"
-                Text="{Binding #SPRangeSlider.UpperValue}" />
+                Classes="ClearButton"
+                InnerLeftContent="Name"
+                Text="{Binding SearchText}" />
+            <ItemsControl
+                ItemTemplate="{StaticResource FilterIconTemplate}"
+                ItemsPanel="{StaticResource WrapPanelTemplate}"
+                ItemsSource="{Binding WeaponFilters}" />
+            <ItemsControl
+                ItemTemplate="{StaticResource FilterIconTemplate}"
+                ItemsPanel="{StaticResource WrapPanelTemplate}"
+                ItemsSource="{Binding MoveFilters}" />
+            <u:SelectionList
+                HorizontalAlignment="Center"
+                ItemsSource="{Binding SlotFilters}"
+                SelectedItem="{Binding SelectedSlot}"
+                SelectionChanged="">
+                <u:SelectionList.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </u:SelectionList.ItemsPanel>
+                <u:SelectionList.ItemTemplate>
+                    <DataTemplate>
+                        <Image Width="24" Source="{Binding Icon}" />
+                    </DataTemplate>
+                </u:SelectionList.ItemTemplate>
+            </u:SelectionList>
+            <Grid HorizontalAlignment="Stretch" ColumnDefinitions="24,24,*,24">
+                <TextBlock VerticalAlignment="Center" Text="SP: " />
+                <TextBlock
+                    Grid.Column="1"
+                    Width="24"
+                    VerticalAlignment="Center"
+                    Text="{Binding #SPRangeSlider.LowerValue}" />
+                <u:RangeSlider
+                    Name="SPRangeSlider"
+                    Grid.Column="2"
+                    HorizontalAlignment="Stretch"
+                    IsSnapToTick="True"
+                    LowerValue="{Binding MinSp}"
+                    Maximum="500"
+                    Minimum="0"
+                    TickPlacement="Outside"
+                    Ticks="0,200,240,300,500"
+                    UpperValue="{Binding MaxSp}" />
+                <TextBlock
+                    Grid.Column="3"
+                    Width="24"
+                    Margin="12,0,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Text="{Binding #SPRangeSlider.UpperValue}" />
 
-        </Grid>
-        <StackPanel
-            HorizontalAlignment="Center"
-            DockPanel.Dock="Top"
-            Orientation="Horizontal">
-            <CheckBox
-                Height="36"
-                Padding="4"
-                Command="{Binding DoSearchCommand}"
-                Content="Exclusive"
-                IsChecked="{Binding ExclusiveQ}"
-                IsThreeState="True"
-                Theme="{DynamicResource CardCheckBox}" />
-            <CheckBox
-                Height="36"
-                Padding="4"
-                Command="{Binding DoSearchCommand}"
-                Content="Refined"
-                IsChecked="{Binding RefinedQ}"
-                IsThreeState="True"
-                Theme="{DynamicResource CardCheckBox}" />
+            </Grid>
+            <StackPanel
+                HorizontalAlignment="Center"
+                DockPanel.Dock="Top"
+                Orientation="Horizontal">
+                <CheckBox
+                    Height="36"
+                    Padding="4"
+                    Command="{Binding ApplyFiltersCommand}"
+                    Content="专属"
+                    IsChecked="{Binding IsExclusive}"
+                    IsThreeState="True"
+                    Theme="{DynamicResource CardCheckBox}" />
+                <CheckBox
+                    Height="36"
+                    Padding="4"
+                    Command="{Binding ApplyFiltersCommand}"
+                    Content="锻造"
+                    IsChecked="{Binding IsRefined}"
+                    IsThreeState="True"
+                    Theme="{DynamicResource CardCheckBox}" />
 
+            </StackPanel>
         </StackPanel>
-        <u:Divider />
         <ListBox
             Name="SkillList"
-            Height="500"
+            Grid.Row="1"
             HorizontalAlignment="Stretch"
             ItemsSource="{Binding FilteredSkills}"
             SelectedItem="{Binding SelectedSkill}">
@@ -137,7 +132,7 @@
                     <Border
                         HorizontalAlignment="Stretch"
                         BorderBrush="Black"
-                        BorderThickness="2"
+                        BorderThickness="1"
                         BoxShadow="inset 3 3 10 0 DarkGray"
                         CornerRadius="3">
                         <Grid HorizontalAlignment="Stretch" ColumnDefinitions="Auto,*,Auto,Auto">
@@ -177,17 +172,6 @@
             </ListBox.ItemTemplate>
 
         </ListBox>
-        <Grid ColumnDefinitions="*,*">
-            <Button
-                HorizontalAlignment="Stretch"
-                Command="{Binding SelectCommand}"
-                Content="Select" />
-            <Button
-                Grid.Column="2"
-                HorizontalAlignment="Stretch"
-                Command="{Binding CloseCommand}"
-                Content="Cancel" />
-        </Grid>
 
-    </StackPanel>
+    </Grid>
 </UserControl>

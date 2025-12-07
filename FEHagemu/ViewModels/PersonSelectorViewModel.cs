@@ -1,10 +1,13 @@
 ﻿using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FEHagemu.HSDArchive;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -17,118 +20,138 @@ using Ursa.Controls;
 
 namespace FEHagemu.ViewModels
 {
+    public partial class FilterItemBase : ObservableObject
+    {
+        public IImage Icon { get; }
+        public string? ToolTipText { get; } // 专门用于显示的文本，代替原来的 Value
+
+        [ObservableProperty]
+        private bool _isSelected;
+
+        protected Action? OnSelectionChangedAction;
+
+        public FilterItemBase(IImage icon, string? toolTipText, Action? action)
+        {
+            Icon = icon;
+            ToolTipText = toolTipText;
+            OnSelectionChangedAction = action;
+        }
+
+        partial void OnIsSelectedChanged(bool value)
+        {
+            OnSelectionChangedAction?.Invoke();
+        }
+    }
+    public partial class FilterItem<T> : FilterItemBase
+    {
+        public T Value { get; }
+
+        public FilterItem(T value, IImage icon, Action action, string? tooltip = null)
+            : base(icon, tooltip == null ? tooltip: value?.ToString()  , action)
+        {
+            Value = value;
+        }
+    }
     public partial class PersonSelectorViewModel : ViewModelBase
     {
+        private List<PersonViewModel> allPersons = null!;
         [ObservableProperty]
         ObservableCollection<PersonViewModel> filteredPersons = [];
         [ObservableProperty]
         PersonViewModel? selectedPerson;
-
-
-        [ObservableProperty]
-        static ObservableCollection<TypeFilterItem> weaponTypeTogglers = new(MasterData.WeaponTypeIcons.Select((v, i) => new TypeFilterItem(i, MasterData.GetWeaponIcon(i))));
-        [ObservableProperty]
-        static ObservableCollection<TypeFilterItem> moveTypeTogglers = new(MasterData.MoveTypeIcons.Select((v,i) => new TypeFilterItem(i, MasterData.GetMoveIcon(i))));
-        [ObservableProperty]
-        ObservableCollection<TypeFilterItem> originTypeTogglers = new(MasterData.OriginTypeIcons.Select((v, i) => new TypeFilterItem(i, MasterData.GetOriginIcon(i))));
-        [ObservableProperty]
-        bool checkDanceQ;
-        [ObservableProperty]
-        bool checkLegendaryQ;
-        [ObservableProperty]
-        bool checkPairQ;
-        [ObservableProperty]
-        bool checkTwinWorldQ;
-        [ObservableProperty]
-        bool checkFlowerBudQ;
-        [ObservableProperty]
-        bool checkDiabolosWeaponQ;
-        [ObservableProperty]
-        bool checkResonateQ;
-        [ObservableProperty]
-        bool checkEngageQ;
-        [ObservableProperty]
-        bool checkSaviorQ;
-
-        public static List<uint> Versions { get {
-                return MasterData.PersonArcs.SelectMany(arc => arc.data.list).Select(p => p.version_num).Distinct().Append((uint)65535).OrderDescending().ToList(); } }
-        uint? selectedVersion;
-        public uint? SelectedVersion { get => selectedVersion; set {
-                selectedVersion = value;
-                OnPropertyChanged();
-                DoSearch();
-            }
-        }
-
+        public ObservableCollection<FilterItem<int>> WeaponFilters { get; } = [];
+        public ObservableCollection<FilterItem<int>> MoveFilters { get; } = [];
+        public ObservableCollection<FilterItem<Func<IPerson, bool>>> SpecialFilters { get; } = [];
+        // 版本筛选
+        public ObservableCollection<uint> Versions { get; } = [];
+        [ObservableProperty] private uint? selectedVersion;
+        partial void OnSelectedVersionChanged(uint? value) => ApplyFilters();
         public PersonSelectorViewModel() {
-            DoSearch();
+            ReloadPersons();
+            InitializeFilters();
+            ApplyFilters();
         }
 
-        private bool IsMatch(IPerson person)
+        private void ReloadPersons()
         {
-            if (SelectedVersion is not null && person.Version != SelectedVersion) return false;
-            bool anyWeaponSelected = WeaponTypeTogglers.Any(x => x.SelectedQ);
-            if (anyWeaponSelected && !WeaponTypeTogglers[(int)person.WeaponType].SelectedQ) return false;
-            bool anyMoveSelected = MoveTypeTogglers.Any(x => x.SelectedQ);
-            if (anyMoveSelected && !MoveTypeTogglers[(int)person.MoveType].SelectedQ) return false;
-            if (CheckDanceQ && person.RefresherQ != 1) return false;
-            var kind = person.Legendary?.kind;
-            if (CheckLegendaryQ && !(person.Legendary?.element > 0)) return false;
-            if (CheckPairQ && kind != LegendaryKind.Pair) return false;
-            if (CheckTwinWorldQ && kind != LegendaryKind.TwinWorld) return false;
-            if (CheckFlowerBudQ && kind != LegendaryKind.FlowerBud) return false;
-            if (CheckDiabolosWeaponQ && kind != LegendaryKind.Diabolos) return false;
-            if (CheckResonateQ && kind != LegendaryKind.Resonate) return false;
-            if (CheckEngageQ && kind != LegendaryKind.Engage) return false;
-            if (CheckSaviorQ && kind != LegendaryKind.Savior) return false;
-
-            return true;
+            allPersons = MasterData.PersonArcs
+                .SelectMany<HSDArc<PersonList>, IPerson>(arc => arc.data.list)
+                .Concat(MasterData.EnemyArcs.SelectMany<HSDArc<EnemyList>, IPerson>(arc => arc.data.list)).OrderBy(p => p.IdNum)
+                .Select(p => new PersonViewModel(p))
+                .Reverse().ToList();
         }
-
-        [RelayCommand]
-        void DoSearch()
+        private void AddSpecialFilter(IImage icon, Func<IPerson, bool> predicate)
         {
-            List<PersonViewModel> newList = new();
-            foreach (var arc in MasterData.PersonArcs.Reverse())
+            SpecialFilters.Add(new FilterItem<Func<IPerson, bool>>(predicate, icon, ApplyFilters));
+        }
+        private void InitializeFilters()
+        {
+            for (int i = 0; i < MasterData.WeaponTypeIcons.Length; i++)
             {
-                foreach (IPerson person in arc.data.list)
-                {
-                    if (IsMatch(person))
-                    {
-                        newList.Add(new PersonViewModel(person));
-                    }
-                }
+                WeaponFilters.Add(new FilterItem<int>(i, MasterData.GetWeaponIcon(i), ApplyFilters));
             }
-            foreach (var arc in MasterData.EnemyArcs.Reverse())
+            for (int i = 0; i < MasterData.MoveTypeIcons.Length; i++)
             {
-                foreach (IPerson person in arc.data.list)
-                {
-                    if (IsMatch(person))
-                    {
-                        newList.Add(new PersonViewModel(person));
-                    }
-                }
+                MoveFilters.Add(new FilterItem<int>(i, MasterData.GetMoveIcon(i), ApplyFilters));
             }
-            FilteredPersons = new (newList);
+            AddSpecialFilter(MasterData.GetOtherIcon("Icon_Dance"), p => p.RefresherQ == 1);
+            AddSpecialFilter(MasterData.GetOtherIcon("Icon_Legendary"), p => p.Legendary?.kind == LegendaryKind.LegendaryOrMythic);
+            AddSpecialFilter(MasterData.GetOtherIcon("Icon_Pair"), p => p.Legendary?.kind == LegendaryKind.Pair);
+            AddSpecialFilter(MasterData.GetOtherIcon("Icon_TwinWorld"), p => p.Legendary?.kind == LegendaryKind.TwinWorld);
+            AddSpecialFilter(MasterData.GetOtherIcon("Icon_Engage_s"), p => p.Legendary?.kind == LegendaryKind.Engage);
+            AddSpecialFilter(MasterData.GetOtherIcon("Icon_Savior"), p => p.Legendary?.kind == LegendaryKind.Savior);
+            AddSpecialFilter(MasterData.GetOtherIcon("Icon_FlowerBud_Emblem"), p => p.Legendary?.kind == LegendaryKind.FlowerBud);
+            AddSpecialFilter(MasterData.GetOtherIcon("Icon_Diabolos_s"), p => p.Legendary?.kind == LegendaryKind.Diabolos);
+            AddSpecialFilter(MasterData.GetOtherIcon("Icon_Resonate_s"), p => p.Legendary?.kind == LegendaryKind.Resonate);
+            // ... 添加更多 ...
+
+            // 4. 初始化版本
+            var versions = allPersons.Select(vm => vm.person.Version).Distinct().OrderDescending();
+            foreach (var v in versions) Versions.Add(v);
         }
         [RelayCommand]
-        void ShowSameCharacters(PersonViewModel pvm)
+        private void ApplyFilters()
         {
-            FilteredPersons.Clear();
-            foreach (var arc in MasterData.PersonArcs.Reverse())
+            // 1. 准备过滤条件 (提取选中的 ID 到 HashSet，O(1) 查找)
+            var activeWeapons = WeaponFilters.Where(f => f.IsSelected).Select(f => f.Value).ToHashSet();
+            var activeMoves = MoveFilters.Where(f => f.IsSelected).Select(f => f.Value).ToHashSet();
+            var activeSpecials = SpecialFilters.Where(f => f.IsSelected).Select(f => f.Value).ToList();
+            // 2. 构建查询
+            IEnumerable<PersonViewModel> query = allPersons;
+            // 版本过滤
+            if (SelectedVersion.HasValue)
             {
-                foreach (IPerson person in arc.data.list)
-                {
-                    if (person.Origins == pvm.person.Origins && person.SortValue == pvm.person.SortValue) FilteredPersons.Add(new PersonViewModel(person));
-                }
+                query = query.Where(vm => vm.person.Version == SelectedVersion.Value);
             }
-            foreach (var arc in MasterData.EnemyArcs.Reverse())
+            // 武器过滤 (如果都没选，默认全选/不过滤)
+            if (activeWeapons.Count > 0)
             {
-                foreach (IPerson person in arc.data.list)
-                {
-                    if (person.Origins == pvm.person.Origins && person.SortValue == pvm.person.SortValue) FilteredPersons.Add(new PersonViewModel(person));
-                }
+                query = query.Where(vm => activeWeapons.Contains((int)vm.person.WeaponType));
             }
+            // 移动过滤
+            if (activeMoves.Count > 0)
+            {
+                query = query.Where(vm => activeMoves.Contains((int)vm.person.MoveType));
+            }
+            // 特殊属性过滤 (必须满足所有勾选的特殊属性？还是满足任意一个？通常是满足所有勾选的限制)
+            // 这里假设逻辑是：如果勾选了 Dancer，就必须是 Dancer；如果同时勾选 Dancer 和 Engage，必须既是 Dancer 又是 Engage
+            foreach (var predicate in activeSpecials)
+            {
+                query = query.Where(vm => predicate(vm.person));
+            }
+            // 3. 执行并更新 UI
+            // 如果数据量大，可以使用 new ObservableCollection(query) 避免 Clear/Add 带来的多次 UI 通知
+            FilteredPersons = new ObservableCollection<PersonViewModel>(query);
+        }
+        [RelayCommand]
+        private void ShowSameCharacters(PersonViewModel pvm)
+        {
+            List<PersonViewModel> list = new();
+            foreach (IPerson person in allPersons)
+            {
+                if (person.Origins == pvm.person.Origins && person.SortValue == pvm.person.SortValue) list.Add(new PersonViewModel(person));
+            }
+            FilteredPersons = new(list);
         }
 
         [RelayCommand]
@@ -184,7 +207,7 @@ namespace FEHagemu.ViewModels
                 {
                     MasterData.DeletePerson(MasterData.ModPersonArc, (Person)pvm.person);
                 }
-                DoSearch();
+                ApplyFilters();
             }
             else
             {
@@ -195,8 +218,9 @@ namespace FEHagemu.ViewModels
 
     public partial class PersonViewModel : ViewModelBase
     {
-        public IPerson person;
+        public readonly IPerson person;
         public string[] skills;
+        public List<IImage> TraitIcons { get; }
         public PersonViewModel(IPerson p)
         {
             person = p;
@@ -211,6 +235,19 @@ namespace FEHagemu.ViewModels
                 skills[5] = p.Skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.C)) ?? string.Empty;
                 skills[6] = p.Skills.LastOrDefault(id => MasterData.CheckSkillCategory(id, SkillCategory.X)) ?? string.Empty;
             }
+
+            var list = new List<IImage>();
+            if (p.RefresherQ == 1)
+                list.Add(MasterData.GetOtherIcon("Icon_Dance")); 
+            if (p.Legendary?.element is { } element && p.Legendary?.kind is { } kind)
+            {
+                if (element > 0)
+                {
+                    list.Add(MasterData.GetLegendaryIcon(person.LegendaryIconName));
+                }
+                if (!string.IsNullOrEmpty(person.TypeIconName)) list.Add(MasterData.GetLegendaryIcon(person.TypeIconName));
+            }
+            TraitIcons = list;
         }
 
         IImage GetSkillImage(int index)
@@ -220,15 +257,6 @@ namespace FEHagemu.ViewModels
             return s is not null ? MasterData.GetSkillIcon((int)s.icon) : MasterData.GetSkillIcon(0);
         }
         public string Name => MasterData.GetMessage("M" + person.Id);
-        public bool DiabolosWeaponQ => person.Legendary?.kind == LegendaryKind.Diabolos;
-        public bool FlowerBudQ => person.Legendary?.kind == LegendaryKind.FlowerBud;
-        public bool ResonateQ => person.Legendary?.kind == LegendaryKind.Resonate;
-        public bool LegendaryQ => person.Legendary?.kind == LegendaryKind.LegendaryOrMythic;
-        public bool PairQ => person.Legendary?.kind == LegendaryKind.Pair;
-        public bool TwinWorldQ => person.Legendary?.kind == LegendaryKind.TwinWorld;
-        public bool EngageQ => person.Legendary?.kind == LegendaryKind.Engage;
-        public bool SaviorQ => person.Legendary?.kind == LegendaryKind.Savior;
-        public bool DanceQ => person.RefresherQ == 1;
         public Task<Bitmap> Face => MasterData.GetFaceAsync(person.Face);
 
         public string Title

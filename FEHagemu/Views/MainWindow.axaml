@@ -23,6 +23,7 @@
             <MenuItem Header="数据">
                 <MenuItem Command="{Binding ImportSkillCommand}" Header="导入技能" />
                 <MenuItem Command="{Binding ExportPackageCommand}" Header="导出数据包" />
+                <MenuItem Command="{Binding ExportSkillsCommand}" Header="导出所有技能数据" />
             </MenuItem>
             <MenuItem Header="地图">
                 <MenuItem Command="{Binding GameBoard.ResizeMapCommand}" Header="变更地图大小" />

@@ -258,7 +258,6 @@ namespace FEHagemu.ViewModels
         async Task ExportPackage()
         {
             if (mapArc is null || GameBoard is null) return;
-            await SaveMap();
             
             var root = Path.GetDirectoryName(mapArc.FilePath);
             if (Directory.Exists(root)) {
@@ -280,22 +279,37 @@ namespace FEHagemu.ViewModels
                     File.WriteAllBytes(data.FullName + "\\Data_Tutorial.bin.lz", buffer);
 
                     DirectoryInfo srpg_map = common.CreateSubdirectory("SRPGMap");
-                    mapData.map_units = GameBoard.Cells.SelectMany(cell => cell).SelectMany(cell => cell.Units).Select(uvm => uvm.unit).ToArray();
-                    mapData.unit_count = (uint)mapData.map_units.Length;
-                    using (MemoryStream ms = new MemoryStream())
-                    using (FEHArcWriter writer = new FEHArcWriter(ms))
-                    using (FileStream fs = File.OpenWrite(mapArc.FilePath))
-                    {
-                        writer.WriteStart();
-                        writer.WriteStruct(mapData);
-                        writer.WritePointerOffsets();
-                        writer.WriteEnd(mapArc.header.unknown1, mapArc.header.unknown2, mapArc.header.magic);
-                        buffer = mapArc.XStart.Concat(ms.ToArray()).ToArray();
-                    }
+                    await SaveMap();
                     await File.WriteAllBytesAsync(srpg_map.FullName + "\\" + Path.GetFileName(mapArc.FilePath), Cryptor.EncryptAndCompress(buffer));
                 }
             }
             
+        }
+        [RelayCommand]
+        async Task ExportSkills()
+        {
+            var skillList = MasterData.SkillDict.Values.ToList();
+            string jsonString = JsonSerializer.Serialize(skillList, new JsonSerializerOptions()
+            {
+                IncludeFields = true,
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                WriteIndented = true,
+            });
+            var mainWindow = Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+            if (mainWindow is not null)
+            {
+                var file = await mainWindow.StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions()
+                {
+                    Title = "Export skills",
+                    SuggestedFileName = $"SRPG_Skills.json",
+                });
+                if (file is not null)
+                {
+                    await using var stream = await file.OpenWriteAsync();
+                    using var streamWriter = new StreamWriter(stream);
+                    await streamWriter.WriteAsync(jsonString);
+                }
+            }
         }
     }
 }

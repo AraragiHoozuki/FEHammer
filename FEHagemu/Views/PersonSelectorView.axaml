@@ -9,116 +9,65 @@
     xmlns:views="clr-namespace:FEHagemu.Views"
     xmlns:vm="using:FEHagemu.ViewModels"
     Name="PersonSelectorDialog"
-    Width="500"
+    MaxWidth="500"
+    MaxHeight="800"
     d:DesignHeight="450"
     d:DesignWidth="800"
     x:DataType="vm:PersonSelectorViewModel"
     mc:Ignorable="d">
-    <StackPanel>
-        <ComboBox
-            HorizontalAlignment="Stretch"
-            Classes="ClearButton"
-            ItemsSource="{Binding Versions}"
-            PlaceholderText="版本"
-            SelectedItem="{Binding SelectedVersion}" />
-        <Border
-            Margin="8,0"
-            HorizontalAlignment="Center"
-            Theme="{StaticResource RadioButtonGroupBorder}">
-            <ItemsControl HorizontalAlignment="Center" ItemsSource="{Binding MoveTypeTogglers}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <ToggleButton
-                            Height="36"
-                            Padding="0"
-                            Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).DoSearchCommand}"
-                            IsChecked="{Binding Path=SelectedQ}">
-                            <Image Source="{Binding Icon}" />
-                        </ToggleButton>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </Border>
+    <UserControl.Resources>
+        <DataTemplate x:Key="FilterIconTemplate" x:DataType="vm:FilterItemBase">
+            <ToggleButton
+                Width="40"
+                Height="40"
+                Padding="2"
+                CornerRadius="4"
+                IsChecked="{Binding IsSelected}">
+                <Image
+                    Width="32"
+                    Height="32"
+                    Source="{Binding Icon}" />
+            </ToggleButton>
+        </DataTemplate>
 
+        <ItemsPanelTemplate x:Key="WrapPanelTemplate">
+            <WrapPanel HorizontalAlignment="Center" Orientation="Horizontal" />
+        </ItemsPanelTemplate>
+    </UserControl.Resources>
+    <Grid RowDefinitions="Auto, *">
+        <StackPanel Margin="10" Spacing="2">
+            <ComboBox
+                HorizontalAlignment="Center"
+                Classes="ClearButton"
+                ItemsSource="{Binding Versions}"
+                PlaceholderText="Version"
+                SelectedItem="{Binding SelectedVersion}" />
 
-        <Border
-            Margin="8,0"
-            HorizontalAlignment="Center"
-            Theme="{StaticResource RadioButtonGroupBorder}">
-            <ItemsControl HorizontalAlignment="Center" ItemsSource="{Binding WeaponTypeTogglers}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <ToggleButton
-                            Height="36"
-                            Padding="0"
-                            Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).DoSearchCommand}"
-                            IsChecked="{Binding Path=SelectedQ}">
-                            <Image Source="{Binding Icon}" />
-                        </ToggleButton>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </Border>
-        <Border
-            Margin="8,0"
-            HorizontalAlignment="Center"
-            Theme="{StaticResource RadioButtonGroupBorder}">
-            <StackPanel Orientation="Horizontal">
-                <StackPanel.Styles>
-                    <Style Selector="Image">
-                        <Setter Property="Height" Value="36" />
-                    </Style>
-                    <Style Selector="ToggleButton">
-                        <Setter Property="Padding" Value="0" />
-                        <Setter Property="Command" Value="{Binding DoSearchCommand}" />
-                    </Style>
-                </StackPanel.Styles>
-                <ToggleButton
-                    Width="38"
-                    Height="38"
-                    IsChecked="{Binding CheckDanceQ}">
-                    <Image Height="30" Source="avares://FEHagemu/Assets/Icon/Icon_Dance.png" />
-                </ToggleButton>
-                <ToggleButton IsChecked="{Binding CheckLegendaryQ}">
-                    <Image Source="avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_BlessingFireS.png" />
-                </ToggleButton>
-                <ToggleButton IsChecked="{Binding CheckPairQ}">
-                    <Image Source="avares://FEHagemu/Assets/Icon/Icon_Pair.png" />
-                </ToggleButton>
-                <ToggleButton IsChecked="{Binding CheckTwinWorldQ}">
-                    <Image Source="avares://FEHagemu/Assets/Icon/Icon_TwinWorld.png" />
-                </ToggleButton>
-                <ToggleButton IsChecked="{Binding CheckFlowerBudQ}">
-                    <Image Source="avares://FEHagemu/Assets/Icon/Icon_FlowerBud_Emblem.png" />
-                </ToggleButton>
-                <ToggleButton IsChecked="{Binding CheckDiabolosWeaponQ}">
-                    <Image Source="avares://FEHagemu/Assets/Icon/Icon_Diabolos_m.png" />
-                </ToggleButton>
-                <ToggleButton IsChecked="{Binding CheckResonateQ}">
-                    <Image Source="avares://FEHagemu/Assets/Icon/Icon_Resonate_s.png" />
-                </ToggleButton>
-                <ToggleButton IsChecked="{Binding CheckEngageQ}">
-                    <Image Source="avares://FEHagemu/Assets/Icon/Icon_Engage_s.png" />
-                </ToggleButton>
-                <ToggleButton IsChecked="{Binding CheckSaviorQ}">
-                    <Image Source="avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_Savior.png" />
-                </ToggleButton>
-            </StackPanel>
-        </Border>
+            <ItemsControl
+                ItemTemplate="{StaticResource FilterIconTemplate}"
+                ItemsPanel="{StaticResource WrapPanelTemplate}"
+                ItemsSource="{Binding WeaponFilters}" />
+
+            <ItemsControl
+                ItemTemplate="{StaticResource FilterIconTemplate}"
+                ItemsPanel="{StaticResource WrapPanelTemplate}"
+                ItemsSource="{Binding MoveFilters}" />
+
+            <Border
+                Padding="5"
+                HorizontalAlignment="Center"
+                Theme="{StaticResource RadioButtonGroupBorder}">
+                <ItemsControl
+                    ItemTemplate="{StaticResource FilterIconTemplate}"
+                    ItemsPanel="{StaticResource WrapPanelTemplate}"
+                    ItemsSource="{Binding SpecialFilters}" />
+            </Border>
+
+        </StackPanel>
 
         <ListBox
             Name="PersonList"
-            Height="600"
+            Grid.Row="1"
             ItemsSource="{Binding FilteredPersons}"
             SelectedItem="{Binding SelectedPerson}">
             <ListBox.ItemsPanel>
@@ -166,23 +115,31 @@
                                 FontSize="24"
                                 FontWeight="Bold"
                                 Text="{Binding Name}" />
-                            <Image
-                                Height="32"
-                                IsVisible="{Binding DanceQ}"
-                                Source="avares://FEHagemu/Assets/Icon/Icon_Dance.png" />
-                            <Image IsVisible="{Binding PairQ}" Source="avares://FEHagemu/Assets/Icon/Icon_Pair.png" />
-                            <Image IsVisible="{Binding TwinWorldQ}" Source="avares://FEHagemu/Assets/Icon/Icon_TwinWorld.png" />
-                            <Image IsVisible="{Binding FlowerBudQ}" Source="avares://FEHagemu/Assets/Icon/Icon_FlowerBud_Emblem.png" />
-                            <Image IsVisible="{Binding DiabolosWeaponQ}" Source="avares://FEHagemu/Assets/Icon/Icon_Diabolos_m.png" />
-                            <Image IsVisible="{Binding ResonateQ}" Source="avares://FEHagemu/Assets/Icon/Icon_Resonate_s.png" />
-                            <Image IsVisible="{Binding EngageQ}" Source="avares://FEHagemu/Assets/Icon/Icon_Engage_s.png" />
-                            <Image IsVisible="{Binding SaviorQ}" Source="avares://FEHagemu/Assets/UI/LegendaryIcons/Icon_Savior.png" />
+                            <ItemsControl ItemsSource="{Binding TraitIcons}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Image
+                                            Width="32"
+                                            Height="32"
+                                            Margin="2"
+                                            Source="{Binding}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+
+                            </ItemsControl>
+
+
                         </StackPanel>
                     </Border>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
 
+    </Grid>
 
-    </StackPanel>
 </UserControl>

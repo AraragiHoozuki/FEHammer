@@ -12,12 +12,5 @@ public partial class SkillSelectorView : UserControl
         InitializeComponent();
     }
 
-    void WeaponFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        // Some logic here
-        if (DataContext is SkillSelectorViewModel vm)
-        {
-            vm.DoSearch();
-        }
-    }
+
 }

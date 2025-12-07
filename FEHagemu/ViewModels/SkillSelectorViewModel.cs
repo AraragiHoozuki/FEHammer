@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using FEHagemu.HSDArchive;
 using Irihi.Avalonia.Shared.Contracts;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -28,8 +29,9 @@ namespace FEHagemu.ViewModels
         [ObservableProperty]
         public bool selectedQ = false;
     }
-    public partial class SkillSelectorViewModel : ViewModelBase, IDialogContext
+    public partial class SkillSelectorViewModel : ViewModelBase
     {
+        private List<SkillViewModel> allSkills = null!;
         [ObservableProperty]
         ObservableCollection<SkillViewModel> filteredSkills = [];
         [ObservableProperty]
@@ -42,122 +44,119 @@ namespace FEHagemu.ViewModels
             [ObservableProperty]
             public IImage icon = i;
         }
-
+        [ObservableProperty]
         string? searchText;
-        public string? SearchText { get => searchText; set {
-                searchText = value;
-                OnPropertyChanged();
-                DoSearch();
-            } 
-        }
+        partial void OnSearchTextChanged(string? value) => ApplyFilters();
+        public ObservableCollection<FilterItem<int>> WeaponFilters { get; } = [];
+        public ObservableCollection<FilterItem<int>> SlotFilters { get; } = [];
+        public ObservableCollection<FilterItem<int>> MoveFilters { get; } = [];
+        [ObservableProperty]
+        private FilterItem<int>? selectedSlot;
+        partial void OnSelectedSlotChanged(FilterItem<int>? value) => ApplyFilters();
 
-        [ObservableProperty]
-        ObservableCollection<TypeFilterItem> weaponTypeComboItems = new(MasterData.WeaponTypeIcons.Select((v, i) => new TypeFilterItem(i, MasterData.GetWeaponIcon(i))));
-        [ObservableProperty]
-        ObservableCollection<TypeFilterItem> selectedWeaponTypes = [];
+        [ObservableProperty] private bool? isExclusive = null;
+        partial void OnIsExclusiveChanged(bool? value) => ApplyFilters();
 
-        [ObservableProperty]
-        ObservableCollection<TypeFilterItem> skillSlotSelectItems = [new TypeFilterItem(0, MasterData.GetSkillIcon(1)), new TypeFilterItem(1, MasterData.GetSkillIcon(2)), new TypeFilterItem(2, MasterData.GetSkillIcon(3)), new TypeFilterItem(3, MasterData.GetABCSXIcon("A")), new TypeFilterItem(4, MasterData.GetABCSXIcon("B")), new TypeFilterItem(5, MasterData.GetABCSXIcon("C")), new TypeFilterItem(6, MasterData.GetABCSXIcon("X")), new TypeFilterItem(7, MasterData.GetABCSXIcon("S")), new TypeFilterItem(9, MasterData.GetSkillIcon(0))];
+        [ObservableProperty] private bool? isRefined = null;
+        partial void OnIsRefinedChanged(bool? value) => ApplyFilters();
 
-        TypeFilterItem? selectedSkillSlot;
-        public TypeFilterItem? SelectedSkillSlot { get => selectedSkillSlot; set
-            {
-                selectedSkillSlot = value;
-                OnPropertyChanged();
-                DoSearch();
-            } 
-        }
+        [ObservableProperty] private int minSp = 0;
+        partial void OnMinSpChanged(int value) => ApplyFilters();
 
-        [ObservableProperty]
-        bool? exclusiveQ = null;
-        [ObservableProperty]
-        bool? refinedQ = null;
-        int minSp = 0;
-        public int MinSp {get =>minSp; set {
-                minSp = value;
-                OnPropertyChanged();
-                DoSearch();
-            }
-        }
-        int maxSp = 500;
-        public int MaxSp
-        {
-            get => maxSp; set
-            {
-                maxSp = value;
-                OnPropertyChanged();
-                DoSearch();
-            }
-        }
+        [ObservableProperty] private int maxSp = 500;
+        partial void OnMaxSpChanged(int value) => ApplyFilters();
 
         public void SelectSlot(int slot)
         {
-            SelectedSkillSlot = SkillSlotSelectItems[slot];
+            SelectedSlot = SlotFilters.FirstOrDefault(x => x.Value == slot);
         }
 
         public SkillSelectorViewModel()
         {
-            SelectAllWeaponFilters();
-            SelectedWeaponTypes.CollectionChanged += (object? sender, NotifyCollectionChangedEventArgs e) =>
+            ReloadSkills();
+            for (int i = 0; i < MasterData.WeaponTypeIcons.Length; i++)
             {
-                DoSearch();
-            };
-        }
-        bool IsWeaponTypeSelected(int type)
-        {
-            return SelectedWeaponTypes.Any(item => item.Index == type);
-        }
-        bool CheckWeaponType(Skill sk)
-        {
-            for (int i = 0; i < (int)WeaponType.ColorlessBeast + 1; i++)
-            {
-                if (IsWeaponTypeSelected(i) && (sk.wep_equip & (1 << i)) == (1 << i)) return true;
+                var wf = new FilterItem<int>(i, MasterData.GetWeaponIcon(i), ApplyFilters);
+                WeaponFilters.Add(wf);
             }
-            return false;
+            for (int i = 0; i < MasterData.MoveTypeIcons.Length; i++)
+            {
+                MoveFilters.Add(new FilterItem<int>(i, MasterData.GetMoveIcon(i), ApplyFilters));
+            }
+            SlotFilters.Add(new FilterItem<int>(0, MasterData.GetSkillIcon(1), null!));
+            SlotFilters.Add(new FilterItem<int>(1, MasterData.GetSkillIcon(2), null!));
+            SlotFilters.Add(new FilterItem<int>(2, MasterData.GetSkillIcon(3), null!));
+            SlotFilters.Add(new FilterItem<int>(3, MasterData.GetABCSXIcon("A"), null!));
+            SlotFilters.Add(new FilterItem<int>(4, MasterData.GetABCSXIcon("B"), null!));
+            SlotFilters.Add(new FilterItem<int>(5, MasterData.GetABCSXIcon("C"), null!));
+            SlotFilters.Add(new FilterItem<int>(6, MasterData.GetABCSXIcon("X"), null!));
+            SlotFilters.Add(new FilterItem<int>(7, MasterData.GetABCSXIcon("S"), null!));
+            SlotFilters.Add(new FilterItem<int>(9, MasterData.GetSkillIcon(0), null!));
+            ApplyFilters();
         }
-        bool CheckSlot(Skill sk)
+        public void ReloadSkills()
         {
-            return ((int)sk.category == SelectedSkillSlot?.Index)|| (SelectedSkillSlot?.Index ==9 && (sk.category == SkillCategory.Engage ||sk.category == SkillCategory.Refine));
-        }
-        bool CheckCheckers(Skill sk)
-        {
-            return (ExclusiveQ == null || ((sk.exclusiveQ == 1) == ExclusiveQ)) &&
-                (RefinedQ == null || ((sk.refinedQ == 1) == RefinedQ));
+            allSkills = MasterData.SkillArcs.SelectMany(arc => arc.data.list).OrderByDescending(sk => sk.id_num).Select(sk => new SkillViewModel(sk)).ToList();
         }
         [RelayCommand]
-        public void DoSearch()
+        private void ApplyFilters()
         {
-            FilteredSkills.Clear();
-            List<SkillViewModel> list = new List<SkillViewModel>();
-            foreach (var arc in MasterData.SkillArcs)
+            uint selectedWeaponMask = 0;
+            foreach (var item in WeaponFilters)
             {
-                foreach (var skill in arc.data.list)
+                if (item.IsSelected) selectedWeaponMask |= (1u << item.Value);
+            }
+            uint selectedMoveMask = 0;
+            foreach (var item in MoveFilters)
+            {
+                if (item.IsSelected) selectedMoveMask |= (1u << item.Value);
+            }
+            var searchStr = SearchText;
+            bool hasSearchText = !string.IsNullOrEmpty(searchStr);
+            int targetSlot = SelectedSlot?.Value ?? -1;
+            bool isSpecialSlot = targetSlot == 9;
+            int minSpCost = MinSp;
+            int maxSpCost = MaxSp;
+            bool? filterExclusive = IsExclusive;
+            bool? filterRefined = IsRefined;
+
+            // 3. 过滤
+            var result = new List<SkillViewModel>();
+
+            foreach (var svm in allSkills)
+            {
+                if (selectedWeaponMask != 0)
                 {
-                    if (!CheckWeaponType(skill)) continue;
-                    if (!CheckSlot(skill)) continue;
-                    if (!CheckCheckers(skill)) continue;
-                    if (!(skill.sp_cost >= MinSp && skill.sp_cost <= MaxSp)) continue;
-                    if (!string.IsNullOrEmpty(SearchText) && !skill.Name.Contains(SearchText)) continue;
-                    list.Add(new SkillViewModel(skill.id, 0));
+                    if (((uint)svm.skill!.wep_equip & selectedWeaponMask) == 0) continue;
                 }
+                if (selectedMoveMask != 0)
+                {
+                    if (((uint)svm.skill!.mov_equip & selectedMoveMask) == 0) continue;
+                }
+
+                // 槽位检查
+                if (isSpecialSlot)
+                {
+                    if (svm.skill!.category != SkillCategory.Engage && svm.skill.category != SkillCategory.Refine) continue;
+                }
+                else if (targetSlot != -1)
+                {
+                    if ((int)svm.skill!.category != targetSlot) continue;
+                }
+
+                // 属性检查
+                if (filterExclusive.HasValue && (svm.skill!.exclusiveQ == 1) != filterExclusive.Value) continue;
+                if (filterRefined.HasValue && (svm.skill!.refinedQ == 1) != filterRefined.Value) continue;
+
+                // SP 检查
+                if (svm.skill!.sp_cost < minSpCost || svm.skill.sp_cost > maxSpCost) continue;
+
+                // 文本检查
+                if (hasSearchText && !svm.skill.Name.Contains(searchStr!, StringComparison.OrdinalIgnoreCase)) continue;
+
+                result.Add(new SkillViewModel(svm.skill.id, 0));
             }
-            list.Sort((x, y) => -x.skill!.sort_value.CompareTo(y.skill!.sort_value));
-            FilteredSkills = new(list);
-        }
-        [RelayCommand]
-        void ClearWeaponFilters()
-        {
-            SelectedWeaponTypes.Clear();
-        }
-        [RelayCommand]
-        void SelectAllWeaponFilters()
-        {
-            SelectedWeaponTypes.Clear();
-            foreach (var item in WeaponTypeComboItems)
-            {
-                SelectedWeaponTypes.Add(item);
-            }
-            
+            FilteredSkills = new ObservableCollection<SkillViewModel>(result);
         }
         [RelayCommand]
         public async Task Export(SkillViewModel svm)
@@ -191,7 +190,8 @@ namespace FEHagemu.ViewModels
             if (svm is not null && svm.skill is not null && svm.skill.id.Contains("MOD"))
             {
                 MasterData.DeleteSkill(MasterData.ModSkillArc, svm.skill);
-                DoSearch();
+                ReloadSkills();
+                ApplyFilters();
             } else
             {
                 await MessageBox.ShowAsync("Cannot delete built-in skill", "Error", MessageBoxIcon.Error, MessageBoxButton.OK);
@@ -200,33 +200,15 @@ namespace FEHagemu.ViewModels
         [RelayCommand]
         void ShowSameAbilitySkills(SkillViewModel svm)
         {
-            FilteredSkills.Clear();
             List<SkillViewModel> list = new List<SkillViewModel>();
-            foreach (var arc in MasterData.SkillArcs)
+            foreach (var svm2 in allSkills)
             {
-                foreach (var skill in arc.data.list)
+                if (svm2.skill?.ability == svm.skill?.ability)
                 {
-                    if (skill.ability == svm.skill?.ability)
-                    {
-                        list.Add(new SkillViewModel(skill.id, 0));
-                    }
-                    
+                    list.Add(svm2);
                 }
             }
-            list.Sort((x, y) => -x.skill!.sort_value.CompareTo(y.skill!.sort_value));
             FilteredSkills = new(list);
-        }
-
-        public event EventHandler<object?>? RequestClose;
-        [RelayCommand]
-        public void Close()
-        {
-            RequestClose?.Invoke(this, false);
-        }
-        [RelayCommand]
-        void Select()
-        {
-            RequestClose?.Invoke(this, true);
         }
     }
 
