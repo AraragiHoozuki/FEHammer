@@ -1,0 +1,44 @@
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:FEHagemu.Controls">
+
+    <Design.PreviewWith>
+        <Border Padding="20">
+            <!--  Add Controls for Previewer Here  -->
+        </Border>
+    </Design.PreviewWith>
+    <Style Selector="ToolTip.FEHSkill">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="48" />
+        <Setter Property="MaxWidth" Value="500" />
+        <Setter Property="MinWidth" Value="300" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.3" />
+            </Transitions>
+        </Setter>
+
+        <Setter Property="Template">
+            <ControlTemplate TargetType="ToolTip">
+                <controls:NineGridBorder
+                    Padding="{TemplateBinding Padding}"
+                    NineGrid="88,88,88,88"
+                    Source="/Assets/UI/9Grids/Common_Violet0.png">
+                    <ContentPresenter
+                        Name="PART_ContentPresenter"
+                        MaxWidth="{TemplateBinding MaxWidth}"
+                        Content="{TemplateBinding Content}"
+                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                        TextBlock.TextWrapping="Wrap" />
+                </controls:NineGridBorder>
+
+
+
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <!--  Add Styles Here  -->
+</Styles>

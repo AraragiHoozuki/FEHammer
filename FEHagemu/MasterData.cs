@@ -404,7 +404,7 @@ namespace FEHagemu
             }
             else
             {
-                skill.id_num = SkillDict.Values.MaxBy(sk => sk.id_num)!.id_num + 1;
+                skill.id_num = SkillDict.Values.Where(sk=>sk.id_num < 10000).MaxBy(sk => sk.id_num)!.id_num + 1;
                 skill.sort_value = SkillDict.Values.MaxBy(sk => sk.sort_value)!.sort_value + 1;
                 Array.Resize(ref arc.data.list, arc.data.list.Length + 1);
                 arc.data.list[^1] = skill;

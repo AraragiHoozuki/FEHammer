@@ -1,0 +1,686 @@
+<Window
+    x:Class="FEHagemu.Views.Tools.SkillEditorWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="using:FEHagemu.Views.Components"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:u="https://irihi.tech/ursa"
+    xmlns:vm="using:FEHagemu.ViewModels.Tools"
+    Title="Skill Editor"
+    x:DataType="vm:SkillEditorViewModel"
+    Icon="/Assets/favicon.ico"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
+    <Panel>
+        <Grid ColumnDefinitions="*,2*" RowDefinitions="Auto,*">
+
+            <!--  Toolbar  -->
+            <Border
+                Grid.Row="0"
+                Grid.ColumnSpan="2"
+                Margin="0,0,0,10"
+                Padding="10"
+                BoxShadow="0 2 5 0 DarkGray">
+                <StackPanel
+                    Margin="10"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <u:IconButton
+                        Classes="Secondary"
+                        Command="{Binding ImportJsonCommand}"
+                        Content="Import JSON"
+                        Icon="{StaticResource SemiIconImport}" />
+                    <u:IconButton
+                        Classes="Secondary"
+                        Command="{Binding SelectSkillFromGameCommand}"
+                        Content="Read Skill"
+                        Icon="{StaticResource SemiIconSearch}" />
+                    <u:IconButton
+                        Classes="Primary"
+                        Command="{Binding SaveToGameCommand}"
+                        Content="Save Skill"
+                        Icon="{StaticResource SemiIconSave}" />
+                </StackPanel>
+            </Border>
+
+            <StackPanel
+                Grid.Row="1"
+                Margin="20"
+                Spacing="10">
+                <StackPanel Orientation="Horizontal">
+                    <Image
+                        Width="32"
+                        Height="32"
+                        Source="{Binding SkillIcon}"
+                        ToolTip.Tip="{Binding Icon}" />
+                    <u:NumericUIntUpDown Minimum="0" Value="{Binding Icon}" />
+                </StackPanel>
+
+
+                <Grid ColumnDefinitions="Auto, 10, *">
+                    <TextBlock
+                        Width="100"
+                        VerticalAlignment="Center"
+                        Text="ID (SID_...):" />
+                    <TextBox
+                        Grid.Column="2"
+                        Text="{Binding Id}"
+                        Watermark="SID_MOD_MySkill" />
+                </Grid>
+                <Grid ColumnDefinitions="Auto, 10, *">
+                    <TextBlock
+                        Width="100"
+                        VerticalAlignment="Center"
+                        Text="ID Num:" />
+                    <u:NumericUIntUpDown Grid.Column="2" Value="{Binding IdNum}" />
+                </Grid>
+                <Grid ColumnDefinitions="Auto, 10, *">
+                    <TextBlock
+                        Width="100"
+                        VerticalAlignment="Center"
+                        Text="Name:" />
+                    <TextBox Grid.Column="2" Text="{Binding NameText}" />
+                </Grid>
+                <StackPanel>
+                    <TextBlock Text="Description:" />
+                    <TextBox
+                        Height="300"
+                        AcceptsReturn="True"
+                        Text="{Binding DescriptionText}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </StackPanel>
+
+
+            <ScrollViewer
+                Grid.Row="1"
+                Grid.Column="1"
+                Padding="20,20,20,0">
+                <StackPanel Spacing="20">
+
+                    <TabControl Margin="12,12,12,48">
+                        <TabItem Header="Basic">
+                            <ScrollViewer>
+                                <StackPanel Margin="0,15,0,0" Spacing="15">
+                                    <Grid ColumnDefinitions="Auto, 10, *, 20, Auto, 10, *" RowDefinitions="Auto, 10, Auto, 10, Auto, 10, Auto">
+                                        <TextBlock VerticalAlignment="Center" Text="Category:" />
+                                        <ComboBox
+                                            Grid.Column="2"
+                                            HorizontalAlignment="Stretch"
+                                            ItemsSource="{Binding Categories}"
+                                            SelectedItem="{Binding Category}" />
+
+                                        <TextBlock
+                                            Grid.Column="4"
+                                            VerticalAlignment="Center"
+                                            Text="SP Cost:" />
+                                        <u:NumericUIntUpDown
+                                            Grid.Column="6"
+                                            Minimum="0"
+                                            Value="{Binding SpCost}" />
+
+                                        <TextBlock
+                                            Grid.Row="2"
+                                            VerticalAlignment="Center"
+                                            Text="Tome Class:" />
+                                        <ComboBox
+                                            Grid.Row="2"
+                                            Grid.Column="2"
+                                            HorizontalAlignment="Stretch"
+                                            ItemsSource="{Binding Elements}"
+                                            SelectedItem="{Binding TomeClass}" />
+
+                                        <TextBlock
+                                            Grid.Row="2"
+                                            Grid.Column="4"
+                                            VerticalAlignment="Center"
+                                            Text="Sort Value:" />
+                                        <u:NumericUIntUpDown
+                                            Grid.Row="2"
+                                            Grid.Column="6"
+                                            Value="{Binding SortValue}" />
+
+                                        <TextBlock
+                                            Grid.Row="4"
+                                            VerticalAlignment="Center"
+                                            Text="Promo Tier:" />
+                                        <u:NumericUIntUpDown
+                                            Grid.Row="4"
+                                            Grid.Column="2"
+                                            Maximum="255"
+                                            Value="{Binding PromotionTier}" />
+
+                                        <TextBlock
+                                            Grid.Row="4"
+                                            Grid.Column="4"
+                                            VerticalAlignment="Center"
+                                            Text="Promo Rarity:" />
+                                        <u:NumericUIntUpDown
+                                            Grid.Row="4"
+                                            Grid.Column="6"
+                                            Maximum="255"
+                                            Value="{Binding PromotionRarity}" />
+
+                                        <TextBlock
+                                            Grid.Row="6"
+                                            VerticalAlignment="Center"
+                                            Text="Refined:" />
+                                        <ToggleSwitch
+                                            Grid.Row="6"
+                                            Grid.Column="2"
+                                            IsChecked="{Binding RefinedQ}" />
+
+                                        <TextBlock
+                                            Grid.Row="6"
+                                            Grid.Column="4"
+                                            VerticalAlignment="Center"
+                                            Text="Refine Sort:" />
+                                        <u:NumericUIntUpDown
+                                            Grid.Row="6"
+                                            Grid.Column="6"
+                                            Value="{Binding RefineSortId}" />
+                                    </Grid>
+
+
+
+                                    <Grid ColumnDefinitions="*, 10, *">
+                                        <c:FlagEditorView DataContext="{Binding WepEquipVM}" />
+                                        <c:FlagEditorView Grid.Column="2" DataContext="{Binding MovEquipVM}" />
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*, 10, *">
+                                        <ToggleSwitch
+                                            IsChecked="{Binding ExclusiveQ}"
+                                            OffContent="Exclusive: No"
+                                            OnContent="Exclusive: Yes" />
+                                        <ToggleSwitch
+                                            Grid.Column="2"
+                                            IsChecked="{Binding EnemyOnlyQ}"
+                                            OffContent="Enemy Only: No"
+                                            OnContent="Enemy Only: Yes" />
+                                    </Grid>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem Header="Combat">
+                            <ScrollViewer>
+                                <StackPanel Margin="0,15,0,0" Spacing="15">
+                                    <UniformGrid Columns="4">
+                                        <StackPanel Margin="5" Spacing="5">
+                                            <TextBlock Text="Might" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding Might}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="5" Spacing="5">
+                                            <TextBlock Text="Range" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding Range}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="5" Spacing="5">
+                                            <TextBlock Text="Cooldown" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding Cooldown}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="5" Spacing="5">
+                                            <TextBlock Text="Assist CD" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding AssistCd}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="5" Spacing="5">
+                                            <TextBlock Text="Healing" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding Healing}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="5" Spacing="5">
+                                            <TextBlock Text="Skill Range" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding SkillRange}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="5" Spacing="5">
+                                            <TextBlock Text="Score" />
+                                            <u:NumericUIntUpDown Maximum="65535" Value="{Binding Score}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="5" Spacing="5">
+                                            <TextBlock Text="Range Shape" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding RangeShape}" />
+                                        </StackPanel>
+                                    </UniformGrid>
+                                    <u:Divider Content="Combat Parameters" />
+                                    <Grid ColumnDefinitions="*, 10, *">
+                                        <StackPanel Spacing="5">
+                                            <c:FlagEditorView Margin="5" DataContext="{Binding EffectiveWepVM}" />
+                                            <c:FlagEditorView Margin="5" DataContext="{Binding ShieldWepVM}" />
+                                            <c:FlagEditorView Margin="5" DataContext="{Binding WeakWepVM}" />
+                                            <c:FlagEditorView Margin="5" DataContext="{Binding GotWeakWepVM}" />
+                                            <c:FlagEditorView Margin="5" DataContext="{Binding AdaptiveWepVM}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="5">
+                                            <c:FlagEditorView Margin="5" DataContext="{Binding EffectiveMovVM}" />
+                                            <c:FlagEditorView Margin="5" DataContext="{Binding ShieldMovVM}" />
+                                            <c:FlagEditorView Margin="5" DataContext="{Binding WeakMovVM}" />
+                                            <c:FlagEditorView Margin="5" DataContext="{Binding GotWeakMovVM}" />
+                                            <c:FlagEditorView Margin="5" DataContext="{Binding AdaptiveMovVM}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem Header="Stats">
+                            <ScrollViewer>
+                                <StackPanel Margin="0,15,0,0" Spacing="15">
+                                    <TextBlock Classes="BodyStrong" Text="Passive Stats (stats)" />
+                                    <UniformGrid Columns="5">
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="HP"
+                                            Value="{Binding Hp}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Atk"
+                                            Value="{Binding Atk}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Spd"
+                                            Value="{Binding Spd}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Def"
+                                            Value="{Binding Def}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Res"
+                                            Value="{Binding Res}" />
+                                    </UniformGrid>
+
+                                    <TextBlock Classes="BodyStrong" Text="Combat Buffs (combat_buffs)" />
+                                    <UniformGrid Columns="5">
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="HP"
+                                            Value="{Binding CbHp}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Atk"
+                                            Value="{Binding CbAtk}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Spd"
+                                            Value="{Binding CbSpd}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Def"
+                                            Value="{Binding CbDef}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Res"
+                                            Value="{Binding CbRes}" />
+                                    </UniformGrid>
+
+                                    <TextBlock Classes="BodyStrong" Text="Skill Params (skill_params)" />
+                                    <UniformGrid Columns="5">
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="HP"
+                                            Value="{Binding SpHp}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Atk"
+                                            Value="{Binding SpAtk}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Spd"
+                                            Value="{Binding SpSpd}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Def"
+                                            Value="{Binding SpDef}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Res"
+                                            Value="{Binding SpRes}" />
+                                    </UniformGrid>
+
+                                    <TextBlock Classes="BodyStrong" Text="Skill Params 2 (skill_params2)" />
+                                    <UniformGrid Columns="5">
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="HP"
+                                            Value="{Binding Sp2Hp}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Atk"
+                                            Value="{Binding Sp2Atk}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Spd"
+                                            Value="{Binding Sp2Spd}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Def"
+                                            Value="{Binding Sp2Def}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Res"
+                                            Value="{Binding Sp2Res}" />
+                                    </UniformGrid>
+
+                                    <TextBlock Classes="BodyStrong" Text="Skill Params 3 (skill_params3)" />
+                                    <UniformGrid Columns="5">
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="HP"
+                                            Value="{Binding Sp3Hp}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Atk"
+                                            Value="{Binding Sp3Atk}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Spd"
+                                            Value="{Binding Sp3Spd}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Def"
+                                            Value="{Binding Sp3Def}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Res"
+                                            Value="{Binding Sp3Res}" />
+                                    </UniformGrid>
+
+                                    <TextBlock Classes="BodyStrong" Text="Refine Stats (refine_stats)" />
+                                    <UniformGrid Columns="5">
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="HP"
+                                            Value="{Binding RefineHp}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Atk"
+                                            Value="{Binding RefineAtk}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Spd"
+                                            Value="{Binding RefineSpd}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Def"
+                                            Value="{Binding RefineDef}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Res"
+                                            Value="{Binding RefineRes}" />
+                                    </UniformGrid>
+
+                                    <TextBlock Classes="BodyStrong" Text="Class Params (class_params)" />
+                                    <UniformGrid Columns="5">
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="HP"
+                                            Value="{Binding CpHp}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Atk"
+                                            Value="{Binding CpAtk}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Spd"
+                                            Value="{Binding CpSpd}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Def"
+                                            Value="{Binding CpDef}" />
+                                        <u:NumericIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Res"
+                                            Value="{Binding CpRes}" />
+                                    </UniformGrid>
+
+                                    <u:Divider />
+                                    <UniformGrid Columns="3">
+                                        <u:NumericUIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="DmgUp"
+                                            Value="{Binding DamageUp}" />
+                                        <u:NumericUIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="DmgDown"
+                                            Value="{Binding DamageDown}" />
+                                        <u:NumericUIntUpDown
+                                            Margin="2"
+                                            InnerLeftContent="Heal"
+                                            Value="{Binding HealAfterBattle}" />
+                                    </UniformGrid>
+                                    <Grid ColumnDefinitions="*, 10, *">
+                                        <c:FlagEditorView DataContext="{Binding NeutralizeEnemyBonusVM}" />
+                                        <c:FlagEditorView Grid.Column="2" DataContext="{Binding NeutralizeSelfPenaltyVM}" />
+                                    </Grid>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem Header="Flags">
+                            <ScrollViewer>
+                                <StackPanel Margin="10" Spacing="10">
+                                    <c:FlagEditorView DataContext="{Binding FlagsVM}" />
+                                    <c:FlagEditorView DataContext="{Binding Flags1VM}" />
+                                    <c:FlagEditorView DataContext="{Binding Flags2VM}" />
+                                    <c:FlagEditorView DataContext="{Binding Flags3VM}" />
+                                    <c:FlagEditorView DataContext="{Binding Flags4VM}" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem Header="Advanced">
+                            <ScrollViewer>
+                                <StackPanel Margin="10" Spacing="10">
+                                    <u:Divider Content="Timing &amp; Ability" />
+                                    <Grid ColumnDefinitions="Auto, 10, *, 20, Auto, 10, *">
+                                        <TextBlock VerticalAlignment="Center" Text="Timing:" />
+                                        <u:NumericUIntUpDown Grid.Column="2" Value="{Binding Timing}" />
+                                        <TextBlock
+                                            Grid.Column="4"
+                                            VerticalAlignment="Center"
+                                            Text="Ability:" />
+                                        <u:NumericUIntUpDown Grid.Column="6" Value="{Binding Ability}" />
+                                    </Grid>
+
+                                    <u:Divider Content="Targets" />
+                                    <UniformGrid Columns="3">
+                                        <StackPanel Margin="2" Spacing="5">
+                                            <TextBlock Text="Target Wep" />
+                                            <u:NumericUIntUpDown Value="{Binding TargetWep}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="2" Spacing="5">
+                                            <TextBlock Text="Target Mov" />
+                                            <u:NumericUIntUpDown Value="{Binding TargetMov}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="2" Spacing="5">
+                                            <TextBlock Text="Target Either" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding TargetEitherQ}" />
+                                        </StackPanel>
+                                    </UniformGrid>
+
+                                    <u:Divider Content="Limits" />
+                                    <Grid RowDefinitions="Auto, Auto, Auto">
+                                        <Grid
+                                            Grid.Row="0"
+                                            Margin="0,5"
+                                            ColumnDefinitions="Auto, 10, *, 10, *, 10, *">
+                                            <TextBlock VerticalAlignment="Center" Text="Limit 1:" />
+                                            <u:NumericUIntUpDown
+                                                Grid.Column="2"
+                                                InnerLeftContent="ID"
+                                                Value="{Binding Limit1Id}" />
+                                            <u:NumericUIntUpDown
+                                                Grid.Column="4"
+                                                InnerLeftContent="P1"
+                                                Maximum="65535"
+                                                Value="{Binding Limit1Param1}" />
+                                            <u:NumericUIntUpDown
+                                                Grid.Column="6"
+                                                InnerLeftContent="P2"
+                                                Maximum="65535"
+                                                Value="{Binding Limit1Param2}" />
+                                        </Grid>
+                                        <Grid
+                                            Grid.Row="1"
+                                            Margin="0,5"
+                                            ColumnDefinitions="Auto, 10, *, 10, *, 10, *">
+                                            <TextBlock VerticalAlignment="Center" Text="Limit 2:" />
+                                            <u:NumericUIntUpDown
+                                                Grid.Column="2"
+                                                InnerLeftContent="ID"
+                                                Value="{Binding Limit2Id}" />
+                                            <u:NumericUIntUpDown
+                                                Grid.Column="4"
+                                                InnerLeftContent="P1"
+                                                Maximum="65535"
+                                                Value="{Binding Limit2Param1}" />
+                                            <u:NumericUIntUpDown
+                                                Grid.Column="6"
+                                                InnerLeftContent="P2"
+                                                Maximum="65535"
+                                                Value="{Binding Limit2Param2}" />
+                                        </Grid>
+                                        <Grid
+                                            Grid.Row="2"
+                                            Margin="0,5"
+                                            ColumnDefinitions="Auto, 10, *, 10, *, 10, *">
+                                            <TextBlock VerticalAlignment="Center" Text="Limit 3:" />
+                                            <u:NumericUIntUpDown
+                                                Grid.Column="2"
+                                                InnerLeftContent="ID"
+                                                Value="{Binding Limit3Id}" />
+                                            <u:NumericUIntUpDown
+                                                Grid.Column="4"
+                                                InnerLeftContent="P1"
+                                                Maximum="65535"
+                                                Value="{Binding Limit3Param1}" />
+                                            <u:NumericUIntUpDown
+                                                Grid.Column="6"
+                                                InnerLeftContent="P2"
+                                                Maximum="65535"
+                                                Value="{Binding Limit3Param2}" />
+                                        </Grid>
+                                    </Grid>
+
+                                    <u:Divider Content="Randomization &amp; Inherit" />
+                                    <Grid ColumnDefinitions="Auto, 10, *, 20, Auto, 10, *">
+                                        <TextBlock VerticalAlignment="Center" Text="Random Allowed:" />
+                                        <ToggleSwitch Grid.Column="2" IsChecked="{Binding RandomAllowedQ}" />
+                                        <TextBlock
+                                            Grid.Column="4"
+                                            VerticalAlignment="Center"
+                                            Text="Random Mode:" />
+                                        <u:NumericUIntUpDown
+                                            Grid.Column="6"
+                                            Maximum="255"
+                                            Value="{Binding RandomMode}" />
+                                    </Grid>
+                                    <UniformGrid Columns="3">
+                                        <StackPanel Margin="2" Spacing="5">
+                                            <TextBlock Text="Min Lv" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding MinLv}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="2" Spacing="5">
+                                            <TextBlock Text="Max Lv" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding MaxLv}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="2" Spacing="5">
+                                            <TextBlock Text="Tt Inherit Base" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding TtInheritBase}" />
+                                        </StackPanel>
+                                    </UniformGrid>
+
+                                    <u:Divider Content="Special Mechanics" />
+                                    <UniformGrid Columns="4">
+                                        <StackPanel Margin="2" Spacing="5">
+                                            <TextBlock Text="Arcane Wep" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding ArcaneWeaponQ}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="2" Spacing="5">
+                                            <TextBlock Text="Seer Snare" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding SeerSnareAvailableQ}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="2" Spacing="5">
+                                            <TextBlock Text="Canto Range" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding CantoRange}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="2" Spacing="5">
+                                            <TextBlock Text="Pathfinder" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding PathfinderRange}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="2" Spacing="5">
+                                            <TextBlock Text="Combat Method" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding CombatStatsMethod}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="2" Spacing="5">
+                                            <TextBlock Text="Combat Method P" />
+                                            <u:NumericUIntUpDown Maximum="255" Value="{Binding CombatStatsMethodParam}" />
+                                        </StackPanel>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem Header="Misc">
+                            <ScrollViewer>
+                                <StackPanel Margin="10" Spacing="10">
+                                    <TextBlock Classes="H6" Text="Linked Skills" />
+                                    <Grid ColumnDefinitions="*, 10, *" RowDefinitions="Auto, 5, Auto, 5, Auto, 5, Auto, 5, Auto">
+                                        <TextBlock VerticalAlignment="Center" Text="Refine Base:" />
+                                        <TextBox Grid.Column="2" Text="{Binding RefineBase}" />
+
+                                        <TextBlock
+                                            Grid.Row="2"
+                                            VerticalAlignment="Center"
+                                            Text="Refine ID:" />
+                                        <TextBox
+                                            Grid.Row="2"
+                                            Grid.Column="2"
+                                            Text="{Binding RefineId}" />
+
+                                        <TextBlock
+                                            Grid.Row="4"
+                                            VerticalAlignment="Center"
+                                            Text="Beast Ef ID:" />
+                                        <TextBox
+                                            Grid.Row="4"
+                                            Grid.Column="2"
+                                            Text="{Binding BeastEffectId}" />
+
+                                        <TextBlock
+                                            Grid.Row="6"
+                                            VerticalAlignment="Center"
+                                            Text="Next Skill:" />
+                                        <TextBox
+                                            Grid.Row="6"
+                                            Grid.Column="2"
+                                            Text="{Binding NextSkill}" />
+
+                                        <TextBlock
+                                            Grid.Row="8"
+                                            VerticalAlignment="Center"
+                                            Text="Passive Next:" />
+                                        <TextBox
+                                            Grid.Row="8"
+                                            Grid.Column="2"
+                                            Text="{Binding PassiveNext}" />
+                                    </Grid>
+
+                                    <u:Divider Content="Requirements" />
+                                    <TextBox Text="{Binding Requirements1}" Watermark="Requirement 1 (SID_...)" />
+                                    <TextBox Text="{Binding Requirements2}" Watermark="Requirement 2 (SID_...)" />
+
+                                    <u:Divider Content="Sprites" />
+                                    <TextBox Text="{Binding Sprite1}" Watermark="Sprite 1" />
+                                    <TextBox Text="{Binding Sprite2}" Watermark="Sprite 2" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+                    </TabControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+        <u:OverlayDialogHost />
+    </Panel>
+
+
+</Window>

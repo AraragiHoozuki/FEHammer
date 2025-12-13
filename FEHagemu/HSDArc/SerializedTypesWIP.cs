@@ -848,7 +848,28 @@ namespace FEHagemu.HSDArchive
         NoAttackOrderChange_WhenDef5Higher = 0x1000,
         SkillFlags1_0x2000_WIP = 0x2000,
         NegateCannotCounterAttack = 0x4000,
-        GodSpeedAttack_100Percent_WIP = 0x8000
+        GodSpeedAttack_100Percent_WIP = 0x8000,
+        // --- 补全部分 ---
+        SkillFlags1_0x10000 = 0x10000,
+        SkillFlags1_0x20000 = 0x20000,
+        SkillFlags1_0x40000 = 0x40000,
+        SkillFlags1_0x80000 = 0x80000,
+
+        SkillFlags1_0x100000 = 0x100000,
+        SkillFlags1_0x200000 = 0x200000,
+        SkillFlags1_0x400000 = 0x400000,
+        SkillFlags1_0x800000 = 0x800000,
+
+        SkillFlags1_0x1000000 = 0x1000000,
+        SkillFlags1_0x2000000 = 0x2000000,
+        SkillFlags1_0x4000000 = 0x4000000,
+        SkillFlags1_0x8000000 = 0x8000000,
+
+        SkillFlags1_0x10000000 = 0x10000000,
+        SkillFlags1_0x20000000 = 0x20000000,
+        SkillFlags1_0x40000000 = 0x40000000,
+        SkillFlags1_0x80000000 = 0x80000000,
+
     }
     [Flags]
     public enum SkillFlags2 : byte
@@ -883,8 +904,8 @@ namespace FEHagemu.HSDArchive
         Vantage_WIP = 8,
         SkillFlags4_0x10_WIP = 0x10,
         SkillFlags4_0x20_WIP = 0x20,
-        SkillFlags4_0x40_WIP = 0x40,
-        SkillFlags4_0x80_WIP = 0x80
+        FakeSPD10_GodSpeed = 0x40,
+        NO_OUGI = 0x80
     }
     public struct SkillLimit
     {

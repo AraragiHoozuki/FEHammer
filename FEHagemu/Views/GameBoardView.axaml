@@ -2,6 +2,7 @@
     x:Class="FEHagemu.Views.GameBoardView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:FEHagemu.Controls"
     xmlns:converters="using:FEHagemu.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:FEHagemu"
@@ -110,6 +111,8 @@
                             </VisualBrush>
                         </Border.Background>
                     </Border>
+
+
                 </Panel>
             </Border>
 

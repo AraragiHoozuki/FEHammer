@@ -140,16 +140,15 @@ namespace FEHagemu.ViewModels
                 query = query.Where(vm => predicate(vm.person));
             }
             // 3. 执行并更新 UI
-            // 如果数据量大，可以使用 new ObservableCollection(query) 避免 Clear/Add 带来的多次 UI 通知
             FilteredPersons = new ObservableCollection<PersonViewModel>(query);
         }
         [RelayCommand]
         private void ShowSameCharacters(PersonViewModel pvm)
         {
             List<PersonViewModel> list = new();
-            foreach (IPerson person in allPersons)
+            foreach (PersonViewModel pvm2 in allPersons)
             {
-                if (person.Origins == pvm.person.Origins && person.SortValue == pvm.person.SortValue) list.Add(new PersonViewModel(person));
+                if (pvm2.person.Origins == pvm.person.Origins && pvm2.person.SortValue == pvm.person.SortValue) list.Add(pvm2);
             }
             FilteredPersons = new(list);
         }

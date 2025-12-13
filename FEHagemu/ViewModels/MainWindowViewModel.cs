@@ -16,6 +16,8 @@ using System.Text.Unicode;
 
 namespace FEHagemu.ViewModels
 {
+    using FEHagemu.Views.Tools;
+    using FEHagemu.ViewModels.Tools;
     public partial class MainWindowViewModel : ViewModelBase
     {
         public MainWindowViewModel()
@@ -30,7 +32,7 @@ namespace FEHagemu.ViewModels
         [ObservableProperty]
         GameBoardViewModel? gameBoard;
         [ObservableProperty]
-        bool loadingQ  = true;
+        bool loadingQ = true;
 
         async void LoadMasterData()
         {
@@ -72,7 +74,8 @@ namespace FEHagemu.ViewModels
                         bool useBuiltinDescription = true;
                         if (!id_name.Contains("MOD")) id_name = id_name + "MOD";
                         s.id = "SID_" + id_name;
-                        if (!s.name.StartsWith("MSID_")) {
+                        if (!s.name.StartsWith("MSID_"))
+                        {
                             s.name = $"MSID_{id_name}";
                         }
                         if (!s.description.StartsWith("MSID_H_"))
@@ -127,18 +130,18 @@ namespace FEHagemu.ViewModels
                     await using var stream = await file[0].OpenReadAsync();
                     using var streamReader = new StreamReader(stream);
                     string json = await streamReader.ReadToEndAsync();
-                   
+
                     var msg_arc = MasterData.MsgArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"));
                     if (file[0].Name.StartsWith("PID_"))
                     {
-                        
+
                         Person? p = JsonSerializer.Deserialize<Person>(json, new JsonSerializerOptions()
                         {
                             IncludeFields = true,
                             Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
                             IgnoreReadOnlyProperties = true,
                         });
-                        
+
                         if (p is not null)
                         {
                             string pid = p.Id;
@@ -150,7 +153,8 @@ namespace FEHagemu.ViewModels
                                 PackageArchive(person_arc);
                             }
                         }
-                    } else if (file[0].Name.StartsWith("EID_"))
+                    }
+                    else if (file[0].Name.StartsWith("EID_"))
                     {
                         Enemy? p = JsonSerializer.Deserialize<Enemy>(json, new JsonSerializerOptions()
                         {
@@ -189,7 +193,7 @@ namespace FEHagemu.ViewModels
                 {
                     DirectoryInfo folder = srpg.CreateSubdirectory(folder_name);
                     byte[] buffer = File.ReadAllBytes(arc.path);
-                    File.WriteAllBytes(Path.Combine(folder.FullName,Path.GetFileName(arc.path)), buffer);
+                    File.WriteAllBytes(Path.Combine(folder.FullName, Path.GetFileName(arc.path)), buffer);
                 }
             }
         }
@@ -211,15 +215,17 @@ namespace FEHagemu.ViewModels
                     if (GameBoard is not null)
                     {
                         GameBoard.SetMap(mapData);
-                    } else {
+                    }
+                    else
+                    {
                         GameBoard = new GameBoardViewModel(mapData);
                     }
-                        
+
                 }
             }
         }
 
-        
+
 
         [ObservableProperty]
         BoardUnitViewModel? selectedUnit;
@@ -258,32 +264,35 @@ namespace FEHagemu.ViewModels
         async Task ExportPackage()
         {
             if (mapArc is null || GameBoard is null) return;
-            
+
             var root = Path.GetDirectoryName(mapArc.FilePath);
-            if (Directory.Exists(root)) {
-                byte[] buffer;
-                var assets = Directory.CreateDirectory(root + "\\assets");
-                if (assets != null) {
-                    DirectoryInfo common = assets.CreateSubdirectory("Common");
-                    DirectoryInfo srpg = common.CreateSubdirectory("SRPG");
-                    DirectoryInfo skill = srpg.CreateSubdirectory("Skill");
-                    DirectoryInfo person = srpg.CreateSubdirectory("Person");
-                    DirectoryInfo enemy = srpg.CreateSubdirectory("Enemy");
-                    buffer = File.ReadAllBytes(MasterData.SkillArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!.path);
-                    File.WriteAllBytes(skill.FullName + "\\Tutorial.bin.lz", buffer);
+            if (string.IsNullOrEmpty(root) || !Directory.Exists(root)) return;
+            var assetsPath = Path.Combine(root, "assets");
+            var skillDir = Directory.CreateDirectory(Path.Combine(assetsPath, "Common", "SRPG", "Skill"));
+            var personDir = Directory.CreateDirectory(Path.Combine(assetsPath, "Common", "SRPG", "Person"));
+            var enemyDir = Directory.CreateDirectory(Path.Combine(assetsPath, "Common", "SRPG", "Enemy"));
+            var msgDataDir = Directory.CreateDirectory(Path.Combine(assetsPath, "TWZH", "Message", "Data"));
+            var srpgMapDir = Directory.CreateDirectory(Path.Combine(assetsPath, "Common", "SRPGMap"));
 
-                    DirectoryInfo twzh = assets.CreateSubdirectory("TWZH");
-                    DirectoryInfo message = twzh.CreateSubdirectory("Message");
-                    DirectoryInfo data = message.CreateSubdirectory("Data");
-                    buffer = File.ReadAllBytes(MasterData.MsgArcs.FirstOrDefault(arc => arc.path.EndsWith("Data_Tutorial.bin.lz"))!.path);
-                    File.WriteAllBytes(data.FullName + "\\Data_Tutorial.bin.lz", buffer);
-
-                    DirectoryInfo srpg_map = common.CreateSubdirectory("SRPGMap");
-                    await SaveMap();
-                    await File.WriteAllBytesAsync(srpg_map.FullName + "\\" + Path.GetFileName(mapArc.FilePath), Cryptor.EncryptAndCompress(buffer));
-                }
+            var skillSource = MasterData.SkillArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"));
+            if (skillSource != null)
+            {
+                var destFile = Path.Combine(skillDir.FullName, "Tutorial.bin.lz");
+                File.Copy(skillSource.path, destFile, true);
             }
-            
+            var msgSource = MasterData.MsgArcs.FirstOrDefault(arc => arc.path.EndsWith("Data_Tutorial.bin.lz"));
+            if (msgSource != null)
+            {
+                var destFile = Path.Combine(msgDataDir.FullName, "Data_Tutorial.bin.lz");
+                File.Copy(msgSource.path, destFile, true);
+            }
+            await SaveMap();
+
+            string mapSourcePath = mapArc.FilePath;
+            string mapFileName = Path.GetFileName(mapSourcePath);
+            string mapDestPath = Path.Combine(srpgMapDir.FullName, mapFileName);
+            File.Copy(mapSourcePath, mapDestPath, true);
+
         }
         [RelayCommand]
         async Task ExportSkills()
@@ -310,6 +319,22 @@ namespace FEHagemu.ViewModels
                     await streamWriter.WriteAsync(jsonString);
                 }
             }
+        }
+
+        [RelayCommand]
+        void OpenSkillEditor()
+        {
+            var window = new SkillEditorWindow();
+            window.DataContext = new SkillEditorViewModel();
+            window.Show();
+        }
+
+        [RelayCommand]
+        void OpenFlagTool()
+        {
+            var window = new FlagCheckToolWindow();
+            window.DataContext = new FlagCheckToolViewModel();
+            window.Show();
         }
     }
 }

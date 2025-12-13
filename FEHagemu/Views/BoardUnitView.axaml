@@ -3,6 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:FEHagemu.Behaviors"
+    xmlns:controls="using:FEHagemu.Controls"
     xmlns:converters="using:FEHagemu.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:FEHagemu"
@@ -247,6 +248,7 @@
                         </ItemsControl.Styles>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
+
                                 <Border
                                     Margin="2"
                                     Padding="0"
@@ -277,7 +279,10 @@
                                             Icon="{StaticResource SemiIconClear}" />
                                     </Grid>
                                     <ToolTip.Tip>
-                                        <views:SkillToolTipPanel />
+                                        <ToolTip Classes="FEHSkill">
+                                            <views:SkillToolTipPanel />
+                                        </ToolTip>
+
                                     </ToolTip.Tip>
                                 </Border>
                             </DataTemplate>
@@ -300,7 +305,10 @@
                                 Text="{Binding Path=LegendarySkill.Name}" />
                         </Grid>
                         <ToolTip.Tip>
-                            <views:SkillToolTipPanel DataContext="{Binding Path=LegendarySkill}" />
+                            <ToolTip Classes="FEHSkill">
+                                <views:SkillToolTipPanel DataContext="{Binding Path=LegendarySkill}" />
+                            </ToolTip>
+
                         </ToolTip.Tip>
                     </Border>
                     <Separator Margin="0,4,0,4" />

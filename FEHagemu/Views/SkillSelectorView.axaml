@@ -2,6 +2,7 @@
     x:Class="FEHagemu.Views.SkillSelectorView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:FEHagemu.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:FEHagemu"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -129,45 +130,51 @@
             </ListBox.ItemsPanel>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Border
-                        HorizontalAlignment="Stretch"
-                        BorderBrush="Black"
-                        BorderThickness="1"
-                        BoxShadow="inset 3 3 10 0 DarkGray"
-                        CornerRadius="3">
-                        <Grid HorizontalAlignment="Stretch" ColumnDefinitions="Auto,*,Auto,Auto">
-                            <Image
-                                Grid.Column="0"
-                                Height="36"
-                                Source="{Binding Icon}" />
-                            <TextBlock
-                                Grid.Column="1"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Center"
-                                FontSize="24"
-                                FontWeight="Bold"
-                                Text="{Binding Name}" />
-                        </Grid>
-                        <ToolTip.Tip>
-                            <views:SkillToolTipPanel />
-                        </ToolTip.Tip>
-                        <Border.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem
-                                    Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).ExportCommand}"
-                                    CommandParameter="{Binding}"
-                                    Header="Export Skill" />
-                                <MenuItem
-                                    Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).DeleteCommand}"
-                                    CommandParameter="{Binding}"
-                                    Header="Delete Skill" />
-                                <MenuItem
-                                    Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).ShowSameAbilitySkillsCommand}"
-                                    CommandParameter="{Binding}"
-                                    Header="Show skills with same ability id" />
-                            </ContextMenu>
-                        </Border.ContextMenu>
-                    </Border>
+                    <Panel>
+                        <Border
+                            HorizontalAlignment="Stretch"
+                            BorderBrush="Black"
+                            BorderThickness="1"
+                            BoxShadow="inset 3 3 10 0 DarkGray"
+                            CornerRadius="3">
+                            <Grid HorizontalAlignment="Stretch" ColumnDefinitions="Auto,*,Auto,Auto">
+                                <Image
+                                    Grid.Column="0"
+                                    Height="36"
+                                    Source="{Binding Icon}" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Center"
+                                    FontSize="24"
+                                    FontWeight="Bold"
+                                    Text="{Binding Name}" />
+                            </Grid>
+                            <ToolTip.Tip>
+                                <ToolTip Classes="FEHSkill">
+                                    <views:SkillToolTipPanel />
+                                </ToolTip>
+
+                            </ToolTip.Tip>
+                            <Border.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem
+                                        Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).ExportCommand}"
+                                        CommandParameter="{Binding}"
+                                        Header="Export Skill" />
+                                    <MenuItem
+                                        Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).DeleteCommand}"
+                                        CommandParameter="{Binding}"
+                                        Header="Delete Skill" />
+                                    <MenuItem
+                                        Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).ShowSameAbilitySkillsCommand}"
+                                        CommandParameter="{Binding}"
+                                        Header="Show skills with same ability id" />
+                                </ContextMenu>
+                            </Border.ContextMenu>
+                        </Border>
+
+                    </Panel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
 

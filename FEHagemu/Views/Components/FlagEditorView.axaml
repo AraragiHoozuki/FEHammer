@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:u="https://irihi.tech/ursa"
+             xmlns:vm="using:FEHagemu.ViewModels.Components"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="FEHagemu.Views.Components.FlagEditorView"
+             x:DataType="vm:FlagEditorViewModel">
+    <Expander Header="{Binding Title}" IsExpanded="{Binding IsExpanded}">
+        <StackPanel Spacing="5">
+            <Grid ColumnDefinitions="Auto, 10, *">
+                <TextBlock Text="Value:" VerticalAlignment="Center"/>
+                <u:NumericUIntUpDown Grid.Column="2" Value="{Binding CurrentValue}" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding Flags}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Panel Margin="0,0,10,5">
+                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}"
+                                      IsVisible="{Binding Icon, Converter={x:Static ObjectConverters.IsNull}}" />
+                            <ToggleButton IsChecked="{Binding IsChecked}"
+                                          IsVisible="{Binding Icon, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                          ToolTip.Tip="{Binding Name}" Padding="4">
+                                <Image Source="{Binding Icon}" Width="24" Height="24" />
+                            </ToggleButton>
+                        </Panel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </Expander>
+</UserControl>

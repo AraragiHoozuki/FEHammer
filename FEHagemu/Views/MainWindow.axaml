@@ -25,6 +25,7 @@
                 <MenuItem Command="{Binding ExportPackageCommand}" Header="导出数据包" />
                 <MenuItem Command="{Binding ExportSkillsCommand}" Header="导出所有技能数据" />
             </MenuItem>
+
             <MenuItem Header="地图">
                 <MenuItem Command="{Binding GameBoard.ResizeMapCommand}" Header="变更地图大小" />
                 <MenuItem Command="{Binding GameBoard.ChangeFieldCommand}" Header="变更地图背景" />
@@ -37,7 +38,10 @@
                     IsChecked="{Binding GameBoard.IsTerrainVisible, Mode=TwoWay}"
                     ToggleType="CheckBox" />
             </MenuItem>
-
+            <MenuItem Header="工具">
+                <MenuItem Command="{Binding OpenSkillEditorCommand}" Header="技能编辑器" />
+                <MenuItem Command="{Binding OpenFlagToolCommand}" Header="Flag(Bitmask)计算器" />
+            </MenuItem>
 
             <!--<MenuItem
                     Command="{Binding ImportPersonCommand}"

@@ -19,21 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Assets\UI\Icon\Icon_Chance.png" />
-    <None Remove="Assets\UI\Icon\Icon_Dance.png" />
-    <None Remove="Assets\UI\Icon\Icon_Diabolos_Emblem.png" />
-    <None Remove="Assets\UI\Icon\Icon_Diabolos_m.png" />
-    <None Remove="Assets\UI\Icon\Icon_Diabolos_s.png" />
-    <None Remove="Assets\UI\Icon\Icon_Engage_Emblem.png" />
-    <None Remove="Assets\UI\Icon\Icon_Engage_s.png" />
-    <None Remove="Assets\UI\Icon\Icon_FlowerBud_Emblem.png" />
-    <None Remove="Assets\UI\Icon\Icon_Pair.png" />
-    <None Remove="Assets\UI\Icon\Icon_Resonate_Emblem.png" />
-    <None Remove="Assets\UI\Icon\Icon_Resonate_s.png" />
-    <None Remove="Assets\UI\Icon\Icon_TwinWorld.png" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="favicon.ico" />
   </ItemGroup>
 
