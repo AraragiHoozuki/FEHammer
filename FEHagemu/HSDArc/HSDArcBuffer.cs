@@ -1,6 +1,8 @@
 ﻿using FEHagemu.FEHArchive;
 using FEHagemu.HSDArcIO;
+using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace FEHagemu.HSDArchive
 {
@@ -77,10 +79,30 @@ namespace FEHagemu.HSDArchive
             return buffer;
         }
 
-        public async System.Threading.Tasks.Task Save()
+        public async Task Save()
         {
-            byte[] data = Cryptor.EncryptAndCompress(Binarize());
-            await File.WriteAllBytesAsync(FilePath, data);
+            byte[] data = await Task.Run(() => Cryptor.EncryptAndCompress(Binarize()));
+
+            string tempPath = FilePath + ".tmp"; 
+            string bakPath = FilePath + ".bak";  
+
+            await File.WriteAllBytesAsync(tempPath, data);
+
+            try
+            {
+                if (File.Exists(FilePath))
+                {
+                    File.Move(FilePath, bakPath, true);
+
+                    File.Delete(FilePath);
+                }
+
+                File.Move(tempPath, FilePath);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
     }
 }

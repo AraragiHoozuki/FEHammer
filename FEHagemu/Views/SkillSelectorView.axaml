@@ -10,23 +10,90 @@
     xmlns:views="clr-namespace:FEHagemu.Views"
     xmlns:vm="using:FEHagemu.ViewModels"
     Name="SkillSelectDialog"
-    MaxWidth="500"
-    MaxHeight="800"
-    d:DesignHeight="500"
-    d:DesignWidth="800"
+    MinWidth="480"
+    MaxWidth="560"
+    MaxHeight="860"
+    d:DesignHeight="600"
+    d:DesignWidth="500"
     x:DataType="vm:SkillSelectorViewModel"
     mc:Ignorable="d">
+
+    <UserControl.Styles>
+        <!--  Filter toggle buttons (reuse PersonSelector pattern)  -->
+        <Style Selector="ToggleButton.filterBtn">
+            <Setter Property="Width" Value="38" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="Opacity" Value="0.55" />
+            <Setter Property="RenderTransform" Value="scale(0.95)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="ToggleButton.filterBtn:pointerover">
+            <Setter Property="Opacity" Value="0.85" />
+            <Setter Property="RenderTransform" Value="scale(1.0)" />
+        </Style>
+        <Style Selector="ToggleButton.filterBtn:checked">
+            <Setter Property="Opacity" Value="1" />
+            <Setter Property="RenderTransform" Value="scale(1.0)" />
+        </Style>
+
+        <!--  Skill list item hover  -->
+        <Style Selector="Border.skillItem">
+            <Setter Property="Background" Value="{DynamicResource SemiGrey1Color}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="6,4" />
+            <Setter Property="Margin" Value="2,1" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.12" />
+                    <BrushTransition Property="Background" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.skillItem:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiBlue5Color}" />
+            <Setter Property="Background" Value="{DynamicResource SemiGrey2Color}" />
+        </Style>
+
+        <!--  Skill icon hover (icon-only mode)  -->
+        <Style Selector="Border.skillIcon">
+            <Setter Property="Background" Value="{DynamicResource SemiGrey1Color}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="RenderTransform" Value="scale(1)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.12" />
+                    <BrushTransition Property="Background" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.skillIcon:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.05)" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiBlue5Color}" />
+            <Setter Property="Background" Value="{DynamicResource SemiGrey2Color}" />
+        </Style>
+    </UserControl.Styles>
+
     <UserControl.Resources>
         <DataTemplate x:Key="FilterIconTemplate" x:DataType="vm:FilterItemBase">
-            <ToggleButton
-                Width="40"
-                Height="40"
-                Padding="2"
-                CornerRadius="4"
-                IsChecked="{Binding IsSelected}">
+            <ToggleButton Classes="filterBtn" IsChecked="{Binding IsSelected}">
                 <Image
-                    Width="32"
-                    Height="32"
+                    Width="30"
+                    Height="30"
                     Source="{Binding Icon}" />
             </ToggleButton>
         </DataTemplate>
@@ -35,92 +102,181 @@
             <WrapPanel HorizontalAlignment="Center" Orientation="Horizontal" />
         </ItemsPanelTemplate>
     </UserControl.Resources>
+
     <Grid RowDefinitions="Auto, *">
-        <StackPanel Margin="10" Spacing="2">
-            <TextBox
-                Name="SearchBar"
-                HorizontalAlignment="Stretch"
-                Classes="ClearButton"
-                InnerLeftContent="Name"
-                Text="{Binding SearchText}" />
-            <ItemsControl
-                ItemTemplate="{StaticResource FilterIconTemplate}"
-                ItemsPanel="{StaticResource WrapPanelTemplate}"
-                ItemsSource="{Binding WeaponFilters}" />
-            <ItemsControl
-                ItemTemplate="{StaticResource FilterIconTemplate}"
-                ItemsPanel="{StaticResource WrapPanelTemplate}"
-                ItemsSource="{Binding MoveFilters}" />
-            <u:SelectionList
-                HorizontalAlignment="Center"
-                ItemsSource="{Binding SlotFilters}"
-                SelectedItem="{Binding SelectedSlot}"
-                SelectionChanged="">
-                <u:SelectionList.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </u:SelectionList.ItemsPanel>
-                <u:SelectionList.ItemTemplate>
-                    <DataTemplate>
-                        <Image Width="24" Source="{Binding Icon}" />
-                    </DataTemplate>
-                </u:SelectionList.ItemTemplate>
-            </u:SelectionList>
-            <Grid HorizontalAlignment="Stretch" ColumnDefinitions="24,24,*,24">
-                <TextBlock VerticalAlignment="Center" Text="SP: " />
-                <TextBlock
-                    Grid.Column="1"
-                    Width="24"
-                    VerticalAlignment="Center"
-                    Text="{Binding #SPRangeSlider.LowerValue}" />
-                <u:RangeSlider
-                    Name="SPRangeSlider"
-                    Grid.Column="2"
-                    HorizontalAlignment="Stretch"
-                    IsSnapToTick="True"
-                    LowerValue="{Binding MinSp}"
-                    Maximum="500"
-                    Minimum="0"
-                    TickPlacement="Outside"
-                    Ticks="0,200,240,300,500"
-                    UpperValue="{Binding MaxSp}" />
-                <TextBlock
-                    Grid.Column="3"
-                    Width="24"
-                    Margin="12,0,0,0"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Text="{Binding #SPRangeSlider.UpperValue}" />
+        <!--  Filter Area  -->
+        <Border
+            Grid.Row="0"
+            Margin="8,8,8,4"
+            Padding="10,8"
+            Background="{DynamicResource SemiGrey1Color}"
+            BorderBrush="{DynamicResource SemiGrey3Color}"
+            BorderThickness="1"
+            CornerRadius="10">
+            <StackPanel Spacing="6">
+                <!--  Search bar & filter toggle  -->
+                <Grid ColumnDefinitions="Auto,*">
+                    <ToggleButton
+                        Grid.Column="0"
+                        Width="32"
+                        Height="32"
+                        Margin="0,0,6,0"
+                        Padding="4"
+                        CornerRadius="6"
+                        IsChecked="{Binding ShowFilters}"
+                        ToolTip.Tip="显示/隐藏筛选器">
+                        <PathIcon
+                            Width="16"
+                            Height="16"
+                            Data="{StaticResource SemiIconFilter}" />
+                    </ToggleButton>
+                    <TextBox
+                        Name="SearchBar"
+                        Grid.Column="1"
+                        HorizontalAlignment="Stretch"
+                        Classes="ClearButton"
+                        Text="{Binding SearchText}"
+                        Watermark="搜索技能名称..." />
+                </Grid>
 
-            </Grid>
-            <StackPanel
-                HorizontalAlignment="Center"
-                DockPanel.Dock="Top"
-                Orientation="Horizontal">
-                <CheckBox
-                    Height="36"
-                    Padding="4"
-                    Command="{Binding ApplyFiltersCommand}"
-                    Content="专属"
-                    IsChecked="{Binding IsExclusive}"
-                    IsThreeState="True"
-                    Theme="{DynamicResource CardCheckBox}" />
-                <CheckBox
-                    Height="36"
-                    Padding="4"
-                    Command="{Binding ApplyFiltersCommand}"
-                    Content="锻造"
-                    IsChecked="{Binding IsRefined}"
-                    IsThreeState="True"
-                    Theme="{DynamicResource CardCheckBox}" />
+                <!--  Collapsible filter section with animation  -->
+                <Border Classes.collapsed="{Binding !ShowFilters}" ClipToBounds="True">
+                    <Border.Styles>
+                        <Style Selector="Border">
+                            <Setter Property="MaxHeight" Value="500" />
+                            <Setter Property="Opacity" Value="1" />
+                            <Setter Property="Transitions">
+                                <Transitions>
+                                    <DoubleTransition
+                                        Easing="CubicEaseOut"
+                                        Property="MaxHeight"
+                                        Duration="0:0:0.25" />
+                                    <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                                </Transitions>
+                            </Setter>
+                        </Style>
+                        <Style Selector="Border.collapsed">
+                            <Setter Property="MaxHeight" Value="0" />
+                            <Setter Property="Opacity" Value="0" />
+                        </Style>
+                    </Border.Styles>
+                    <StackPanel Margin="0,2" Spacing="6">
+                        <!--  Weapon filters  -->
+                        <ItemsControl
+                            ItemTemplate="{StaticResource FilterIconTemplate}"
+                            ItemsPanel="{StaticResource WrapPanelTemplate}"
+                            ItemsSource="{Binding WeaponFilters}" />
+                        <!--  Move filters  -->
+                        <ItemsControl
+                            ItemTemplate="{StaticResource FilterIconTemplate}"
+                            ItemsPanel="{StaticResource WrapPanelTemplate}"
+                            ItemsSource="{Binding MoveFilters}" />
+                        <!--  Slot selection  -->
+                        <u:SelectionList
+                            HorizontalAlignment="Center"
+                            ItemsSource="{Binding SlotFilters}"
+                            SelectedItem="{Binding SelectedSlot}">
+                            <u:SelectionList.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </u:SelectionList.ItemsPanel>
+                            <u:SelectionList.ItemTemplate>
+                                <DataTemplate>
+                                    <Image Width="24" Source="{Binding Icon}" />
+                                </DataTemplate>
+                            </u:SelectionList.ItemTemplate>
+                        </u:SelectionList>
+                        <!--  SP range  -->
+                        <Grid Margin="0,2" ColumnDefinitions="Auto,*,Auto">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Foreground="{DynamicResource SemiGrey6Color}"
+                                Text="{Binding #SPRangeSlider.LowerValue, StringFormat='SP {0}'}" />
+                            <u:RangeSlider
+                                Name="SPRangeSlider"
+                                Grid.Column="1"
+                                Margin="8,0"
+                                HorizontalAlignment="Stretch"
+                                IsSnapToTick="True"
+                                LowerValue="{Binding MinSp}"
+                                Maximum="500"
+                                Minimum="0"
+                                TickPlacement="Outside"
+                                Ticks="0,200,240,300,500"
+                                UpperValue="{Binding MaxSp}" />
+                            <TextBlock
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Foreground="{DynamicResource SemiGrey6Color}"
+                                Text="{Binding #SPRangeSlider.UpperValue}" />
+                        </Grid>
+                        <!--  Exclusive / Refined toggles  -->
+                        <StackPanel
+                            HorizontalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="8">
+                            <CheckBox
+                                Height="32"
+                                Padding="4"
+                                Command="{Binding ApplyFiltersCommand}"
+                                Content="专属"
+                                IsChecked="{Binding IsExclusive}"
+                                IsThreeState="True"
+                                Theme="{DynamicResource CardCheckBox}" />
+                            <CheckBox
+                                Height="32"
+                                Padding="4"
+                                Command="{Binding ApplyFiltersCommand}"
+                                Content="锻造"
+                                IsChecked="{Binding IsRefined}"
+                                IsThreeState="True"
+                                Theme="{DynamicResource CardCheckBox}" />
+                            <CheckBox
+                                Height="32"
+                                Padding="4"
+                                Content="高级"
+                                IsChecked="{Binding IsTopOnly}"
+                                ToolTip.Tip="仅显示没有后继技能的最高级技能"
+                                Theme="{DynamicResource CardCheckBox}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
 
+                <!--  Result count & icon-only toggle  -->
+                <Grid ColumnDefinitions="*,Auto,*">
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.ColumnSpan="3"
+                        HorizontalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{DynamicResource SemiGrey6Color}"
+                        Text="{Binding ResultCountText}" />
+                    <CheckBox
+                        Grid.Column="2"
+                        MinHeight="0"
+                        Padding="4,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Content="图标"
+                        FontSize="11"
+                        IsChecked="{Binding ShowIconsOnly}"
+                        ToolTip.Tip="仅显示图标" />
+                </Grid>
             </StackPanel>
-        </StackPanel>
+        </Border>
+
+        <!--  ===== List mode (default) =====  -->
         <ListBox
             Name="SkillList"
             Grid.Row="1"
+            Margin="8,0,8,8"
             HorizontalAlignment="Stretch"
+            Background="Transparent"
+            BorderThickness="0"
+            IsVisible="{Binding !ShowIconsOnly}"
             ItemsSource="{Binding FilteredSkills}"
             SelectedItem="{Binding SelectedSkill}">
             <ListBox.ItemsPanel>
@@ -128,57 +284,146 @@
                     <VirtualizingStackPanel />
                 </ItemsPanelTemplate>
             </ListBox.ItemsPanel>
+            <ListBox.Styles>
+                <Style Selector="ListBoxItem">
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="Margin" Value="0" />
+                    <Setter Property="MinHeight" Value="0" />
+                    <Setter Property="Background" Value="Transparent" />
+                </Style>
+                <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+                    <Setter Property="Background" Value="Transparent" />
+                </Style>
+                <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+                    <Setter Property="Background" Value="Transparent" />
+                </Style>
+            </ListBox.Styles>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Panel>
+                    <Border Classes="skillItem" DoubleTapped="OnSkillItemDoubleTapped">
+                        <Grid HorizontalAlignment="Stretch" ColumnDefinitions="Auto,*">
+                            <Image
+                                Grid.Column="0"
+                                Width="32"
+                                Height="32"
+                                Margin="2"
+                                Source="{Binding Icon}" />
+                            <TextBlock
+                                Grid.Column="1"
+                                Margin="8,0,0,0"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Center"
+                                FontSize="16"
+                                FontWeight="SemiBold"
+                                Text="{Binding Name}"
+                                TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                        <ToolTip.Tip>
+                            <ToolTip Classes="FEHSkill">
+                                <views:SkillToolTipPanel />
+                            </ToolTip>
+                        </ToolTip.Tip>
+                        <Border.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem
+                                    Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).NavigateToSkillCommand}"
+                                    CommandParameter="{Binding NextSkillId}"
+                                    Header="{Binding NextSkillName, StringFormat='跳转到后置: {0}'}"
+                                    IsVisible="{Binding HasNextSkill}" />
+                                <MenuItem
+                                    Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).NavigateToSkillCommand}"
+                                    CommandParameter="{Binding FirstPrerequisiteId}"
+                                    Header="{Binding FirstPrerequisiteName, StringFormat='跳转到前置: {0}'}"
+                                    IsVisible="{Binding HasPrerequisites}" />
+                                <MenuItem
+                                    Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).PinSkillCommand}"
+                                    CommandParameter="{Binding}"
+                                    Header="📌 钉住详情" />
+                                <Separator />
+                                <MenuItem
+                                    Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).ExportCommand}"
+                                    CommandParameter="{Binding}"
+                                    Header="导出技能" />
+                                <MenuItem
+                                    Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).DeleteCommand}"
+                                    CommandParameter="{Binding}"
+                                    Header="删除技能" />
+                                <MenuItem
+                                    Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).ShowSameAbilitySkillsCommand}"
+                                    CommandParameter="{Binding}"
+                                    Header="显示相同 Ability 技能" />
+                            </ContextMenu>
+                        </Border.ContextMenu>
+                    </Border>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <!--  ===== Icon-only grid mode =====  -->
+        <ScrollViewer
+            Grid.Row="1"
+            Margin="8,0,8,8"
+            HorizontalScrollBarVisibility="Disabled"
+            IsVisible="{Binding ShowIconsOnly}"
+            VerticalScrollBarVisibility="Auto">
+            <controls:VirtualizingWrapPanel
+                Name="SkillIconGrid"
+                Margin="0,4"
+                ItemHeight="42"
+                ItemWidth="42"
+                ItemsSource="{Binding FilteredSkills}"
+                Spacing="2">
+                <controls:VirtualizingWrapPanel.ItemTemplate>
+                    <DataTemplate x:DataType="vm:SkillViewModel">
                         <Border
-                            HorizontalAlignment="Stretch"
-                            BorderBrush="Black"
-                            BorderThickness="1"
-                            BoxShadow="inset 3 3 10 0 DarkGray"
-                            CornerRadius="3">
-                            <Grid HorizontalAlignment="Stretch" ColumnDefinitions="Auto,*,Auto,Auto">
-                                <Image
-                                    Grid.Column="0"
-                                    Height="36"
-                                    Source="{Binding Icon}" />
-                                <TextBlock
-                                    Grid.Column="1"
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Center"
-                                    FontSize="24"
-                                    FontWeight="Bold"
-                                    Text="{Binding Name}" />
-                            </Grid>
+                            Classes="skillIcon"
+                            DoubleTapped="OnSkillItemDoubleTapped"
+                            Tapped="OnSkillIconTapped">
+                            <Image
+                                Width="36"
+                                Height="36"
+                                Margin="2"
+                                Source="{Binding Icon}" />
                             <ToolTip.Tip>
                                 <ToolTip Classes="FEHSkill">
                                     <views:SkillToolTipPanel />
                                 </ToolTip>
-
                             </ToolTip.Tip>
                             <Border.ContextMenu>
                                 <ContextMenu>
                                     <MenuItem
+                                        Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).NavigateToSkillCommand}"
+                                        CommandParameter="{Binding NextSkillId}"
+                                        Header="{Binding NextSkillName, StringFormat='跳转到后置: {0}'}"
+                                        IsVisible="{Binding HasNextSkill}" />
+                                    <MenuItem
+                                        Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).NavigateToSkillCommand}"
+                                        CommandParameter="{Binding FirstPrerequisiteId}"
+                                        Header="{Binding FirstPrerequisiteName, StringFormat='跳转到前置: {0}'}"
+                                        IsVisible="{Binding HasPrerequisites}" />
+                                    <MenuItem
+                                        Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).PinSkillCommand}"
+                                        CommandParameter="{Binding}"
+                                        Header="📌 钉住详情" />
+                                    <Separator />
+                                    <MenuItem
                                         Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).ExportCommand}"
                                         CommandParameter="{Binding}"
-                                        Header="Export Skill" />
+                                        Header="导出技能" />
                                     <MenuItem
                                         Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).DeleteCommand}"
                                         CommandParameter="{Binding}"
-                                        Header="Delete Skill" />
+                                        Header="删除技能" />
                                     <MenuItem
                                         Command="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).ShowSameAbilitySkillsCommand}"
                                         CommandParameter="{Binding}"
-                                        Header="Show skills with same ability id" />
+                                        Header="显示相同 Ability 技能" />
                                 </ContextMenu>
                             </Border.ContextMenu>
                         </Border>
-
-                    </Panel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-
-        </ListBox>
-
+                    </DataTemplate>
+                </controls:VirtualizingWrapPanel.ItemTemplate>
+            </controls:VirtualizingWrapPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>

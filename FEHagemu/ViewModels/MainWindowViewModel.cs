@@ -131,7 +131,7 @@ namespace FEHagemu.ViewModels
                     using var streamReader = new StreamReader(stream);
                     string json = await streamReader.ReadToEndAsync();
 
-                    var msg_arc = MasterData.MsgArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"));
+                    var msg_arc = MasterData.MsgArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!;
                     if (file[0].Name.StartsWith("PID_"))
                     {
 
@@ -149,7 +149,19 @@ namespace FEHagemu.ViewModels
                             if (person_arc is not null)
                             {
                                 MasterData.AddPerson(person_arc, p);
-                                person_arc.Save();
+                                await person_arc.Save();
+                                PackageArchive(person_arc);
+                            }
+                            else
+                            {
+                                person_arc = MasterData.PersonArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!;
+                                string inner_id = p.Id.Contains("MOD") ? p.Id : p.Id + "MOD";
+                                string name = MasterData.StripIdPrefix(p.Id, out _);
+
+                                p.id = inner_id;
+                                MasterData.AddPerson(person_arc, p);
+                                await person_arc.Save();
+                                MasterData.AddMessage(msg_arc, $"M{inner_id}", name);
                                 PackageArchive(person_arc);
                             }
                         }
@@ -170,7 +182,7 @@ namespace FEHagemu.ViewModels
                             if (enemy_arc is not null)
                             {
                                 MasterData.AddEnemy(enemy_arc, p);
-                                enemy_arc.Save();
+                                await enemy_arc.Save();
                                 PackageArchive(enemy_arc);
                             }
                         }
@@ -181,21 +193,17 @@ namespace FEHagemu.ViewModels
 
         private void PackageArchive<T>(HSDArc<T> arc) where T : new()
         {
-            var root = Path.GetDirectoryName(mapArc.FilePath);
-            var assets = Directory.CreateDirectory(root + "\\assets");
-            if (assets != null)
-            {
+            if (string.IsNullOrWhiteSpace(arc.path) || !File.Exists(arc.path)) return;
 
-                DirectoryInfo common = assets.CreateSubdirectory("Common");
-                DirectoryInfo srpg = common.CreateSubdirectory("SRPG");
-                string? folder_name = Path.GetFileName(Path.GetDirectoryName(arc.path));
-                if (folder_name is not null)
-                {
-                    DirectoryInfo folder = srpg.CreateSubdirectory(folder_name);
-                    byte[] buffer = File.ReadAllBytes(arc.path);
-                    File.WriteAllBytes(Path.Combine(folder.FullName, Path.GetFileName(arc.path)), buffer);
-                }
-            }
+            var root = Path.GetDirectoryName(mapArc.FilePath);
+
+            var folderName = Path.GetFileName(Path.GetDirectoryName(arc.path));
+            if (string.IsNullOrEmpty(folderName)) return;
+
+            var targetDir = Path.Combine(root, "assets", "Common", "SRPG", folderName);
+            Directory.CreateDirectory(targetDir);
+            var destFile = Path.Combine(targetDir, Path.GetFileName(arc.path));
+            File.Copy(arc.path, destFile, true);
         }
         [RelayCommand]
         async Task OpenMap()
@@ -273,6 +281,7 @@ namespace FEHagemu.ViewModels
             var enemyDir = Directory.CreateDirectory(Path.Combine(assetsPath, "Common", "SRPG", "Enemy"));
             var msgDataDir = Directory.CreateDirectory(Path.Combine(assetsPath, "TWZH", "Message", "Data"));
             var srpgMapDir = Directory.CreateDirectory(Path.Combine(assetsPath, "Common", "SRPGMap"));
+            var uiDir = Directory.CreateDirectory(Path.Combine(assetsPath, "Common", "UI"));
 
             var skillSource = MasterData.SkillArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"));
             if (skillSource != null)
@@ -285,6 +294,11 @@ namespace FEHagemu.ViewModels
             {
                 var destFile = Path.Combine(msgDataDir.FullName, "Data_Tutorial.bin.lz");
                 File.Copy(msgSource.path, destFile, true);
+            }
+            var uiSourceDir = new DirectoryInfo(MasterData.UI_PATH);
+            var uiSources = uiSourceDir.GetFiles("Skill_Passive*.png").Where(f => File.Exists(f.FullName + ".bak")).ToArray();
+            foreach (var uiSource in uiSources) {
+                File.Copy(uiSource.FullName, Path.Combine(uiDir.FullName, uiSource.Name), true);
             }
             await SaveMap();
 
@@ -322,7 +336,7 @@ namespace FEHagemu.ViewModels
         }
 
         [RelayCommand]
-        void OpenSkillEditor()
+        private void OpenSkillEditor()
         {
             var window = new SkillEditorWindow();
             window.DataContext = new SkillEditorViewModel();
@@ -330,10 +344,18 @@ namespace FEHagemu.ViewModels
         }
 
         [RelayCommand]
-        void OpenFlagTool()
+        private void OpenFlagTool()
         {
             var window = new FlagCheckToolWindow();
             window.DataContext = new FlagCheckToolViewModel();
+            window.Show();
+        }
+
+        [RelayCommand]
+        private void OpenPersonEditor()
+        {
+            var window = new PersonEditorWindow();
+            window.DataContext = new PersonEditorViewModel();
             window.Show();
         }
     }

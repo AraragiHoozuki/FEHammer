@@ -1,0 +1,275 @@
+<Window
+    x:Class="FEHagemu.Views.PinnedSkillWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:FEHagemu.ViewModels"
+    Title="技能详情"
+    Width="400"
+    MinWidth="320"
+    MaxHeight="600"
+    d:DesignHeight="500"
+    d:DesignWidth="400"
+    x:DataType="vm:SkillViewModel"
+    Background="Transparent"
+    CanResize="True"
+    ExtendClientAreaToDecorationsHint="True"
+    SizeToContent="Height"
+    SystemDecorations="None"
+    TransparencyLevelHint="Transparent"
+    WindowStartupLocation="CenterOwner"
+    mc:Ignorable="d">
+
+    <Window.Styles>
+        <Style Selector="Button.chainBtn">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="4,2" />
+            <Setter Property="Margin" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Opacity" Value="0.65" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.1" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.chainBtn:pointerover">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="Button.chainBtn:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#22FFFFFF" />
+        </Style>
+        <Style Selector="Button.chainCurrent">
+            <Setter Property="Background" Value="{DynamicResource SemiGreen4Color}" />
+            <Setter Property="Padding" Value="4,2" />
+            <Setter Property="Margin" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Cursor" Value="Arrow" />
+            <Setter Property="IsEnabled" Value="False" />
+            <Setter Property="Opacity" Value="1" />
+
+        </Style>
+        <Style Selector="Button.chainCurrent /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SemiGreen4Color}" />
+        </Style>
+    </Window.Styles>
+
+    <Border
+        Padding="14,10"
+        Background="#E8202030"
+        BorderBrush="#44668899"
+        BorderThickness="1"
+        CornerRadius="10">
+        <Grid RowDefinitions="Auto,*">
+            <!--  Draggable Header with close button  -->
+            <Grid
+                Name="DragArea"
+                Margin="0,0,0,8"
+                ColumnDefinitions="Auto,*,Auto"
+                PointerPressed="OnDragAreaPressed">
+                <Panel VerticalAlignment="Center">
+                    <Image
+                        Width="36"
+                        Height="36"
+                        Source="{Binding Icon}" />
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Foreground="#00D4FF"
+                        IsVisible="{Binding ShowExNumberQ}"
+                        Text="{Binding ExNumber}" />
+                </Panel>
+                <StackPanel
+                    Grid.Column="1"
+                    Margin="10,0"
+                    VerticalAlignment="Center"
+                    Spacing="1">
+                    <TextBlock
+                        FontSize="17"
+                        FontWeight="Bold"
+                        Foreground="#EEEEEE"
+                        Text="{Binding Name}"
+                        TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="#99AABB"
+                            Text="{Binding CategoryName}" />
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="#99AABB"
+                            Text="{Binding SpCost, StringFormat='SP {0}'}" />
+                        <Border
+                            Padding="5,1"
+                            Background="#3344AAFF"
+                            CornerRadius="3"
+                            IsVisible="{Binding ExclusiveQ}">
+                            <TextBlock
+                                FontSize="9"
+                                FontWeight="SemiBold"
+                                Foreground="#88CCFF"
+                                Text="专属" />
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+                <Button
+                    Grid.Column="2"
+                    Width="28"
+                    Height="28"
+                    Padding="0"
+                    VerticalAlignment="Top"
+                    Click="OnCloseClick"
+                    Content="✕"
+                    CornerRadius="14"
+                    FontSize="13" />
+            </Grid>
+
+            <!--  Scrollable content  -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="8">
+                    <Border Height="1" Background="#33FFFFFF" />
+
+                    <!--  Description  -->
+                    <TextBlock
+                        FontSize="13"
+                        Foreground="#CCDDEE"
+                        LineHeight="19"
+                        Text="{Binding Description}"
+                        TextWrapping="Wrap" />
+
+                    <!--  Refine  -->
+                    <Border
+                        Padding="8,6"
+                        Background="#1A66FF66"
+                        CornerRadius="6"
+                        IsVisible="{Binding HasRefine}">
+                        <StackPanel Spacing="2">
+                            <TextBlock
+                                FontSize="11"
+                                FontWeight="SemiBold"
+                                Foreground="#88EE88"
+                                Text="锻造效果" />
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="#AAFFAA"
+                                LineHeight="17"
+                                Text="{Binding RefineDescription}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!--  Ancestor Chain  -->
+                    <StackPanel IsVisible="{Binding HasChain}" Spacing="2">
+                        <TextBlock
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            Foreground="#BBBB88"
+                            Text="技能链" />
+                        <ItemsControl ItemsSource="{Binding AncestorChain}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:SkillChainItem">
+                                    <Button
+                                        Classes.chainBtn="{Binding !IsCurrent}"
+                                        Classes.chainCurrent="{Binding IsCurrent}"
+                                        Click="OnChainItemClick"
+                                        Tag="{Binding SkillId}">
+                                        <StackPanel Orientation="Horizontal" Spacing="3">
+                                            <Image
+                                                Width="16"
+                                                Height="16"
+                                                VerticalAlignment="Center"
+                                                Source="{Binding Icon}" />
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                FontSize="11"
+                                                Foreground="#CCDDEE"
+                                                Text="{Binding Name}" />
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                FontSize="9"
+                                                Foreground="#556677"
+                                                IsVisible="{Binding !IsCurrent}"
+                                                Text="→" />
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <!--  Successors  -->
+                    <StackPanel IsVisible="{Binding HasSuccessors}" Spacing="2">
+                        <TextBlock
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            Foreground="#88AABB"
+                            Text="后置技能" />
+                        <ItemsControl ItemsSource="{Binding SuccessorItems}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:SkillChainItem">
+                                    <Button
+                                        Classes="chainBtn"
+                                        Click="OnChainItemClick"
+                                        Tag="{Binding SkillId}">
+                                        <StackPanel Orientation="Horizontal" Spacing="3">
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                FontSize="10"
+                                                Foreground="#5599BB"
+                                                Text="→" />
+                                            <Image
+                                                Width="16"
+                                                Height="16"
+                                                VerticalAlignment="Center"
+                                                Source="{Binding Icon}" />
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                FontSize="11"
+                                                Foreground="#CCDDEE"
+                                                Text="{Binding Name}" />
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <!--  Not equippable  -->
+                    <StackPanel IsVisible="{Binding NotEquippables.Count}" Spacing="3">
+                        <TextBlock
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            Foreground="#FF8888"
+                            Text="无法装备" />
+                        <ItemsControl ItemsSource="{Binding NotEquippables}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Image
+                                        Width="20"
+                                        Height="20"
+                                        Margin="1"
+                                        Opacity="0.7"
+                                        Source="{Binding}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</Window>

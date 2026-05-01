@@ -1,10 +1,12 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using FEHagemu.HSDArchive;
 using FEHagemu.HSDArcIO;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,6 +16,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Image = SixLabors.ImageSharp.Image;
+using Point = SixLabors.ImageSharp.Point;
 using Path = System.IO.Path;
 
 namespace FEHagemu
@@ -134,9 +138,10 @@ namespace FEHagemu
         public static IImage[] OriginTypeIcons { get; private set; } = null!;
 
 
-        private const int SkillAtlasCapacity = 169; // 13行 * 13列
+        public const int SkillAtlasCapacity = 169; // 13行 * 13列
         private const int SkillGridCols = 13;
         private const int SkillIconSize = 76;
+        public static int SkillIconCount => ICON_ATLAS != null ? ICON_ATLAS.Length * SkillAtlasCapacity : 0;
 
         private const int WeaponIconSize = 56;
         private const int WeaponStartY = 261;
@@ -197,6 +202,92 @@ namespace FEHagemu
             var cropped = new CroppedBitmap(sourceBitmap, rect);
             skillIconCache[id] = cropped;
             return cropped;
+        }
+        public static async Task ReplaceSkillIcon(int id, string sourceFilePath)
+        {
+            if (ICON_ATLAS == null || ICON_ATLAS.Length == 0)
+                throw new InvalidOperationException("Skill Atlases not initialized.");
+
+            int atlasIndex = id / SkillAtlasCapacity;
+            int localIndex = id % SkillAtlasCapacity;
+            if (atlasIndex >= ICON_ATLAS.Length)
+            {
+                atlasIndex = 0;
+                localIndex = 1;
+            }
+
+            // Figure out the file path for the atlas
+            var directory = new DirectoryInfo(UI_PATH);
+            var files = directory.GetFiles("Skill_Passive*.png")
+                                 .OrderBy(f => f.Name.Length) 
+                                 .ThenBy(f => f.Name)
+                                 .ToArray();
+            
+            if (atlasIndex >= files.Length) return;
+            string atlasPath = files[atlasIndex].FullName;
+            string backupPath = atlasPath + ".bak";
+
+            // If backup doesn't exist, create it
+            if (!File.Exists(backupPath))
+            {
+                File.Copy(atlasPath, backupPath);
+            }
+
+            int row = localIndex / SkillGridCols;
+            int col = localIndex % SkillGridCols;
+            
+            // Dispose the old avalonia bitmap so we can write to the file
+            ICON_ATLAS[atlasIndex].Dispose();
+            
+            var keysToRemove = skillIconCache.Keys.Where(k => k / SkillAtlasCapacity == atlasIndex).ToList();
+            foreach (var k in keysToRemove)
+            {
+                skillIconCache.Remove(k);
+            }
+
+            // Use SixLabors.ImageSharp to mutate the atlas
+            using (var atlasImage = await SixLabors.ImageSharp.Image.LoadAsync(atlasPath))
+            using (var sourceImage = await SixLabors.ImageSharp.Image.LoadAsync(sourceFilePath))
+            {
+                SixLabors.ImageSharp.Processing.ProcessingExtensions.Mutate(sourceImage, x => x.Resize(SkillIconSize, SkillIconSize));
+                SixLabors.ImageSharp.Processing.ProcessingExtensions.Mutate(atlasImage, x => x.Opacity(0, new SixLabors.ImageSharp.Rectangle(col * SkillIconSize, row * SkillIconSize, SkillIconSize, SkillIconSize)));
+                SixLabors.ImageSharp.Processing.ProcessingExtensions.Mutate(atlasImage, x => x.DrawImage(sourceImage, new SixLabors.ImageSharp.Point(col * SkillIconSize, row * SkillIconSize), 1f));
+                await atlasImage.SaveAsWebpAsync(atlasPath);
+            }
+
+            // Reload the atlas
+            ICON_ATLAS[atlasIndex] = new Bitmap(atlasPath);
+        }
+
+        public static void RestoreSkillIcon(int id)
+        {
+            if (ICON_ATLAS == null || ICON_ATLAS.Length == 0) return;
+
+            int atlasIndex = id / SkillAtlasCapacity;
+            if (atlasIndex >= ICON_ATLAS.Length) atlasIndex = 0;
+
+            var directory = new DirectoryInfo(UI_PATH);
+            var files = directory.GetFiles("Skill_Passive*.png")
+                                 .OrderBy(f => f.Name.Length) 
+                                 .ThenBy(f => f.Name)
+                                 .ToArray();
+            
+            if (atlasIndex >= files.Length) return;
+            string atlasPath = files[atlasIndex].FullName;
+            string backupPath = atlasPath + ".bak";
+
+            if (File.Exists(backupPath))
+            {
+                ICON_ATLAS[atlasIndex].Dispose();
+                
+                // Keep the backup, delete the modified, replace with backup
+                File.Copy(backupPath, atlasPath, true);
+                
+                // Clear all icon cache for safety since they come from the atlas
+                skillIconCache.Clear();
+
+                ICON_ATLAS[atlasIndex] = new Bitmap(atlasPath);
+            }
         }
 
         public static IImage GetWeaponIcon(int id)

@@ -15,11 +15,13 @@ namespace FEHagemu.Converters
         public object? Convert(object? value, Type targetType,
                                         object? parameter, CultureInfo culture)
         {
-            if (targetType.IsAssignableTo(typeof(IImage))) {
+            if (targetType.IsAssignableTo(typeof(IImage)))
+            {
                 if (value is null)
                 {
                     return MasterData.GetSkillIcon(0);
-                } else if (value is Skill sk)
+                }
+                else if (value is Skill sk)
                 {
                     return MasterData.GetSkillIcon((int)sk.icon);
                 }
@@ -66,7 +68,8 @@ namespace FEHagemu.Converters
                     if (string.IsNullOrEmpty(name))
                     {
                         return new Bitmap(AssetLoader.Open(new Uri("avares://FEHagemu/Assets/empty.png")));
-                    } else
+                    }
+                    else
                     {
                         var uri = new Uri($"avares://FEHagemu/Assets/Face/{name}/Face_FC.png");
                         if (AssetLoader.Exists(uri))
@@ -75,7 +78,7 @@ namespace FEHagemu.Converters
                         }
                         else
                         {
-                            uri = new Uri($"avares://FEHagemu/Assets/Face/ch00_00_Eclat_F_Avatar01/Face_FC.png");
+                            uri = new Uri($"avares://FEHagemu/Assets/Face/None.png");
                             return new Bitmap(AssetLoader.Open(uri));
                         }
                     }

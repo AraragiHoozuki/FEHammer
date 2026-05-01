@@ -1,0 +1,58 @@
+<UserControl
+    x:Class="FEHagemu.Views.Tools.IconSelectorView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:FEHagemu.ViewModels.Tools"
+    MaxWidth="560"
+    MaxHeight="600"
+    d:DesignHeight="450"
+    d:DesignWidth="400"
+    x:DataType="vm:IconSelectorViewModel"
+    mc:Ignorable="d">
+    <Grid Name="SelectorGrid" RowDefinitions="*">
+        <ListBox
+            Background="Transparent"
+            ItemsSource="{Binding Icons}"
+            SelectedItem="{Binding SelectedIcon}">
+            <ListBox.Styles>
+                <Style Selector="ListBoxItem">
+                    <Setter Property="Padding" Value="2" />
+                    <Setter Property="Margin" Value="0" />
+                    <Setter Property="MinHeight" Value="0" />
+                </Style>
+            </ListBox.Styles>
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel
+                        Background="Transparent"
+                        Width="48"
+                        Margin="0"
+                        Spacing="2">
+                        <StackPanel.ContextFlyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Replace Image..." Command="{Binding #SelectorGrid.((vm:IconSelectorViewModel)DataContext).ImportImageCommand}" />
+                                <MenuItem Header="Restore Image" Command="{Binding #SelectorGrid.((vm:IconSelectorViewModel)DataContext).RestoreImageCommand}" />
+                            </MenuFlyout>
+                        </StackPanel.ContextFlyout>
+                        <Image
+                            Width="48"
+                            Height="48"
+                            Margin="0"
+                            Source="{Binding Icon}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="10"
+                            Text="{Binding Id}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</UserControl>

@@ -1,10 +1,9 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
-using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FEHagemu.HSDArchive;
@@ -13,20 +12,21 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Linq;
 using Ursa.Controls;
 
 namespace FEHagemu.ViewModels
 {
     public partial class GameBoardViewModel : ViewModelBase
     {
-        private SRPGMap mapData;
+        internal SRPGMap mapData;
 
         [ObservableProperty] ObservableCollection<ObservableCollection<BoardCellViewModel>> cells = [];
         [ObservableProperty] BoardCellViewModel? selectedCell;
+        [ObservableProperty] private ObservableCollection<BoardUnitViewModel> popupUnits = [];
+        [ObservableProperty] private bool isPopupOpen = false;
         [ObservableProperty] ObservableCollection<BoardUnitViewModel> units = [];
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(TotalWidth))]
@@ -173,6 +173,7 @@ namespace FEHagemu.ViewModels
             {
                 var unit = Unit.Create(SelectedCell.X, SelectedCell.Y);
                 AddUnit(unit).IsHighlighted = true;
+                UpdatePopup(SelectedCell);
             }
         }
         public BoardUnitViewModel? GetFirstUnitByXY(int x, int y)
@@ -195,6 +196,25 @@ namespace FEHagemu.ViewModels
                     yield return u;
                 }
             }
+        }
+
+        public void SetPlayerSlot(ushort x, ushort y, bool isPlayerSlot)
+        {
+            if (mapData == null) return;
+            var positions = mapData.player_positions?.ToList() ?? new List<Position>();
+            if (isPlayerSlot)
+            {
+                if (!positions.Any(p => p.x == x && p.y == y))
+                {
+                    positions.Add(new Position { x = x, y = y });
+                }
+            }
+            else
+            {
+                positions.RemoveAll(p => p.x == x && p.y == y);
+            }
+            mapData.player_positions = positions.ToArray();
+            mapData.player_count = (uint)positions.Count;
         }
 
         [RelayCommand]
@@ -231,10 +251,6 @@ namespace FEHagemu.ViewModels
         [RelayCommand]
         public void SelectCell(BoardCellViewModel cell)
         {
-            if (SelectedCell == cell)
-            {
-                return;
-            }
             if (SelectedCell is not null) SelectedCell.IsSelected = false;
             cell.IsSelected = true;
             SelectedCell = cell;
@@ -242,6 +258,52 @@ namespace FEHagemu.ViewModels
             {
                 u.IsHighlighted = (u.unit.pos.x == cell.X && u.unit.pos.y == cell.Y);
             }
+            UpdatePopup(cell);
+        }
+
+        private void UpdatePopup(BoardCellViewModel cell)
+        {
+            var cellUnits = new ObservableCollection<BoardUnitViewModel>();
+            foreach (var u in Units)
+            {
+                if (u.unit.pos.x == cell.X && u.unit.pos.y == cell.Y)
+                {
+                    cellUnits.Add(u);
+                }
+            }
+            PopupUnits = cellUnits;
+            OnPropertyChanged(nameof(HasNoPopupUnits));
+            IsPopupOpen = true;
+        }
+
+        public bool HasNoPopupUnits => PopupUnits.Count == 0;
+
+        [RelayCommand]
+        public void ClosePopup()
+        {
+            IsPopupOpen = false;
+        }
+
+        [RelayCommand]
+        public async Task SelectUnit(BoardUnitViewModel unit)
+        {
+            foreach (var u in Units)
+            {
+                u.IsHighlighted = (u == unit);
+            }
+            await Dialog.ShowModal(
+                new BoardUnitView(),
+                unit,
+                null,
+                new DialogOptions()
+                {
+                    Title = unit.Name,
+                    CanResize = true,
+                    StartupLocation = WindowStartupLocation.CenterScreen,
+                    Button = DialogButton.None
+                });
+            // Refresh cell face in case the unit was changed
+            if (SelectedCell is not null) SelectedCell.CallFirstPersonChange();
         }
         [RelayCommand]
         public void ResizeMap()
@@ -268,6 +330,7 @@ namespace FEHagemu.ViewModels
                 to_paste.pos.x = SelectedCell.X;
                 to_paste.pos.y = SelectedCell.Y;
                 AddUnit(to_paste).IsHighlighted = true;
+                UpdatePopup(SelectedCell);
             }
         }
         [RelayCommand]
@@ -279,7 +342,17 @@ namespace FEHagemu.ViewModels
             if (TryGetCell(buvm.unit.pos.x, buvm.unit.pos.y, out var cell))
             {
                 cell.CallFirstPersonChange();
+                if (SelectedCell == cell) UpdatePopup(cell);
             }
+        }
+
+        [RelayCommand]
+        private async Task ChangeUnitPerson(BoardUnitViewModel buvm)
+        {
+            if (buvm is null) return;
+            var cell = SelectedCell;
+            await buvm.ChangePerson(cell!);
+            if (cell is not null) UpdatePopup(cell);
         }
 
 
@@ -289,6 +362,8 @@ namespace FEHagemu.ViewModels
     public partial class BoardCellViewModel : ViewModelBase
     {
         public static Type Terrains => typeof(TerrainType);
+        public static IEnumerable<TerrainType> AllTerrains => Enum.GetValues<TerrainType>();
+
         [ObservableProperty]
         private GameBoardViewModel board;
         [ObservableProperty]
@@ -300,10 +375,33 @@ namespace FEHagemu.ViewModels
         [NotifyPropertyChangedFor(nameof(TerrainKanjiColor))]
         [NotifyPropertyChangedFor(nameof(TerrainColorHex))]
         TerrainType terrain;
+
+        partial void OnTerrainChanged(TerrainType value)
+        {
+            if (Board?.mapData != null)
+            {
+                int w = (int)Board.mapData.field.width;
+                int h = (int)Board.mapData.field.height;
+                // Note: when generated, gameY corresponds to Y (which is h - 1 - uiRow)
+                // terrainIndex was: gameY * w + gameX. Since Y is gameY, X is gameX.
+                int terrainIndex = Y * w + X;
+                if (terrainIndex >= 0 && terrainIndex < Board.mapData.field.terrains.Length)
+                {
+                    Board.mapData.field.terrains[terrainIndex].tid = (byte)value;
+                }
+            }
+        }
+
         [ObservableProperty]
         bool isSelected = false;
         [ObservableProperty]
         bool isPlayerSlot = false;
+
+        partial void OnIsPlayerSlotChanged(bool value)
+        {
+            Board?.SetPlayerSlot(X, Y, value);
+        }
+
         [ObservableProperty]
         public ObservableCollection<BoardUnitViewModel> units = [];
 
@@ -546,11 +644,11 @@ namespace FEHagemu.ViewModels
         partial void OnMergeChanged(int value) => RefreshStats();
         [ObservableProperty] private int lV = 1;
         partial void OnLVChanged(int value) => RefreshStats();
-        public ushort HP { get => unit.stats.hp; set { unit.stats.hp = value; OnPropertyChanged(); } }
-        public ushort ATK { get => unit.stats.atk; set { unit.stats.atk = value; OnPropertyChanged(); } }
-        public ushort SPD { get => unit.stats.spd; set { unit.stats.spd = value; OnPropertyChanged(); } }
-        public ushort DEF { get => unit.stats.def; set { unit.stats.def = value; OnPropertyChanged(); } }
-        public ushort RES { get => unit.stats.res; set { unit.stats.res = value; OnPropertyChanged(); } }
+        public ushort HP { get => unit.stats.hp; set { unit.stats.hp = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
+        public ushort ATK { get => unit.stats.atk; set { unit.stats.atk = value; OnPropertyChanged();OnPropertyChanged(nameof(Total)); } }
+        public ushort SPD { get => unit.stats.spd; set { unit.stats.spd = value; OnPropertyChanged();OnPropertyChanged(nameof(Total)); } }
+        public ushort DEF { get => unit.stats.def; set { unit.stats.def = value; OnPropertyChanged();OnPropertyChanged(nameof(Total)); } }
+        public ushort RES { get => unit.stats.res; set { unit.stats.res = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
         public int Total { get => HP + ATK + SPD + DEF + RES; }
 
         [ObservableProperty]
@@ -714,7 +812,7 @@ namespace FEHagemu.ViewModels
                 {
                     SetSkill(pvm.skills[i], i);
                 }
-                cell.CallFirstPersonChange();
+                cell?.CallFirstPersonChange();
             }
         }
         
@@ -739,6 +837,7 @@ namespace FEHagemu.ViewModels
             OnPropertyChanged(nameof(SPD));
             OnPropertyChanged(nameof(DEF));
             OnPropertyChanged(nameof(RES));
+            OnPropertyChanged(nameof(Total));
         }
         [RelayCommand]
         public void ResetStats()
@@ -808,6 +907,23 @@ namespace FEHagemu.ViewModels
         public bool SpecialQ => skill?.category == SkillCategory.Special;
         public bool WeaponQ => skill?.category == SkillCategory.Weapon;
         public bool ShowExNumberQ => SpecialQ || WeaponQ;
+        public uint SpCost => skill?.sp_cost ?? 0;
+        public bool ExclusiveQ => skill?.exclusiveQ == 1;
+        public bool HasRefine => skill?.refinedQ == 1 && !string.IsNullOrEmpty(RefineDescription);
+        public string CategoryName => skill?.category switch
+        {
+            SkillCategory.Weapon => "武器",
+            SkillCategory.Assist => "辅助",
+            SkillCategory.Special => "奥义",
+            SkillCategory.A => "A技能",
+            SkillCategory.B => "B技能",
+            SkillCategory.C => "C技能",
+            SkillCategory.X => "X技能",
+            SkillCategory.S => "圣印",
+            SkillCategory.Refine => "锻造",
+            SkillCategory.Engage => "纹章士",
+            _ => ""
+        };
         public int ExNumber
         {
             get
@@ -853,6 +969,128 @@ namespace FEHagemu.ViewModels
                 return 0;
             }
         }
+
+        // === Skill chain properties ===
+        public bool IsTopLevel => skill is not null
+            && string.IsNullOrEmpty(skill.next_skill)
+            && string.IsNullOrEmpty(skill.passive_next);
+
+        public bool HasNextSkill => skill is not null && !string.IsNullOrEmpty(skill.next_skill);
+        public string? NextSkillId => skill?.next_skill;
+
+        public bool HasPrerequisites => skill?.requirements is not null
+            && skill.requirements.Any(r => !string.IsNullOrEmpty(r));
+
+        public string? FirstPrerequisiteId => skill?.requirements?.FirstOrDefault(r => !string.IsNullOrEmpty(r));
+        public string FirstPrerequisiteName
+        {
+            get
+            {
+                var id = FirstPrerequisiteId;
+                if (string.IsNullOrEmpty(id)) return string.Empty;
+                var s = MasterData.GetSkill(id);
+                return s is not null ? MasterData.GetMessage(s.name) : id;
+            }
+        }
+
+        public string NextSkillName
+        {
+            get
+            {
+                if (skill is null || string.IsNullOrEmpty(skill.next_skill)) return string.Empty;
+                var s = MasterData.GetSkill(skill.next_skill);
+                return s is not null ? MasterData.GetMessage(s.name) : skill.next_skill;
+            }
+        }
+
+        /// <summary>
+        /// Builds the ancestor chain: walk backwards through requirements → [current]
+        /// </summary>
+        public bool HasChain => HasPrerequisites || HasNextSkill;
+
+        public List<SkillChainItem> AncestorChain
+        {
+            get
+            {
+                var chain = new List<SkillChainItem>();
+                if (skill is null) return chain;
+
+                var ancestors = new List<SkillChainItem>();
+                var visited = new HashSet<string> { skill.id };
+                var current = skill;
+                while (current?.requirements is not null)
+                {
+                    var reqId = current.requirements.FirstOrDefault(r => !string.IsNullOrEmpty(r));
+                    if (string.IsNullOrEmpty(reqId) || visited.Contains(reqId)) break;
+                    visited.Add(reqId);
+                    var reqSkill = MasterData.GetSkill(reqId);
+                    if (reqSkill is null) break;
+                    ancestors.Add(new SkillChainItem
+                    {
+                        SkillId = reqId,
+                        Name = MasterData.GetMessage(reqSkill.name),
+                        Icon = MasterData.GetSkillIcon((int)reqSkill.icon),
+                        IsCurrent = false
+                    });
+                    current = reqSkill;
+                }
+                ancestors.Reverse();
+                chain.AddRange(ancestors);
+
+                // Current skill (always last)
+                chain.Add(new SkillChainItem
+                {
+                    SkillId = skill.id,
+                    Name = Name,
+                    Icon = Icon,
+                    IsCurrent = true
+                });
+                return chain;
+            }
+        }
+
+        /// <summary>
+        /// All skills that list this skill in their requirements (direct successors, supports branching)
+        /// </summary>
+        public List<SkillChainItem> SuccessorItems
+        {
+            get
+            {
+                if (skill is null) return [];
+                var id = skill.id;
+                var successors = new List<SkillChainItem>();
+                var seen = new HashSet<string>();
+                foreach (var arc in MasterData.SkillArcs)
+                {
+                    foreach (var s in arc.data.list)
+                    {
+                        if (s.requirements is null || seen.Contains(s.id)) continue;
+                        if (s.requirements.Any(r => r == id))
+                        {
+                            seen.Add(s.id);
+                            successors.Add(new SkillChainItem
+                            {
+                                SkillId = s.id,
+                                Name = MasterData.GetMessage(s.name),
+                                Icon = MasterData.GetSkillIcon((int)s.icon),
+                                IsCurrent = false
+                            });
+                        }
+                    }
+                }
+                return successors;
+            }
+        }
+
+        public bool HasSuccessors => SuccessorItems.Count > 0;
+    }
+
+    public class SkillChainItem
+    {
+        public string SkillId { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public IImage? Icon { get; set; }
+        public bool IsCurrent { get; set; }
     }
 }
 

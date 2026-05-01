@@ -1,4 +1,4 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -36,6 +36,17 @@ namespace FEHagemu.ViewModels
         ObservableCollection<SkillViewModel> filteredSkills = [];
         [ObservableProperty]
         SkillViewModel? selectedSkill;
+        // 结果计数
+        [ObservableProperty] private string resultCountText = string.Empty;
+        // 显示/隐藏筛选器
+        [ObservableProperty] private bool showFilters = true;
+        // 仅显示图标模式
+        [ObservableProperty] private bool showIconsOnly = false;
+        // 仅显示高级技能（无后继）
+        [ObservableProperty] private bool isTopOnly = false;
+        partial void OnIsTopOnlyChanged(bool value) => ApplyFilters();
+        // 钉住技能详情回调（由View设置）
+        public Action<SkillViewModel>? OnSkillPinRequested { get; set; }
 
         public partial class SkillTypeToggler(bool s, IImage i) : ViewModelBase
         {
@@ -154,9 +165,16 @@ namespace FEHagemu.ViewModels
                 // 文本检查
                 if (hasSearchText && !svm.skill.Name.Contains(searchStr!, StringComparison.OrdinalIgnoreCase)) continue;
 
+                // 仅高级技能检查
+                if (IsTopOnly)
+                {
+                    if (!string.IsNullOrEmpty(svm.skill.next_skill) || !string.IsNullOrEmpty(svm.skill.passive_next)) continue;
+                }
+
                 result.Add(new SkillViewModel(svm.skill.id, 0));
             }
             FilteredSkills = new ObservableCollection<SkillViewModel>(result);
+            ResultCountText = $"共 {result.Count} / {allSkills.Count} 个技能";
         }
         [RelayCommand]
         public async Task Export(SkillViewModel svm)
@@ -209,6 +227,37 @@ namespace FEHagemu.ViewModels
                 }
             }
             FilteredSkills = new(list);
+        }
+
+        /// <summary>
+        /// Navigate to a skill by ID: clear search, find in list, select it
+        /// </summary>
+        [RelayCommand]
+        public void NavigateToSkill(string? skillId)
+        {
+            if (string.IsNullOrEmpty(skillId)) return;
+            // Clear filters to ensure the skill is visible
+            SearchText = null;
+            SelectedSlot = null;
+            IsExclusive = null;
+            IsRefined = null;
+            IsTopOnly = false;
+            MinSp = 0;
+            MaxSp = 500;
+            foreach (var wf in WeaponFilters) wf.IsSelected = false;
+            foreach (var mf in MoveFilters) mf.IsSelected = false;
+            ApplyFilters();
+            // Find and select the skill
+            var target = FilteredSkills.FirstOrDefault(s => s.skill?.id == skillId);
+            if (target is not null)
+            {
+                SelectedSkill = target;
+            }
+        }
+        [RelayCommand]
+        void PinSkill(SkillViewModel? svm)
+        {
+            if (svm is not null) OnSkillPinRequested?.Invoke(svm);
         }
     }
 

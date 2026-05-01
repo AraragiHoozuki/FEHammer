@@ -48,13 +48,15 @@
                 Grid.Row="1"
                 Margin="20"
                 Spacing="10">
-                <StackPanel Orientation="Horizontal">
-                    <Image
-                        Width="32"
-                        Height="32"
-                        Source="{Binding SkillIcon}"
-                        ToolTip.Tip="{Binding Icon}" />
-                    <u:NumericUIntUpDown Minimum="0" Value="{Binding Icon}" />
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                    <Button Padding="0" Background="Transparent" Command="{Binding SelectIconCommand}">
+                        <Image
+                            Width="36"
+                            Height="36"
+                            Source="{Binding SkillIcon}"
+                            ToolTip.Tip="{Binding Icon}" />
+                    </Button>
+                    <u:NumericUIntUpDown Minimum="0" Value="{Binding Icon}" VerticalAlignment="Center" />
                 </StackPanel>
 
 
@@ -632,10 +634,10 @@
                                             Grid.Row="2"
                                             VerticalAlignment="Center"
                                             Text="Refine ID:" />
-                                        <TextBox
-                                            Grid.Row="2"
-                                            Grid.Column="2"
-                                            Text="{Binding RefineId}" />
+                                        <Grid Grid.Row="2" Grid.Column="2" ColumnDefinitions="*, 8, Auto">
+                                            <TextBox Text="{Binding RefineId}" />
+                                            <Button Grid.Column="2" Command="{Binding SelectRefineIdSkillCommand}" Content="..." />
+                                        </Grid>
 
                                         <TextBlock
                                             Grid.Row="4"

@@ -1,4 +1,4 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Shapes;
@@ -58,10 +58,32 @@ namespace FEHagemu.ViewModels
         [ObservableProperty]
         ObservableCollection<PersonViewModel> filteredPersons = [];
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsPersonSelected))]
         PersonViewModel? selectedPerson;
+        public bool IsPersonSelected => SelectedPerson is not null;
+        partial void OnSelectedPersonChanged(PersonViewModel? value)
+        {
+            // Update visual selection state
+            foreach (var p in FilteredPersons)
+                p.IsSelected = (p == value);
+        }
         public ObservableCollection<FilterItem<int>> WeaponFilters { get; } = [];
         public ObservableCollection<FilterItem<int>> MoveFilters { get; } = [];
         public ObservableCollection<FilterItem<Func<IPerson, bool>>> SpecialFilters { get; } = [];
+        // 搜索
+        [ObservableProperty] private string? searchText;
+        partial void OnSearchTextChanged(string? value) => ApplyFilters();
+        // 结果计数
+        [ObservableProperty] private string resultCountText = string.Empty;
+        // 显示/隐藏筛选器
+        [ObservableProperty] private bool showFilters = true;
+        // 显示名称开关
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CardItemHeight))]
+        [NotifyPropertyChangedFor(nameof(CardItemWidth))]
+        private bool showNames = true;
+        public double CardItemHeight => ShowNames ? 96 : 70;
+        public double CardItemWidth => ShowNames ? 90 : 70;
         // 版本筛选
         public ObservableCollection<uint> Versions { get; } = [];
         [ObservableProperty] private uint? selectedVersion;
@@ -116,8 +138,16 @@ namespace FEHagemu.ViewModels
             var activeWeapons = WeaponFilters.Where(f => f.IsSelected).Select(f => f.Value).ToHashSet();
             var activeMoves = MoveFilters.Where(f => f.IsSelected).Select(f => f.Value).ToHashSet();
             var activeSpecials = SpecialFilters.Where(f => f.IsSelected).Select(f => f.Value).ToList();
+            var searchStr = SearchText;
+            bool hasSearch = !string.IsNullOrWhiteSpace(searchStr);
             // 2. 构建查询
             IEnumerable<PersonViewModel> query = allPersons;
+            // 搜索过滤
+            if (hasSearch)
+            {
+                query = query.Where(vm => vm.Name.Contains(searchStr!, StringComparison.OrdinalIgnoreCase)
+                    || vm.person.Id.Contains(searchStr!, StringComparison.OrdinalIgnoreCase));
+            }
             // 版本过滤
             if (SelectedVersion.HasValue)
             {
@@ -133,14 +163,21 @@ namespace FEHagemu.ViewModels
             {
                 query = query.Where(vm => activeMoves.Contains((int)vm.person.MoveType));
             }
-            // 特殊属性过滤 (必须满足所有勾选的特殊属性？还是满足任意一个？通常是满足所有勾选的限制)
-            // 这里假设逻辑是：如果勾选了 Dancer，就必须是 Dancer；如果同时勾选 Dancer 和 Engage，必须既是 Dancer 又是 Engage
+            // 特殊属性过滤
             foreach (var predicate in activeSpecials)
             {
                 query = query.Where(vm => predicate(vm.person));
             }
             // 3. 执行并更新 UI
-            FilteredPersons = new ObservableCollection<PersonViewModel>(query);
+            var result = new ObservableCollection<PersonViewModel>(query);
+            FilteredPersons = result;
+            ResultCountText = $"共 {result.Count} / {allPersons.Count} 个角色";
+            // Restore selection highlight
+            if (SelectedPerson is not null)
+            {
+                foreach (var p in result)
+                    p.IsSelected = (p == SelectedPerson);
+            }
         }
         [RelayCommand]
         private void ShowSameCharacters(PersonViewModel pvm)
@@ -205,6 +242,7 @@ namespace FEHagemu.ViewModels
                 } else
                 {
                     MasterData.DeletePerson(MasterData.ModPersonArc, (Person)pvm.person);
+                    await MasterData.ModPersonArc.Save();
                 }
                 ApplyFilters();
             }
@@ -220,6 +258,8 @@ namespace FEHagemu.ViewModels
         public readonly IPerson person;
         public string[] skills;
         public List<IImage> TraitIcons { get; }
+        [ObservableProperty]
+        private bool isSelected;
         public PersonViewModel(IPerson p)
         {
             person = p;

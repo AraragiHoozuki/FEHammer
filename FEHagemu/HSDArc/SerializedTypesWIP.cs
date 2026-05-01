@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using System.Security.Cryptography;
 
 namespace FEHagemu.HSDArchive
 {
@@ -149,6 +150,8 @@ namespace FEHagemu.HSDArchive
         Flying = 1 << 3, // 8  (飞行)
     }
 
+    
+
     public enum Origins
     {
         Heroes,
@@ -203,8 +206,8 @@ namespace FEHagemu.HSDArchive
         public string face2;
         [HSDHelper(Type = HSDBinType.Struct, IsPtr = true)]
         public LegendaryInfo legendary;
-        [HSDHelper(Type = HSDBinType.Atom, Key = 0xA0013774, IsPtr = true, Size = 4)]
-        public uint dragonflower_num;
+        [HSDHelper(Type = HSDBinType.Struct, IsPtr = true)]
+        public DragonFlowerInfo dragonflower;
         [HSDHelper(Type = HSDBinType.Atom, Size = 8, Key = 0xBDC1E742E9B6489B)]
         public ulong timestamp;
         [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0x5F6E4E18)]
@@ -327,7 +330,7 @@ namespace FEHagemu.HSDArchive
 
         public WeaponType WeaponType => weapon_type;
 
-        public uint DragonflowerNumber => dragonflower_num;
+        public uint DragonflowerNumber => dragonflower.num;
 
         public LegendaryInfo Legendary => legendary;
 
@@ -539,11 +542,28 @@ namespace FEHagemu.HSDArchive
         public byte duelQ; // 1 byte
         [HSDHelper(Type = HSDBinType.Atom, Size = 1, Key = 0x05)]
         public byte ae_extra_slotQ; // 1 byte
+        [HSDHelper(Type = HSDBinType.Padding, Size = 3)]
+        public byte padding;
 
         public static readonly LegendaryInfo None = new()
         {
             kind = LegendaryKind.None,
         };
+    }
+
+    public class DragonFlowerInfo
+    {
+        [HSDHelper(Type = HSDBinType.Atom, Size = 4, Key = 0xA0013774)]
+        public uint num;
+        [HSDHelper(Type = HSDBinType.Padding, Size = 4)]
+        public byte padding;
+        [HSDHelper(Type = HSDBinType.Array, Size =4, ElementType = HSDBinType.Atom, Key = 0x715C6A7B, DynamicSizeCalculator = "CalcCostListSize", IsPtr = true)]
+        public uint[] costs;
+
+        public static int CalcCostListSize(DragonFlowerInfo dfi)
+        {
+            return (int)((dfi.num & 1) == 1?dfi.num+1:dfi.num);
+        }
     }
 
     public class Stats
@@ -786,6 +806,11 @@ namespace FEHagemu.HSDArchive
         public string Name => MasterData.GetMessage(name); 
         public string Description => MasterData.GetMessage(description);
 
+    }
+
+    public enum SkillTiming
+    {
+        TurnStart = 8,
     }
     public enum SkillCategory : byte
     {

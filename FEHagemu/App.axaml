@@ -17,6 +17,6 @@
         <semi:SemiTheme Locale="zh-CN" />
         <u-semi:SemiTheme Locale="zh-CN" />
 
-        <StyleInclude Source="avares://FEHagemu/Styles/SkillTooltip.axaml" />
+        <!--<StyleInclude Source="avares://FEHagemu/Styles/SkillTooltip.axaml" />-->
     </Application.Styles>
 </Application>

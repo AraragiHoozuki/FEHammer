@@ -2,6 +2,7 @@
     x:Class="FEHagemu.Views.PersonSelectorView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:FEHagemu.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:FEHagemu"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -9,23 +10,61 @@
     xmlns:views="clr-namespace:FEHagemu.Views"
     xmlns:vm="using:FEHagemu.ViewModels"
     Name="PersonSelectorDialog"
-    MaxWidth="500"
-    MaxHeight="800"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
+    MinWidth="520"
+    MaxWidth="680"
+    MaxHeight="860"
+    d:DesignHeight="600"
+    d:DesignWidth="600"
     x:DataType="vm:PersonSelectorViewModel"
     mc:Ignorable="d">
+
+    <UserControl.Styles>
+        <!-- Filter toggle buttons -->
+        <Style Selector="ToggleButton.filterBtn">
+            <Setter Property="Width" Value="38" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="Opacity" Value="0.55" />
+            <Setter Property="RenderTransform" Value="scale(0.95)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="ToggleButton.filterBtn:pointerover">
+            <Setter Property="Opacity" Value="0.85" />
+            <Setter Property="RenderTransform" Value="scale(1.0)" />
+        </Style>
+        <Style Selector="ToggleButton.filterBtn:checked">
+            <Setter Property="Opacity" Value="1" />
+            <Setter Property="RenderTransform" Value="scale(1.0)" />
+        </Style>
+
+        <!-- Person card hover effect -->
+        <Style Selector="Panel.personCard">
+            <Setter Property="RenderTransform" Value="scale(1)" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Panel.personCard:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.06)" />
+        </Style>
+    </UserControl.Styles>
+
     <UserControl.Resources>
         <DataTemplate x:Key="FilterIconTemplate" x:DataType="vm:FilterItemBase">
-            <ToggleButton
-                Width="40"
-                Height="40"
-                Padding="2"
-                CornerRadius="4"
-                IsChecked="{Binding IsSelected}">
+            <ToggleButton Classes="filterBtn" IsChecked="{Binding IsSelected}">
                 <Image
-                    Width="32"
-                    Height="32"
+                    Width="30"
+                    Height="30"
                     Source="{Binding Icon}" />
             </ToggleButton>
         </DataTemplate>
@@ -34,112 +73,235 @@
             <WrapPanel HorizontalAlignment="Center" Orientation="Horizontal" />
         </ItemsPanelTemplate>
     </UserControl.Resources>
+
     <Grid RowDefinitions="Auto, *">
-        <StackPanel Margin="10" Spacing="2">
-            <ComboBox
-                HorizontalAlignment="Center"
-                Classes="ClearButton"
-                ItemsSource="{Binding Versions}"
-                PlaceholderText="Version"
-                SelectedItem="{Binding SelectedVersion}" />
+        <!-- Filter Area -->
+        <Border
+            Grid.Row="0"
+            Margin="8,8,8,4"
+            Padding="10,8"
+            Background="{DynamicResource SemiGrey1Color}"
+            BorderBrush="{DynamicResource SemiGrey3Color}"
+            BorderThickness="1"
+            CornerRadius="10">
+            <StackPanel Spacing="6">
+                <!-- Search & Version & Filter toggle row -->
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <ToggleButton
+                        Grid.Column="0"
+                        Width="32" Height="32"
+                        Margin="0,0,6,0"
+                        Padding="4"
+                        CornerRadius="6"
+                        IsChecked="{Binding ShowFilters}"
+                        ToolTip.Tip="显示/隐藏筛选器">
+                        <PathIcon
+                            Width="16" Height="16"
+                            Data="{StaticResource SemiIconFilter}" />
+                    </ToggleButton>
+                    <TextBox
+                        Grid.Column="1"
+                        Name="SearchBar"
+                        Margin="0,0,8,0"
+                        VerticalAlignment="Center"
+                        Classes="ClearButton"
+                        Text="{Binding SearchText}"
+                        Watermark="搜索角色名称..." />
+                    <ComboBox
+                        Grid.Column="2"
+                        MinWidth="90"
+                        VerticalAlignment="Center"
+                        Classes="ClearButton"
+                        ItemsSource="{Binding Versions}"
+                        PlaceholderText="版本"
+                        SelectedItem="{Binding SelectedVersion}" />
+                </Grid>
 
-            <ItemsControl
-                ItemTemplate="{StaticResource FilterIconTemplate}"
-                ItemsPanel="{StaticResource WrapPanelTemplate}"
-                ItemsSource="{Binding WeaponFilters}" />
+                <!-- Collapsible filter section with animation -->
+                <Border
+                    ClipToBounds="True"
+                    Classes.collapsed="{Binding !ShowFilters}">
+                    <Border.Styles>
+                        <Style Selector="Border">
+                            <Setter Property="MaxHeight" Value="500" />
+                            <Setter Property="Opacity" Value="1" />
+                            <Setter Property="Transitions">
+                                <Transitions>
+                                    <DoubleTransition Property="MaxHeight" Duration="0:0:0.25" Easing="CubicEaseOut" />
+                                    <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                                </Transitions>
+                            </Setter>
+                        </Style>
+                        <Style Selector="Border.collapsed">
+                            <Setter Property="MaxHeight" Value="0" />
+                            <Setter Property="Opacity" Value="0" />
+                        </Style>
+                    </Border.Styles>
+                    <StackPanel Spacing="6" Margin="0,2">
+                        <!-- Weapon filters -->
+                        <ItemsControl
+                            ItemTemplate="{StaticResource FilterIconTemplate}"
+                            ItemsPanel="{StaticResource WrapPanelTemplate}"
+                            ItemsSource="{Binding WeaponFilters}" />
+                        <!-- Move filters -->
+                        <ItemsControl
+                            ItemTemplate="{StaticResource FilterIconTemplate}"
+                            ItemsPanel="{StaticResource WrapPanelTemplate}"
+                            ItemsSource="{Binding MoveFilters}" />
+                        <!-- Special filters -->
+                        <ItemsControl
+                            ItemTemplate="{StaticResource FilterIconTemplate}"
+                            ItemsPanel="{StaticResource WrapPanelTemplate}"
+                            ItemsSource="{Binding SpecialFilters}" />
+                    </StackPanel>
+                </Border>
 
-            <ItemsControl
-                ItemTemplate="{StaticResource FilterIconTemplate}"
-                ItemsPanel="{StaticResource WrapPanelTemplate}"
-                ItemsSource="{Binding MoveFilters}" />
+                <!-- Result count & name toggle -->
+                <Grid ColumnDefinitions="*,Auto,*">
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.ColumnSpan="3"
+                        HorizontalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{DynamicResource SemiGrey6Color}"
+                        Text="{Binding ResultCountText}" />
+                    <CheckBox
+                        Grid.Column="2"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Content="名称"
+                        FontSize="11"
+                        IsChecked="{Binding ShowNames}"
+                        Padding="4,0"
+                        MinHeight="0" />
+                </Grid>
+            </StackPanel>
+        </Border>
 
-            <Border
-                Padding="5"
-                HorizontalAlignment="Center"
-                Theme="{StaticResource RadioButtonGroupBorder}">
-                <ItemsControl
-                    ItemTemplate="{StaticResource FilterIconTemplate}"
-                    ItemsPanel="{StaticResource WrapPanelTemplate}"
-                    ItemsSource="{Binding SpecialFilters}" />
-            </Border>
-
-        </StackPanel>
-
-        <ListBox
-            Name="PersonList"
+        <!-- Person Grid - custom VirtualizingWrapPanel -->
+        <ScrollViewer
             Grid.Row="1"
-            ItemsSource="{Binding FilteredPersons}"
-            SelectedItem="{Binding SelectedPerson}">
-            <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <VirtualizingStackPanel />
-                </ItemsPanelTemplate>
-            </ListBox.ItemsPanel>
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <Border
-                        BorderBrush="Black"
-                        BorderThickness="2"
-                        BoxShadow="inset 3 3 10 0 DarkGray"
-                        CornerRadius="3">
-                        <Border.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem
-                                    Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).ShowSameCharactersCommand}"
-                                    CommandParameter="{Binding}"
-                                    Header="Show Same Characters" />
-                                <MenuItem
-                                    Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).ExportCommand}"
-                                    CommandParameter="{Binding}"
-                                    Header="Export" />
-                                <MenuItem
-                                    Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).DeleteCommand}"
-                                    CommandParameter="{Binding}"
-                                    Header="Delete Person" />
-                            </ContextMenu>
+            Margin="8,0,8,8"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto">
+            <controls:VirtualizingWrapPanel
+                Name="PersonGrid"
+                Margin="0,4"
+                ItemHeight="{Binding CardItemHeight}"
+                ItemWidth="{Binding CardItemWidth}"
+                Spacing="2"
+                ItemsSource="{Binding FilteredPersons}">
+                <controls:VirtualizingWrapPanel.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PersonViewModel">
+                        <Panel Classes="personCard" Tapped="OnPersonCardTapped" DoubleTapped="OnPersonCardDoubleTapped">
+                            <Panel.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem
+                                        Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).ShowSameCharactersCommand}"
+                                        CommandParameter="{Binding}"
+                                        Header="显示同角色" />
+                                    <MenuItem
+                                        Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).ExportCommand}"
+                                        CommandParameter="{Binding}"
+                                        Header="导出" />
+                                    <MenuItem
+                                        Command="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).DeleteCommand}"
+                                        CommandParameter="{Binding}"
+                                        Header="删除角色" />
+                                </ContextMenu>
+                            </Panel.ContextMenu>
 
-                        </Border.ContextMenu>
-                        <StackPanel Orientation="Horizontal">
-                            <StackPanel.Styles>
-                                <Style Selector="Image">
-                                    <Setter Property="Height" Value="36" />
-                                </Style>
-                            </StackPanel.Styles>
-                            <Image Source="{Binding Face^}" />
-                            <Image Source="{Binding WeaponIcon}" />
-                            <Image Source="{Binding MoveIcon}" />
+                            <Grid RowDefinitions="Auto, Auto">
+                                <!-- Face portrait with FaceFrame -->
+                                <Panel
+                                    Grid.Row="0"
+                                    Width="64"
+                                    Height="64"
+                                    Margin="0,2,0,0"
+                                    HorizontalAlignment="Center">
+                                    <!-- Layer 1: FaceFrame background -->
+                                    <Image Source="/Assets/UI/FaceFrame_BG.png" Stretch="Fill" />
+                                    <!-- Layer 2: Character face -->
+                                    <Image
+                                        Margin="6"
+                                        Source="{Binding Face^}"
+                                        Stretch="UniformToFill" />
+                                    <!-- Layer 3: FaceFrame overlay border -->
+                                    <Image Source="/Assets/UI/FaceFrame.png" Stretch="Fill" />
 
-
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                FontSize="24"
-                                FontWeight="Bold"
-                                Text="{Binding Name}" />
-                            <ItemsControl ItemsSource="{Binding TraitIcons}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
+                                    <!-- Weapon/Move icons at bottom-left of frame -->
+                                    <StackPanel
+                                        Margin="0,0,0,-2"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Bottom"
+                                        Orientation="Horizontal">
                                         <Image
-                                            Width="32"
-                                            Height="32"
-                                            Margin="2"
-                                            Source="{Binding}" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
+                                            Width="16"
+                                            Height="16"
+                                            Source="{Binding WeaponIcon}" />
+                                        <Image
+                                            Width="16"
+                                            Height="16"
+                                            Source="{Binding MoveIcon}" />
+                                    </StackPanel>
+                                    <!-- Trait icons at bottom-right of frame -->
+                                    <ItemsControl
+                                        Margin="0,0,0,-2"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        ItemsSource="{Binding TraitIcons}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Image
+                                                    Width="16"
+                                                    Height="16"
+                                                    Source="{Binding}" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                    </ItemsControl>
+                                </Panel>
 
-                            </ItemsControl>
+                                <!-- Name (toggleable) -->
+                                <TextBlock
+                                    Grid.Row="1"
+                                    Margin="2,1,2,0"
+                                    HorizontalAlignment="Center"
+                                    FontSize="11"
+                                    FontWeight="SemiBold"
+                                    IsVisible="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).ShowNames}"
+                                    MaxLines="2"
+                                    Text="{Binding Name}"
+                                    TextAlignment="Center"
+                                    TextTrimming="CharacterEllipsis"
+                                    TextWrapping="Wrap" />
+                                <!-- ToolTip on face when name hidden -->
+                                <ToolTip.Tip>
+                                    <TextBlock Text="{Binding Name}" />
+                                </ToolTip.Tip>
+                            </Grid>
 
-
-                        </StackPanel>
-                    </Border>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-
+                            <!-- Selection overlay -->
+                            <Border
+                                BorderThickness="2.5"
+                                CornerRadius="4"
+                                IsHitTestVisible="False"
+                                IsVisible="{Binding IsSelected}">
+                                <Border.BorderBrush>
+                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                        <GradientStop Offset="0" Color="#4A90D9" />
+                                        <GradientStop Offset="1" Color="#63B3ED" />
+                                    </LinearGradientBrush>
+                                </Border.BorderBrush>
+                            </Border>
+                        </Panel>
+                    </DataTemplate>
+                </controls:VirtualizingWrapPanel.ItemTemplate>
+            </controls:VirtualizingWrapPanel>
+        </ScrollViewer>
     </Grid>
-
 </UserControl>

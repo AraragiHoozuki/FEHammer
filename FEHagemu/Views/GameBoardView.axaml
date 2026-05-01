@@ -14,112 +14,303 @@
     d:DesignWidth="800"
     x:DataType="vm:GameBoardViewModel"
     mc:Ignorable="d">
-    <Grid RowDefinitions="Auto,*">
-        <StackPanel>
-            <u:NumericUIntUpDown
-                Name="CellSize"
-                InnerLeftContent="CellSize"
-                IsVisible="False"
-                Maximum="64"
-                Minimum="8"
-                ShowButtonSpinner="False"
-                Value="{Binding CellSize}" />
-        </StackPanel>
 
-        <Viewbox
-            Grid.Row="1"
-            Stretch="Uniform"
-            StretchDirection="Both">
-            <Border Margin="4" BoxShadow="0 0 5 2 DarkGray">
-                <Panel Width="{Binding TotalWidth}" Height="{Binding TotalHeight}">
-                    <Image
-                        Source="{Binding FieldBackground}"
-                        Stretch="Fill"
-                        ZIndex="0" />
-                    <ItemsControl ItemsSource="{Binding Cells}" ZIndex="1">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Vertical" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <ItemsControl ItemsSource="{Binding}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal" />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
+    <UserControl.Styles>
+        <Style Selector="Button.face-btn">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Width" Value="56" />
+            <Setter Property="Height" Value="56" />
+            <!--<Setter Property="RenderTransformOrigin" Value="0.5,0.5" />-->
+            <Setter Property="RenderTransform" Value="scale(1)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.face-btn:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.08)" />
+        </Style>
+        <Style Selector="Button.face-btn:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.95)" />
+        </Style>
+    </UserControl.Styles>
 
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate DataType="vm:BoardCellViewModel">
-                                            <Grid Width="{Binding #CellSize.Value}" Height="{Binding #CellSize.Value}">
+    <Panel>
+        <!--  Main board content  -->
+        <Grid RowDefinitions="Auto,*">
+            <StackPanel>
+                <u:NumericUIntUpDown
+                    Name="CellSize"
+                    InnerLeftContent="CellSize"
+                    IsVisible="False"
+                    Maximum="64"
+                    Minimum="8"
+                    ShowButtonSpinner="False"
+                    Value="{Binding CellSize}" />
+            </StackPanel>
 
-
-                                                <Image
-                                                    Margin="2,2,2,2"
-                                                    IsHitTestVisible="False"
-                                                    Source="{Binding CellFace^}" />
-                                                <Border
-                                                    Background="{Binding TerrainColorHex}"
-                                                    BorderThickness="2"
-                                                    CornerRadius="2"
-                                                    IsVisible="{Binding $parent[UserControl].((vm:GameBoardViewModel)DataContext).IsTerrainVisible}"
-                                                    Opacity="0.5">
-                                                    <TextBlock
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center"
-                                                        Foreground="{Binding TerrainKanjiColor}"
-                                                        Text="{Binding TerrainKanji}" />
-                                                </Border>
-
-
-                                                <Panel Background="Transparent" PointerPressed="OnCellPointerPressed">
-                                                    <Border
-                                                        Background="Green"
-                                                        IsVisible="{Binding IsPlayerSlot}"
-                                                        Opacity="0.5" />
+            <Viewbox
+                Grid.Row="1"
+                Stretch="Uniform"
+                StretchDirection="Both">
+                <Border Margin="4" BoxShadow="0 0 5 2 DarkGray">
+                    <Panel Width="{Binding TotalWidth}" Height="{Binding TotalHeight}">
+                        <Image
+                            Source="{Binding FieldBackground}"
+                            Stretch="Fill"
+                            ZIndex="0" />
+                        <ItemsControl ItemsSource="{Binding Cells}" ZIndex="1">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Vertical" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <ItemsControl ItemsSource="{Binding}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="vm:BoardCellViewModel">
+                                                <Grid Width="{Binding #CellSize.Value}" Height="{Binding #CellSize.Value}">
                                                     <Image
+                                                        Margin="2"
                                                         IsHitTestVisible="False"
-                                                        IsVisible="{Binding IsSelected}"
-                                                        Source="avares://FEHagemu/Assets/UI/MapCellCursor.png"
-                                                        Stretch="Fill" />
-                                                </Panel>
+                                                        Source="{Binding CellFace^}" />
+                                                    <Border
+                                                        Background="{Binding TerrainColorHex}"
+                                                        BorderThickness="2"
+                                                        CornerRadius="2"
+                                                        IsVisible="{Binding $parent[UserControl].((vm:GameBoardViewModel)DataContext).IsTerrainVisible}"
+                                                        Opacity="0.5">
+                                                        <TextBlock
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            Foreground="{Binding TerrainKanjiColor}"
+                                                            Text="{Binding TerrainKanji}" />
+                                                    </Border>
+                                                    <Panel Background="Transparent" PointerPressed="OnCellPointerPressed">
+                                                        <Border
+                                                            Background="Green"
+                                                            IsVisible="{Binding IsPlayerSlot}"
+                                                            Opacity="0.5" />
+                                                        <Image
+                                                            IsHitTestVisible="False"
+                                                            IsVisible="{Binding IsSelected}"
+                                                            Source="avares://FEHagemu/Assets/UI/MapCellCursor.png"
+                                                            Stretch="Fill" />
+                                                    </Panel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
 
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                        <Border IsHitTestVisible="False" IsVisible="{Binding IsGridLineVisible}">
+                            <Border.Background>
+                                <VisualBrush
+                                    DestinationRect="{Binding GridTileRect}"
+                                    SourceRect="{Binding GridTileRect}"
+                                    Stretch="None"
+                                    TileMode="Tile">
+                                    <VisualBrush.Visual>
+                                        <Border
+                                            Width="{Binding #CellSize.Value}"
+                                            Height="{Binding #CellSize.Value}"
+                                            BorderBrush="#80FFFFFF"
+                                            BorderThickness="1" />
+                                    </VisualBrush.Visual>
+                                </VisualBrush>
+                            </Border.Background>
+                        </Border>
+                    </Panel>
+                </Border>
+            </Viewbox>
+        </Grid>
 
-                    <Border IsHitTestVisible="False" IsVisible="{Binding IsGridLineVisible}">
-                        <Border.Background>
-                            <VisualBrush
-                                DestinationRect="{Binding GridTileRect}"
-                                SourceRect="{Binding GridTileRect}"
-                                Stretch="None"
-                                TileMode="Tile">
-                                <VisualBrush.Visual>
-                                    <Border
-                                        Width="{Binding #CellSize.Value}"
-                                        Height="{Binding #CellSize.Value}"
-                                        BorderBrush="#80FFFFFF"
-                                        BorderThickness="1" />
-                                </VisualBrush.Visual>
-                            </VisualBrush>
-                        </Border.Background>
-                    </Border>
-
-
-                </Panel>
+        <!--  Full-screen overlay  -->
+        <Grid Name="OverlayRoot" IsVisible="False">
+            <!--  Dark mask  -->
+            <Border
+                Name="OverlayMask"
+                Background="#000000"
+                Opacity="0"
+                PointerPressed="OnMaskPointerPressed">
+                <Border.Transitions>
+                    <Transitions>
+                        <DoubleTransition Property="Opacity" Duration="0:0:0.25" />
+                    </Transitions>
+                </Border.Transitions>
             </Border>
 
-        </Viewbox>
+            <!--  Centered card  -->
+            <Border
+                Name="OverlayCard"
+                MinWidth="140"
+                MaxWidth="400"
+                Padding="16"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="#F01E1E2E"
+                BorderBrush="#40FFFFFF"
+                BorderThickness="1"
+                BoxShadow="0 8 32 8 #A0000000"
+                CornerRadius="16"
+                Opacity="0">
+                <Border.Transitions>
+                    <Transitions>
+                        <TransformOperationsTransition
+                            Easing="CubicEaseOut"
+                            Property="RenderTransform"
+                            Duration="0:0:0.35" />
+                        <DoubleTransition Property="Opacity" Duration="0:0:0.25" />
+                    </Transitions>
+                </Border.Transitions>
+                <StackPanel Spacing="10">
+                    <!--  Cell info  -->
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="6">
+                        <TextBlock
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Foreground="White">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="({0}, {1})">
+                                    <Binding Path="SelectedCell.X" />
+                                    <Binding Path="SelectedCell.Y" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <ComboBox
+                            VerticalAlignment="Center"
+                            ItemsSource="{Binding Source={x:Static vm:BoardCellViewModel.AllTerrains}}"
+                            SelectedItem="{Binding SelectedCell.Terrain}"
+                            Foreground="Black"
+                            Background="#F0F0F0"
+                            BorderBrush="Gray"
+                            Padding="8,0"
+                            MinHeight="28" />
+                        
+                        <Border Width="1" Height="16" Background="#30FFFFFF" Margin="6,0" />
 
+                        <!-- Toggle Player Slot -->
+                        <CheckBox
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding SelectedCell.IsPlayerSlot}"
+                            Content="我方出击点"
+                            Foreground="#AAFFFFFF" />
+                    </StackPanel>
 
-    </Grid>
+                    <Border Height="1" Background="#30FFFFFF" />
 
+                    <!--  Face grid and Add Button  -->
+                    <WrapPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                        <ItemsControl ItemsSource="{Binding PopupUnits}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="vm:BoardUnitViewModel">
+                                    <Button
+                                        Classes="face-btn"
+                                        Command="{Binding $parent[UserControl].((vm:GameBoardViewModel)DataContext).SelectUnitCommand}"
+                                        CommandParameter="{Binding}"
+                                        ToolTip.Tip="{Binding Name}">
+                                        <Button.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem
+                                                    Command="{Binding $parent[UserControl].((vm:GameBoardViewModel)DataContext).ChangeUnitPersonCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Header="更换角色">
+                                                    <MenuItem.Icon>
+                                                        <PathIcon Data="{StaticResource SemiIconEdit}" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <Separator />
+                                                <MenuItem
+                                                    Command="{Binding $parent[UserControl].((vm:GameBoardViewModel)DataContext).CloneUnitCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Header="复制">
+                                                    <MenuItem.Icon>
+                                                        <PathIcon Data="{StaticResource SemiIconCopy}" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem
+                                                    Classes="Danger"
+                                                    Command="{Binding $parent[UserControl].((vm:GameBoardViewModel)DataContext).DeleteUnitCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Header="删除">
+                                                    <MenuItem.Icon>
+                                                        <PathIcon Data="{StaticResource SemiIconDelete}" Foreground="Red" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                        <Grid>
+                                            <Image IsVisible="{Binding !IsEnemy}" Source="/Assets/UI/FaceFrame_GreenBG.png" />
+                                            <Image IsVisible="{Binding IsEnemy}" Source="/Assets/UI/FaceFrame_RedBG.png" />
 
+                                            <Image Margin="4" Source="{Binding FaceImg^}" />
+
+                                            <Image IsVisible="{Binding !IsEnemy}" Source="/Assets/UI/FaceFrame_Green.png" />
+                                            <Image IsVisible="{Binding IsEnemy}" Source="/Assets/UI/FaceFrame_Red.png" />
+                                        </Grid>
+
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!--  Add/Paste Button  -->
+                        <Button
+                            Classes="face-btn"
+                            Command="{Binding AddNewUnitCommand}"
+                            IsVisible="{Binding SelectedCell, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            ToolTip.Tip="增加角色 (右键粘贴)">
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Command="{Binding AddNewUnitCommand}" Header="增加空角色">
+                                        <MenuItem.Icon>
+                                            <PathIcon Data="{StaticResource SemiIconUserAdd}" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem
+                                        Command="{Binding PasteUnitCommand}"
+                                        Header="粘贴角色"
+                                        IsEnabled="{Binding PasteUnitCommand.CanExecute}">
+                                        <MenuItem.Icon>
+                                            <PathIcon Data="{StaticResource SemiIconCopyAdd}" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                            <PathIcon
+                                Width="24"
+                                Height="24"
+                                Data="{StaticResource SemiIconPlus}"
+                                Foreground="#AAFFFFFF" />
+                        </Button>
+                    </WrapPanel>
+
+                    <!--  Empty message  -->
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        FontSize="12"
+                        Foreground="#66FFFFFF"
+                        IsVisible="{Binding HasNoPopupUnits}"
+                        Text="此格无角色" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Panel>
 </UserControl>

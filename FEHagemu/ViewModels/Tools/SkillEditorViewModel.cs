@@ -558,6 +558,42 @@ namespace FEHagemu.ViewModels.Tools
         }
 
         [RelayCommand]
+        public async Task SelectRefineIdSkill()
+        {
+            var vm = new SkillSelectorViewModel();
+
+            var result = await OverlayDialog.ShowModal(new FEHagemu.Views.SkillSelectorView(), vm, null, new OverlayDialogOptions()
+            {
+                Title = "Select Refine Skill",
+                CanResize = true,
+                Buttons = DialogButton.OKCancel
+            });
+
+            if (result == DialogResult.OK && vm.SelectedSkill is not null && vm.SelectedSkill.skill is not null)
+            {
+                RefineId = vm.SelectedSkill.skill.id;
+            }
+        }
+
+        [RelayCommand]
+        public async Task SelectIcon()
+        {
+            var vm = new IconSelectorViewModel();
+
+            var result = await OverlayDialog.ShowModal(new FEHagemu.Views.Tools.IconSelectorView(), vm, null, new OverlayDialogOptions()
+            {
+                Title = "Select Icon",
+                CanResize = true,
+                Buttons = DialogButton.OKCancel
+            });
+
+            if (result == DialogResult.OK && vm.SelectedIcon is not null)
+            {
+                Icon = (uint)vm.SelectedIcon.Id;
+            }
+        }
+
+        [RelayCommand]
         public async Task SaveToGame()
         {
             var s = CreateSkillObj();

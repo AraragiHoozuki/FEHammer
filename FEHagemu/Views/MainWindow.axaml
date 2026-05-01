@@ -9,6 +9,7 @@
     xmlns:views="clr-namespace:FEHagemu.Views"
     xmlns:vm="using:FEHagemu.ViewModels"
     Title="FEHagemu"
+    Width="400"
     Height="600"
     x:DataType="vm:MainWindowViewModel"
     Icon="/Assets/favicon.ico"
@@ -22,6 +23,7 @@
             </MenuItem>
             <MenuItem Header="数据">
                 <MenuItem Command="{Binding ImportSkillCommand}" Header="导入技能" />
+                <MenuItem Command="{Binding ImportPersonCommand}" Header="导入角色" />
                 <MenuItem Command="{Binding ExportPackageCommand}" Header="导出数据包" />
                 <MenuItem Command="{Binding ExportSkillsCommand}" Header="导出所有技能数据" />
             </MenuItem>
@@ -40,6 +42,7 @@
             </MenuItem>
             <MenuItem Header="工具">
                 <MenuItem Command="{Binding OpenSkillEditorCommand}" Header="技能编辑器" />
+                <MenuItem Command="{Binding OpenPersonEditorCommand}" Header="角色编辑器" />
                 <MenuItem Command="{Binding OpenFlagToolCommand}" Header="Flag(Bitmask)计算器" />
             </MenuItem>
 
@@ -52,70 +55,10 @@
             <MenuItem Header="About" />
         </Menu>
         <u:Divider Grid.Row="1" />
-        <Grid
-            Grid.Row="2"
-            ColumnDefinitions="*, 4, *"
-            RowDefinitions="Auto,*">
-            <views:GameBoardView Grid.RowSpan="2" DataContext="{Binding GameBoard}" />
-            <GridSplitter
-                Grid.RowSpan="2"
-                Grid.Column="1"
-                Background="Black"
-                ResizeDirection="Columns" />
-            <!--<views:CellPanelView Grid.Column="2" DataContext="{Binding GameBoard.SelectedCell}" />-->
-            <Grid />
-            <Border
-                Grid.Column="2"
-                Margin="0,4,0,8"
-                Padding="4,6,4,4"
-                BoxShadow="0 4 5 2 DarkGray">
-                <StackPanel Orientation="Horizontal" Spacing="2">
-                    <StackPanel.Styles>
-                        <Style Selector=":is(u|NumericUpDown)">
-                            <Setter Property="FontFamily" Value="Consolas" />
-                        </Style>
-                    </StackPanel.Styles>
-                    <TextBlock VerticalAlignment="Center" Text="地形: " />
-                    <u:EnumSelector
-                        Margin="4,0,4,0"
-                        DisplayDescription="True"
-                        EnumType="{Binding GameBoard.SelectedCell.Terrains}"
-                        Value="{Binding GameBoard.SelectedCell.Terrain}" />
-                    <u:Divider Orientation="Vertical" />
-                    <ToggleSwitch
-                        Grid.Column="1"
-                        VerticalAlignment="Center"
-                        IsChecked="{Binding GameBoard.SelectedCell.IsPlayerSlot}"
-                        OffContent="非出击位置"
-                        OnContent="出击位置" />
-                    <u:Divider Orientation="Vertical" />
-                    <u:IconButton
-                        Classes="Success"
-                        Command="{Binding GameBoard.AddNewUnitCommand}"
-                        Icon="{StaticResource SemiIconUserAdd}" />
-                    <u:IconButton
-                        Classes="Success"
-                        Command="{Binding GameBoard.PasteUnitCommand}"
-                        Icon="{StaticResource SemiIconCopyAdd}" />
-                </StackPanel>
-            </Border>
 
-            <ScrollViewer Grid.Row="1" Grid.Column="2">
-                <ItemsControl ItemsSource="{Binding GameBoard.Units}">
-                    <ItemsControl.Styles>
-                        <Style Selector="Border.highlighted">
-                            <Setter Property="Background" Value="#39B1C771" />
-                        </Style>
-                    </ItemsControl.Styles>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <views:BoardUnitView DataContext="{Binding}" />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+        <views:GameBoardView Grid.Row="2" DataContext="{Binding GameBoard}" />
+        <!--<views:CellPanelView Grid.Column="2" DataContext="{Binding GameBoard.SelectedCell}" />-->
 
-        </Grid>
 
     </Grid>
 
