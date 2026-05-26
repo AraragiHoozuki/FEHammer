@@ -44,6 +44,7 @@
                 <MenuItem Command="{Binding OpenSkillEditorCommand}" Header="技能编辑器" />
                 <MenuItem Command="{Binding OpenPersonEditorCommand}" Header="角色编辑器" />
                 <MenuItem Command="{Binding OpenFlagToolCommand}" Header="Flag(Bitmask)计算器" />
+                <MenuItem Command="{Binding OpenEnhanceViewerCommand}" Header="状态（ENHANCE）" />
             </MenuItem>
 
             <!--<MenuItem

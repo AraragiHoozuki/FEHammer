@@ -1,0 +1,164 @@
+<Window
+    x:Class="FEHagemu.Views.Tools.EnhanceViewerWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:FEHagemu.ViewModels.Tools"
+    Title="状态（ENHANCE）查看器"
+    Width="500"
+    Height="680"
+    d:DesignHeight="680"
+    d:DesignWidth="500"
+    x:DataType="vm:EnhanceViewerViewModel"
+    Icon="/Assets/favicon.ico"
+    mc:Ignorable="d">
+
+    <Window.Resources>
+        <Color x:Key="GoldAccent">#B8860B</Color>
+        <Color x:Key="GoldLight">#E8C874</Color>
+        <Color x:Key="GoldPale">#FDF6E3</Color>
+        <Color x:Key="Lavender">#7C5CBF</Color>
+        <Color x:Key="LavenderPale">#F0EBF8</Color>
+        <Color x:Key="ParchmentBg">#FDFBF7</Color>
+        <Color x:Key="CardBg">#FFFFFF</Color>
+        <Color x:Key="CardBorder">#E0D4C0</Color>
+        <Color x:Key="ExpandBg">#F8F4EE</Color>
+        <Color x:Key="TextPrimary">#3A2E1F</Color>
+        <Color x:Key="TextSecondary">#6B5D4F</Color>
+        <Color x:Key="TextMuted">#9E8E7A</Color>
+    </Window.Resources>
+
+    <Border CornerRadius="0">
+        <Border.Background>
+            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Offset="0" Color="{StaticResource ParchmentBg}" />
+                <GradientStop Offset="0.5" Color="{StaticResource LavenderPale}" />
+                <GradientStop Offset="1" Color="{StaticResource GoldPale}" />
+            </LinearGradientBrush>
+        </Border.Background>
+
+        <Grid RowDefinitions="Auto,*">
+            <!-- Header -->
+            <Border Grid.Row="0" Padding="16,10" Margin="10,10,10,4" CornerRadius="8"
+                    BoxShadow="0 2 8 0 #18000000">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                        <GradientStop Offset="0" Color="#FFFDF6E3" />
+                        <GradientStop Offset="0.5" Color="#FFF0EBF8" />
+                        <GradientStop Offset="1" Color="#FFFDF6E3" />
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Border.BorderBrush>
+                    <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                        <GradientStop Offset="0" Color="#90E8C874" />
+                        <GradientStop Offset="0.5" Color="#607C5CBF" />
+                        <GradientStop Offset="1" Color="#90E8C874" />
+                    </LinearGradientBrush>
+                </Border.BorderBrush>
+                <Border.BorderThickness>1.5</Border.BorderThickness>
+                <TextBlock Text="✦ ENHANCE 状态一览 ✦"
+                           HorizontalAlignment="Center"
+                           FontSize="15" FontWeight="Bold">
+                    <TextBlock.Foreground>
+                        <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                            <GradientStop Offset="0" Color="{StaticResource GoldAccent}" />
+                            <GradientStop Offset="0.5" Color="{StaticResource Lavender}" />
+                            <GradientStop Offset="1" Color="{StaticResource GoldAccent}" />
+                        </LinearGradientBrush>
+                    </TextBlock.Foreground>
+                </TextBlock>
+            </Border>
+
+            <!-- Scrollable list -->
+            <ScrollViewer Grid.Row="1" Padding="10,4">
+                <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:EnhanceItemViewModel">
+                            <Border Margin="0,2" Padding="1" CornerRadius="6"
+                                    BoxShadow="0 1 4 0 #14000000"
+                                    Cursor="Hand"
+                                    PointerPressed="OnItemPressed">
+                                <Border.BorderBrush>
+                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                        <GradientStop Offset="0" Color="#50E8C874" />
+                                        <GradientStop Offset="0.5" Color="#30E0D4C0" />
+                                        <GradientStop Offset="1" Color="#50E8C874" />
+                                    </LinearGradientBrush>
+                                </Border.BorderBrush>
+                                <Border.BorderThickness>1</Border.BorderThickness>
+
+                                <Border Padding="8,5" CornerRadius="5"
+                                        Background="{StaticResource CardBg}">
+                                    <StackPanel Spacing="2">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <!-- Icon with warm glow -->
+                                            <Border Grid.Column="0" Width="26" Height="26"
+                                                    CornerRadius="4" Margin="0,0,8,0"
+                                                    VerticalAlignment="Center"
+                                                    BoxShadow="0 0 5 0 #20E8C874">
+                                                <Border.Background>
+                                                    <RadialGradientBrush Center="50%,50%"
+                                                                         GradientOrigin="50%,50%"
+                                                                         RadiusX="70%" RadiusY="70%">
+                                                        <GradientStop Offset="0" Color="#18E8C874" />
+                                                        <GradientStop Offset="1" Color="#00FFFFFF" />
+                                                    </RadialGradientBrush>
+                                                </Border.Background>
+                                                <Image Width="24" Height="24"
+                                                       Source="{Binding Icon}"
+                                                       RenderOptions.BitmapInterpolationMode="None" />
+                                            </Border>
+
+                                            <!-- Text -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                                                <TextBlock FontSize="11" Opacity="0.5"
+                                                           FontWeight="Medium"
+                                                           Foreground="{StaticResource GoldAccent}"
+                                                           Text="{Binding Id, StringFormat='#{0}'}" />
+                                                <TextBlock FontSize="11.5"
+                                                           Foreground="{StaticResource TextPrimary}"
+                                                           Text="{Binding Description}"
+                                                           TextWrapping="Wrap" />
+                                            </StackPanel>
+
+                                            <!-- Expand hint -->
+                                            <TextBlock Grid.Column="2"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="10" Opacity="0.3"
+                                                       Foreground="{StaticResource Lavender}"
+                                                       Margin="6,0,2,0"
+                                                       Text="▸" />
+                                        </Grid>
+
+                                        <!-- Expandable detail -->
+                                        <Border IsVisible="{Binding IsExpanded}"
+                                                Margin="34,3,0,2"
+                                                Padding="8,5"
+                                                CornerRadius="4"
+                                                BoxShadow="inset 0 1 3 0 #0A000000">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                                                    <GradientStop Offset="0" Color="{StaticResource ExpandBg}" />
+                                                    <GradientStop Offset="1" Color="{StaticResource LavenderPale}" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <Border.BorderBrush>
+                                                <SolidColorBrush Color="{StaticResource CardBorder}" Opacity="0.5" />
+                                            </Border.BorderBrush>
+                                            <Border.BorderThickness>1</Border.BorderThickness>
+                                            <TextBlock FontSize="11"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       Text="{Binding FormalDescription}"
+                                                       TextWrapping="Wrap" />
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</Window>

@@ -13,6 +13,8 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using System.Threading.Tasks;
 using Ursa.Controls;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
 namespace FEHagemu.ViewModels.Tools
 {
@@ -21,6 +23,7 @@ namespace FEHagemu.ViewModels.Tools
         [ObservableProperty] private string _id = "PID_NewPerson";
         [ObservableProperty] private string _roman = "";
         [ObservableProperty] private string _face = "";
+        partial void OnFaceChanged(string value) => RefreshPortraits();
         [ObservableProperty] private string _face2 = "";
 
         [ObservableProperty] private uint _idNum;
@@ -54,21 +57,7 @@ namespace FEHagemu.ViewModels.Tools
         [ObservableProperty] private int _growDef;
         [ObservableProperty] private int _growRes;
 
-        // Skills (We have up to 75 slots but usually much fewer are used. Let's provide a few specific ones or a list editor?)
-        // The serializer says Size=75. That's a lot.
-        // Usually: Weapon, Assist, Special, A, B, C, S, X?
-        // Let's provide an editable list or just a big text box for JSON import/export?
-        // Or maybe just the first few relevant ones?
-        // Actually, let's just use string properties for the first 8-10, and maybe a "raw" list for the rest?
-        // For now, let's give 7 specific slots as that's what's common in FEH + maybe a few more.
-        [ObservableProperty] private string? _skillWeapon;
-        [ObservableProperty] private string? _skillAssist;
-        [ObservableProperty] private string? _skillSpecial;
-        [ObservableProperty] private string? _skillA;
-        [ObservableProperty] private string? _skillB;
-        [ObservableProperty] private string? _skillC;
-        [ObservableProperty] private string? _skillS;
-        [ObservableProperty] private string? _skillX;
+        public System.Collections.ObjectModel.ObservableCollection<StringWrapper> SkillsList { get; } = new();
 
         // Dragonflowers
         [ObservableProperty] private uint _dragonflowerNum;
@@ -92,6 +81,15 @@ namespace FEHagemu.ViewModels.Tools
 
         [ObservableProperty] private string _nameText = "New Person";
         [ObservableProperty] private string _titleText = "Title";
+
+        // Portrait previews
+        [ObservableProperty] private Avalonia.Media.Imaging.Bitmap? _faceFcImage;
+        [ObservableProperty] private Avalonia.Media.Imaging.Bitmap? _faceImage;
+        [ObservableProperty] private Avalonia.Media.Imaging.Bitmap? _btlFaceImage;
+        [ObservableProperty] private Avalonia.Media.Imaging.Bitmap? _btlFaceCImage;
+        [ObservableProperty] private Avalonia.Media.Imaging.Bitmap? _btlFaceDImage;
+        [ObservableProperty] private Avalonia.Media.Imaging.Bitmap? _btlFaceBuImage;
+        [ObservableProperty] private Avalonia.Media.Imaging.Bitmap? _btlFaceBuDImage;
 
         // public IEnumerable<Origins> OriginsList => Enum.GetValues<Origins>();
         public IEnumerable<WeaponType> WeaponTypes => Enum.GetValues<WeaponType>();
@@ -118,6 +116,111 @@ namespace FEHagemu.ViewModels.Tools
             if (result == DialogResult.OK && vm.SelectedPerson is not null && vm.SelectedPerson.person is Person p)
             {
                 LoadPerson(p);
+            }
+        }
+
+        private void RefreshPortraits()
+        {
+            FaceFcImage = LoadPortrait("Face_FC");
+            FaceImage = LoadPortrait("Face");
+            BtlFaceImage = LoadPortrait("BtlFace");
+            BtlFaceCImage = LoadPortrait("BtlFace_C");
+            BtlFaceDImage = LoadPortrait("BtlFace_D");
+            BtlFaceBuImage = LoadPortrait("BtlFace_BU");
+            BtlFaceBuDImage = LoadPortrait("BtlFace_BU_D");
+        }
+
+        private Avalonia.Media.Imaging.Bitmap? LoadPortrait(string type)
+        {
+            if (string.IsNullOrEmpty(Face)) return null;
+            string path = Path.Combine(MasterData.FACE_PATH, Face, $"{type}.png");
+            if (File.Exists(path))
+            {
+                try
+                {
+                    using var fs = File.OpenRead(path);
+                    return new Avalonia.Media.Imaging.Bitmap(fs);
+                }
+                catch { return null; }
+            }
+            return null;
+        }
+
+        [RelayCommand]
+        public async Task ReplacePortrait(string portraitType)
+        {
+            if (string.IsNullOrEmpty(Face)) return;
+            var mainWindow = Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.MainWindow : null;
+            if (mainWindow is null) return;
+
+            var files = await mainWindow.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+            {
+                Title = $"Select {portraitType} Image",
+                AllowMultiple = false,
+                FileTypeFilter = new[] { Avalonia.Platform.Storage.FilePickerFileTypes.ImageAll }
+            });
+
+            if (files.Count > 0)
+            {
+                string targetPath = Path.Combine(MasterData.FACE_PATH, Face, $"{portraitType}.png");
+                string backupPath = targetPath + ".bak";
+                
+                // Backup if original exists and backup doesn't
+                if (File.Exists(targetPath) && !File.Exists(backupPath))
+                {
+                    File.Copy(targetPath, backupPath);
+                }
+                else if (!File.Exists(targetPath))
+                {
+                    // Create directory if needed
+                    Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+                }
+
+                try
+                {
+                    int targetW = 158, targetH = 158;
+                    if (portraitType == "Face_FC") { targetW = 158; targetH = 158; }
+                    else if (portraitType == "Face" || portraitType.StartsWith("BtlFace") && !portraitType.Contains("BU")) { targetW = 1684; targetH = 1920; }
+                    else if (portraitType.StartsWith("BtlFace_BU")) { targetW = 476; targetH = 300; }
+
+                    using (var sourceImage = await SixLabors.ImageSharp.Image.LoadAsync(files[0].Path.LocalPath))
+                    {
+                        SixLabors.ImageSharp.Processing.ProcessingExtensions.Mutate(sourceImage, x => x.Resize(targetW, targetH));
+                        await sourceImage.SaveAsWebpAsync(targetPath);
+                    }
+                    RefreshPortraits();
+                    await MessageBox.ShowOverlayAsync($"{portraitType} replaced successfully.", "Success");
+                }
+                catch (Exception e)
+                {
+                    await MessageBox.ShowOverlayAsync($"Error processing image: {e.Message}", "Error");
+                }
+            }
+        }
+
+        [RelayCommand]
+        public async Task RestorePortrait(string portraitType)
+        {
+            if (string.IsNullOrEmpty(Face)) return;
+            string targetPath = Path.Combine(MasterData.FACE_PATH, Face, $"{portraitType}.png");
+            string backupPath = targetPath + ".bak";
+
+            if (File.Exists(backupPath))
+            {
+                try
+                {
+                    File.Copy(backupPath, targetPath, true);
+                    RefreshPortraits();
+                    await MessageBox.ShowOverlayAsync($"{portraitType} restored successfully.", "Success");
+                }
+                catch (Exception e)
+                {
+                    await MessageBox.ShowOverlayAsync($"Error restoring image: {e.Message}", "Error");
+                }
+            }
+            else
+            {
+                await MessageBox.ShowOverlayAsync($"No backup found for {portraitType}.", "Info");
             }
         }
 
@@ -166,16 +269,15 @@ namespace FEHagemu.ViewModels.Tools
             else { GrowHp = GrowAtk = GrowSpd = GrowDef = GrowRes = 0; }
 
             // Skills
-            if (p.skills != null)
+            SkillsList.Clear();
+            var pSkills = p.skills ?? Array.Empty<string>();
+            for (int i = 0; i < pSkills.Length; i++)
             {
-                SkillWeapon = p.skills.Length > 0 ? p.skills[0] : null;
-                SkillAssist = p.skills.Length > 1 ? p.skills[1] : null;
-                SkillSpecial = p.skills.Length > 2 ? p.skills[2] : null;
-                SkillA = p.skills.Length > 3 ? p.skills[3] : null;
-                SkillB = p.skills.Length > 4 ? p.skills[4] : null;
-                SkillC = p.skills.Length > 5 ? p.skills[5] : null;
-                SkillS = p.skills.Length > 6 ? p.skills[6] : null;
-                SkillX = p.skills.Length > 7 ? p.skills[7] : null;
+                SkillsList.Add(new StringWrapper 
+                { 
+                    Label = $"Skill {i}",
+                    Value = pSkills[i]
+                });
             }
 
             // Dragonflowers
@@ -237,19 +339,7 @@ namespace FEHagemu.ViewModels.Tools
             p.stats = CreateStats(Hp, Atk, Spd, Def, Res);
             p.grow = CreateStats(GrowHp, GrowAtk, GrowSpd, GrowDef, GrowRes);
 
-            var skillsList = new List<string>();
-            if (!string.IsNullOrEmpty(SkillWeapon)) skillsList.Add(SkillWeapon); else skillsList.Add((string)null!);
-            if (!string.IsNullOrEmpty(SkillAssist)) skillsList.Add(SkillAssist); else skillsList.Add((string)null!);
-            if (!string.IsNullOrEmpty(SkillSpecial)) skillsList.Add(SkillSpecial); else skillsList.Add((string)null!);
-            if (!string.IsNullOrEmpty(SkillA)) skillsList.Add(SkillA); else skillsList.Add((string)null!);
-            if (!string.IsNullOrEmpty(SkillB)) skillsList.Add(SkillB); else skillsList.Add((string)null!);
-            if (!string.IsNullOrEmpty(SkillC)) skillsList.Add(SkillC); else skillsList.Add((string)null!);
-            if (!string.IsNullOrEmpty(SkillS)) skillsList.Add(SkillS); else skillsList.Add((string)null!);
-            if (!string.IsNullOrEmpty(SkillX)) skillsList.Add(SkillX); else skillsList.Add((string)null!);
-
-            // Should probably trim trailing nulls if that's how it works? 
-            // But usually fixed slots. Let's send 8.
-            p.skills = skillsList.ToArray();
+            p.skills = SkillsList.Select(s => string.IsNullOrEmpty(s.Value) ? null : s.Value).ToArray()!;
 
             // Dragonflower
             p.dragonflower = new DragonFlowerInfo
@@ -325,5 +415,46 @@ namespace FEHagemu.ViewModels.Tools
 
             await MessageBox.ShowOverlayAsync($"Person {p.id} saved.", "Success");
         }
+
+        [RelayCommand]
+        public async Task PickSkill(StringWrapper wrapper)
+        {
+            if (wrapper == null) return;
+            var vm = new SkillSelectorViewModel();
+            var result = await OverlayDialog.ShowModal(new FEHagemu.Views.SkillSelectorView(), vm, null, new OverlayDialogOptions()
+            {
+                Title = "Select Skill",
+                CanResize = true,
+                Buttons = DialogButton.OKCancel
+            });
+
+            if (result == DialogResult.OK && vm.SelectedSkill?.skill is not null)
+            {
+                wrapper.Value = vm.SelectedSkill.skill.id;
+            }
+        }
+
+        [RelayCommand]
+        public async Task PickLegendaryBtnSkill()
+        {
+            var vm = new SkillSelectorViewModel();
+            var result = await OverlayDialog.ShowModal(new FEHagemu.Views.SkillSelectorView(), vm, null, new OverlayDialogOptions()
+            {
+                Title = "Select Skill",
+                CanResize = true,
+                Buttons = DialogButton.OKCancel
+            });
+
+            if (result == DialogResult.OK && vm.SelectedSkill?.skill is not null)
+            {
+                LegendaryBtnSkillId = vm.SelectedSkill.skill.id;
+            }
+        }
+    }
+
+    public partial class StringWrapper : ObservableObject
+    {
+        [ObservableProperty] private string? _label;
+        [ObservableProperty] private string? _value;
     }
 }

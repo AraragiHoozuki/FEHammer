@@ -917,20 +917,20 @@ namespace FEHagemu.HSDArchive
         PreventTeleport_4Spaces = 8,
         NegateCalculateDamageUsingLowerOfDefRes = 0x10,
         FakeRes5 = 0x20,
-        SkillFlag3_0x40_WIP = 0x40,
+        可以移动至周围2格内满足4种内任意条件的格子及其周围2格 = 0x40,
         Pass = 0x80
     }
     [Flags]
     public enum SkillFlags4 : byte
     {
-        SkillFlags4_0x1_WIP = 1,
+        可以移动至周围5格内被赋予天脉的格子 = 1,
         NoDefenderHand = 2,
         DestroyFence = 4,
         Vantage_WIP = 8,
-        SkillFlags4_0x10_WIP = 0x10,
-        SkillFlags4_0x20_WIP = 0x20,
+        抵消敌人的防抗较低方计算伤害含范围奥义 = 0x10,
+        可移动至周围5格内敌人相邻的格子中离自己最近的格子 = 0x20,
         FakeSPD10_GodSpeed = 0x40,
-        NO_OUGI = 0x80
+        不能发动奥义 = 0x80
     }
     public struct SkillLimit
     {

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Buffers;
+using System.Collections.Generic;
 using System.IO;
 using System;
 using System.Reflection;
@@ -41,16 +42,25 @@ namespace FEHagemu.HSDArcIO
         //    arc.path = path;
         //}
 
-        protected byte[] ReadTilZero()
+        private const int InitialStringBufferSize = 128;
+
+        protected int ReadTilZero(ref byte[] buffer)
         {
-            List<byte> list = new List<byte>();
+            int count = 0;
             byte reading = ReadByte();
             while (reading != 0)
             {
-                list.Add(reading);
+                if (count >= buffer.Length)
+                {
+                    var newBuf = ArrayPool<byte>.Shared.Rent(buffer.Length * 2);
+                    buffer.AsSpan(0, count).CopyTo(newBuf);
+                    ArrayPool<byte>.Shared.Return(buffer);
+                    buffer = newBuf;
+                }
+                buffer[count++] = reading;
                 reading = ReadByte();
             }
-            return list.ToArray();
+            return count;
         }
 
         //===========================
@@ -102,36 +112,34 @@ namespace FEHagemu.HSDArcIO
         }
         public string ReadStringBuffer(StringType type)
         {
-            byte[] buffer = ReadTilZero();
-            if (buffer.Length == 0)
+            var buffer = ArrayPool<byte>.Shared.Rent(InitialStringBufferSize);
+            try
             {
-                return  string.Empty;
-            }
-            else if (type == StringType.Plain)
-            {
-                return Encoding.UTF8.GetString(buffer);
-            }
-            else
-            {
+                int len = ReadTilZero(ref buffer);
+                if (len == 0) return string.Empty;
+
+                if (type == StringType.Plain)
+                {
+                    return Encoding.UTF8.GetString(buffer, 0, len);
+                }
+
                 var key = type switch
                 {
                     StringType.ID => XKeys.XKeyId,
                     StringType.Message => XKeys.XKeyMsg,
                     _ => XKeys.XKeyId
                 };
-                byte[] decoded = new byte[buffer.Length];
-                for (int i = 0; i < buffer.Length; i++)
+                for (int i = 0; i < len; i++)
                 {
-                    if (buffer[i] != key[i % key.Length])
-                    {
-                        decoded[i] = (byte)(buffer[i] ^ key[i % key.Length]);
-                    }
-                    else
-                    {
-                        decoded[i] = buffer[i];
-                    }
+                    byte k = key[i % key.Length];
+                    if (buffer[i] != k)
+                        buffer[i] = (byte)(buffer[i] ^ k);
                 }
-                return Encoding.UTF8.GetString(decoded);
+                return Encoding.UTF8.GetString(buffer, 0, len);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
             }
         }
         public void ReadXString(object data, FieldInfo field, HSDHelperAttribute at)
@@ -176,17 +184,19 @@ namespace FEHagemu.HSDArcIO
         {
             if (!field.FieldType.IsArray) throw new Exception($"Use attribute 'Array' for no-Array field {field.Name}");
             int size;
-            if (at.DynamicSizeCalculator is not null) 
-            { 
-                size = (int)data.GetType().GetMethod(at.DynamicSizeCalculator!)!.Invoke(null, new object[] { data })!; 
+            if (at.DynamicSizeCalculator is not null)
+            {
+                size = (int)data.GetType().GetMethod(at.DynamicSizeCalculator!)!.Invoke(null, new object[] { data })!;
             }
             else
             {
                 size = at.Size;
             };
-            var eleT = field.FieldType.GetElementType();
-            var arr = Array.CreateInstance(eleT!, size);
-            if (at.ElementIsPtr) {
+            var eleT = field.FieldType.GetElementType()!;
+            var arr = Array.CreateInstance(eleT, size);
+
+            if (at.ElementIsPtr)
+            {
                 for (int i = 0; i < size; i++)
                 {
                     ulong offset = ReadUInt64();
@@ -196,7 +206,34 @@ namespace FEHagemu.HSDArcIO
                     ReadElement(arr, at, i);
                     BaseStream.Seek(pos, SeekOrigin.Begin);
                 }
-            } else
+            }
+            else if (at.ElementType == HSDBinType.Atom)
+            {
+                int atomSize = at.Size;
+                ulong key = at.Key;
+                for (int i = 0; i < size; i++)
+                {
+                    arr.SetValue(ReadAtomValue(atomSize, key), i);
+                }
+            }
+            else if (at.ElementType == HSDBinType.String)
+            {
+                var strType = at.StringType;
+                for (int i = 0; i < size; i++)
+                {
+                    arr.SetValue(ReadStringBuffer(strType), i);
+                }
+            }
+            else if (at.ElementType == HSDBinType.Struct)
+            {
+                for (int i = 0; i < size; i++)
+                {
+                    var element = Activator.CreateInstance(eleT)!;
+                    ReadStruct(element);
+                    arr.SetValue(element, i);
+                }
+            }
+            else
             {
                 for (int i = 0; i < size; i++)
                 {
@@ -306,41 +343,42 @@ namespace FEHagemu.HSDArcIO
         public void ReadStruct(object data)
         {
             Type type = data.GetType();
-            FieldInfo[] fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
-            Dictionary<long, FieldInfo> delayed_ptrs = new();
+            var metas = HSDReflectionCache.GetFieldMetas(type);
+            List<(long position, FieldMeta meta)> delayed_ptrs = null;
 
-            foreach (var field in fields)
+            foreach (ref readonly var m in metas.AsSpan())
             {
-                var at = field.GetCustomAttribute<HSDHelperAttribute>();
-                if (at is null) continue;
-                if (at.IsDelayedPtr)
+                if (m.Attr.IsDelayedPtr)
                 {
-                    delayed_ptrs.TryAdd(BaseStream.Position, field);
+                    delayed_ptrs ??= new();
+                    delayed_ptrs.Add((BaseStream.Position, m));
                     ReadUInt64();
                 }
-                else if (at.IsPtr)
+                else if (m.Attr.IsPtr)
                 {
                     ulong offset = ReadUInt64();
-                    SeekAndExecute(offset, () =>
-                    {
-                        ReadField(data, field, at);
-                    });
+                    if (offset == 0) continue;
+                    long pos = BaseStream.Position;
+                    BaseStream.Seek(HSDArcHeader.Size + (long)offset, SeekOrigin.Begin);
+                    ReadField(data, m.Field, m.Attr);
+                    BaseStream.Seek(pos, SeekOrigin.Begin);
                 }
                 else
                 {
-                    ReadField(data, field, at);
+                    ReadField(data, m.Field, m.Attr);
                 }
             }
 
-            foreach (var (position, field) in delayed_ptrs)
+            if (delayed_ptrs != null)
             {
-                BaseStream.Seek(position, SeekOrigin.Begin);
-                ulong offset = ReadUInt64();
-                var at = field.GetCustomAttribute<HSDHelperAttribute>();
-                SeekAndExecute(offset, () =>
+                foreach (var (position, m) in delayed_ptrs)
                 {
-                    ReadField(data, field, at!);
-                });
+                    BaseStream.Seek(position, SeekOrigin.Begin);
+                    ulong offset = ReadUInt64();
+                    if (offset == 0) continue;
+                    BaseStream.Seek(HSDArcHeader.Size + (long)offset, SeekOrigin.Begin);
+                    ReadField(data, m.Field, m.Attr);
+                }
             }
         }
         #endregion

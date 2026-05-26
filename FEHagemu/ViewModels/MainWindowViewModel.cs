@@ -1,4 +1,4 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using FEHagemu.HSDArchive;
 using FEHagemu.HSDArcIO;
@@ -300,6 +300,39 @@ namespace FEHagemu.ViewModels
             foreach (var uiSource in uiSources) {
                 File.Copy(uiSource.FullName, Path.Combine(uiDir.FullName, uiSource.Name), true);
             }
+
+            // Export modified Person Archives
+            //if (MasterData.PersonArcs != null)
+            //{
+            //    foreach (var personArc in MasterData.PersonArcs)
+            //    {
+            //        if (File.Exists(personArc.path + ".bak"))
+            //        {
+            //            var destFile = Path.Combine(personDir.FullName, Path.GetFileName(personArc.path));
+            //            File.Copy(personArc.path, destFile, true);
+            //        }
+            //    }
+            //}
+
+            // Export modified Face Portraits
+            if (!string.IsNullOrEmpty(MasterData.FACE_PATH) && Directory.Exists(MasterData.FACE_PATH))
+            {
+                var faceSourceDir = new DirectoryInfo(MasterData.FACE_PATH);
+                var faceExportDir = Directory.CreateDirectory(Path.Combine(assetsPath, "Common", "Face"));
+                foreach (var dir in faceSourceDir.GetDirectories())
+                {
+                    var modifiedPngs = dir.GetFiles("*.png").Where(f => File.Exists(f.FullName + ".bak")).ToArray();
+                    if (modifiedPngs.Length > 0)
+                    {
+                        var targetFaceDir = Directory.CreateDirectory(Path.Combine(faceExportDir.FullName, dir.Name));
+                        foreach (var png in modifiedPngs)
+                        {
+                            File.Copy(png.FullName, Path.Combine(targetFaceDir.FullName, png.Name), true);
+                        }
+                    }
+                }
+            }
+
             await SaveMap();
 
             string mapSourcePath = mapArc.FilePath;
@@ -356,6 +389,14 @@ namespace FEHagemu.ViewModels
         {
             var window = new PersonEditorWindow();
             window.DataContext = new PersonEditorViewModel();
+            window.Show();
+        }
+
+        [RelayCommand]
+        private void OpenEnhanceViewer()
+        {
+            var window = new EnhanceViewerWindow();
+            window.DataContext = new EnhanceViewerViewModel();
             window.Show();
         }
     }

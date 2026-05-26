@@ -63,19 +63,18 @@ namespace FEHagemu.HSDArchive
 
         public byte[] Binarize()
         {
-            byte[] buffer;
-            using (MemoryStream ms = new ())
-            using (FEHArcWriter writer = new (ms))
+            using var ms = new MemoryStream(4096);
+            using (var writer = new FEHArcWriter(ms))
             {
                 writer.WriteStart();
                 writer.WriteStruct(data);
                 writer.WritePointerOffsets();
                 writer.WriteEnd(header.unknown1, header.unknown2, header.magic);
-                buffer = new byte[XStart.Length + ms.Length];
-                ms.Position = 0;
-                XStart.CopyTo(buffer, 0);
-                ms.Read(buffer, XStart.Length, (int)ms.Length);
             }
+            int arcLen = (int)ms.Length;
+            byte[] buffer = new byte[XStart.Length + arcLen];
+            XStart.CopyTo(buffer, 0);
+            ms.GetBuffer().AsSpan(0, arcLen).CopyTo(buffer.AsSpan(XStart.Length));
             return buffer;
         }
 
@@ -88,20 +87,13 @@ namespace FEHagemu.HSDArchive
 
             await File.WriteAllBytesAsync(tempPath, data);
 
-            try
+            if (File.Exists(FilePath))
             {
-                if (File.Exists(FilePath))
-                {
-                    File.Move(FilePath, bakPath, true);
-
-                    File.Delete(FilePath);
-                }
-
-                File.Move(tempPath, FilePath);
+                File.Replace(tempPath, FilePath, bakPath, true);
             }
-            catch (Exception)
+            else
             {
-                throw;
+                File.Move(tempPath, FilePath);
             }
         }
     }

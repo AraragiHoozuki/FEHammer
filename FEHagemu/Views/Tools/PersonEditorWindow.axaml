@@ -2,236 +2,393 @@
     x:Class="FEHagemu.Views.Tools.PersonEditorWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:behaviors="clr-namespace:FEHagemu.Behaviors"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:u="https://irihi.tech/ursa"
     xmlns:vm="using:FEHagemu.ViewModels.Tools"
     Title="Person Editor"
-    Width="900"
-    Height="700"
+    Width="1000"
+    Height="800"
     x:DataType="vm:PersonEditorViewModel"
     Icon="/Assets/favicon.ico"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
-    <Window.Resources>
-        <!-- Define CardBorder theme resource locally if not available globally, or use a Style -->
-        <ControlTheme x:Key="CardBorder" TargetType="Border">
-             <Setter Property="Background" Value="{DynamicResource SemiColorBackground0}" />
-             <Setter Property="BorderBrush" Value="{DynamicResource SemiColorBorder}" />
-             <Setter Property="BorderThickness" Value="1" />
-             <Setter Property="CornerRadius" Value="6" />
-        </ControlTheme>
-    </Window.Resources>
-    <Panel>
-        <Grid ColumnDefinitions="*,2*" RowDefinitions="Auto,*">
 
-            <!--  Toolbar  -->
+    <Window.Styles>
+        <Style Selector="TextBlock.cardTitle">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+        <Style Selector="Border.subCard">
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground0}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="16" />
+            <Setter Property="Margin" Value="0,0,0,16" />
+            <Setter Property="BoxShadow" Value="0 2 6 0 #0A000000" />
+        </Style>
+        <Style Selector="TextBlock.fieldLabel">
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText2}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="0,0,0,2" />
+        </Style>
+    </Window.Styles>
+
+    <Panel>
+        <Grid RowDefinitions="Auto, *">
+            <!--  Header Toolbar  -->
             <Border
                 Grid.Row="0"
-                Grid.ColumnSpan="2"
-                Margin="0,0,0,10"
-                Padding="10"
-                BoxShadow="0 2 5 0 DarkGray">
-                <StackPanel
-                    Margin="10"
-                    Orientation="Horizontal"
-                    Spacing="10">
-                    <u:IconButton
-                       Classes="Secondary"
-                       Command="{Binding SelectPersonFromGameCommand}"
-                       Content="Read Person"
-                       Icon="{StaticResource SemiIconSearch}" />
-                    <u:IconButton
-                        Classes="Primary"
-                        Command="{Binding SaveToGameCommand}"
-                        Content="Save Person"
-                        Icon="{StaticResource SemiIconSave}" />
-                </StackPanel>
+                Padding="16,12"
+                Background="{DynamicResource SemiColorBackground1}"
+                BorderBrush="{DynamicResource SemiColorBorder}"
+                BorderThickness="0,0,0,1">
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="16">
+                        <TextBlock VerticalAlignment="Center" FontSize="18" FontWeight="Bold" Text="{Binding NameText}" />
+                        <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource SemiColorText2}" Text="{Binding Id}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                        <u:IconButton Classes="Secondary" Command="{Binding SelectPersonFromGameCommand}" Content="Select Person" Icon="{StaticResource SemiIconSearch}" />
+                        <u:IconButton Classes="Solid" Command="{Binding SaveToGameCommand}" Content="Save Person" Icon="{StaticResource SemiIconSave}" Theme="{DynamicResource SolidIconButton}" />
+                    </StackPanel>
+                </Grid>
             </Border>
 
-            <!-- Main Content Area -->
-            <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="300, *" Margin="30">
-                
-                <!-- Left Column: Identity & Basic Info -->
-                <ScrollViewer Padding="0,0,30,0">
-                    <StackPanel Spacing="10">
-                        <TextBlock Classes="H3" Text="Identity" />
-                        
-                        <Grid ColumnDefinitions="Auto, 10, *">
-                            <TextBlock Width="80" VerticalAlignment="Center" Text="ID:" />
-                            <TextBox Grid.Column="2" Text="{Binding Id}" IsReadOnly="True" Watermark="PID_Name" />
-                        </Grid>
-                        <Grid ColumnDefinitions="Auto, 10, *">
-                            <TextBlock Width="80" VerticalAlignment="Center" Text="Name:" />
-                            <TextBox Grid.Column="2" Text="{Binding NameText}" />
-                        </Grid>
-                        <Grid ColumnDefinitions="Auto, 10, *">
-                            <TextBlock Width="80" VerticalAlignment="Center" Text="Title:" />
-                            <TextBox Grid.Column="2" Text="{Binding TitleText}" />
-                        </Grid>
-                        <Grid ColumnDefinitions="Auto, 10, *">
-                            <TextBlock Width="80" VerticalAlignment="Center" Text="Roman:" />
-                            <TextBox Grid.Column="2" Text="{Binding Roman}" />
-                        </Grid>
-                        
-                        <u:Divider Content="Appearance" />
-                        
-                        <Grid ColumnDefinitions="Auto, 10, *">
-                            <TextBlock Width="80" VerticalAlignment="Center" Text="Face:" />
-                            <TextBox Grid.Column="2" Text="{Binding Face}" />
-                        </Grid>
-                        <Grid ColumnDefinitions="Auto, 10, *">
-                            <TextBlock Width="80" VerticalAlignment="Center" Text="Face 2:" />
-                            <TextBox Grid.Column="2" Text="{Binding Face2}" />
-                        </Grid>
-                        
-                        <u:Divider Content="Game Data" />
+            <!--  Main Content  -->
+            <Border Grid.Row="1" Background="{DynamicResource SemiColorBackground1}">
+                <TabControl Margin="0" Padding="0">
+                    <!--  Basic Info Tab  -->
+                    <TabItem Header="Basic Info">
+                        <ScrollViewer>
+                            <StackPanel Margin="16,16,16,48" Spacing="0">
+                                <Border Classes="subCard">
+                                    <StackPanel>
+                                        <TextBlock Classes="cardTitle" Text="Identity" />
+                                        <Grid ColumnDefinitions="*, 16, *" RowDefinitions="Auto, 12, Auto, 12, Auto">
+                                            <StackPanel Grid.Row="0" Grid.Column="0" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="ID" />
+                                                <TextBox IsReadOnly="True" Text="{Binding Id}" Watermark="PID_..." />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="0" Grid.Column="2" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Name" />
+                                                <TextBox Text="{Binding NameText}" />
+                                            </StackPanel>
 
-                        <Grid ColumnDefinitions="Auto, 10, *">
-                            <TextBlock Width="80" VerticalAlignment="Center" Text="ID Num:" />
-                            <u:NumericUIntUpDown Grid.Column="2" Value="{Binding IdNum}" />
-                        </Grid>
-                        <Grid ColumnDefinitions="Auto, 10, *">
-                            <TextBlock Width="80" VerticalAlignment="Center" Text="Sort Value:" />
-                            <u:NumericUIntUpDown Grid.Column="2" Value="{Binding SortValue}" />
-                        </Grid>
-                        <Grid ColumnDefinitions="Auto, 10, *">
-                            <TextBlock Width="80" VerticalAlignment="Center" Text="Version:" />
-                            <u:NumericUIntUpDown Grid.Column="2" Value="{Binding VersionNum}" />
-                        </Grid>
-                        <Grid ColumnDefinitions="Auto, 10, *">
-                            <TextBlock Width="80" VerticalAlignment="Center" Text="Timestamp:" />
-                            <TextBox Grid.Column="2" Text="{Binding Timestamp}" />
-                        </Grid>
-                        <Grid ColumnDefinitions="Auto, 10, *">
-                            <TextBlock Width="80" VerticalAlignment="Center" Text="Origin:" />
-                            <u:NumericUIntUpDown Grid.Column="2" Value="{Binding Origin}" />
-                        </Grid>
-                        <Grid ColumnDefinitions="Auto, 10, *">
-                            <TextBlock Width="80" VerticalAlignment="Center" Text="Series:" />
-                            <u:NumericByteUpDown Grid.Column="2" Value="{Binding Series}" />
-                        </Grid>
+                                            <StackPanel Grid.Row="2" Grid.Column="0" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Title" />
+                                                <TextBox Text="{Binding TitleText}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2" Grid.Column="2" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Roman" />
+                                                <TextBox Text="{Binding Roman}" />
+                                            </StackPanel>
 
-                    </StackPanel>
-                </ScrollViewer>
+                                            <StackPanel Grid.Row="4" Grid.Column="0" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Face" />
+                                                <TextBox Text="{Binding Face}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="4" Grid.Column="2" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Face 2" />
+                                                <TextBox Text="{Binding Face2}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
 
-                <!-- Right Column: Gameplay Stats & Attributes -->
-                <ScrollViewer Grid.Column="1">
-                    <StackPanel Spacing="15">
-                        
-                        <!-- Gameplay Section -->
-                        <Border Theme="{StaticResource CardBorder}" Padding="15">
-                            <StackPanel Spacing="10">
-                                <TextBlock Classes="H4" Text="Gameplay Attributes" />
-                                <Grid ColumnDefinitions="*, 10, *, 10, *" RowDefinitions="Auto, 10, Auto">
-                                    <StackPanel Spacing="5">
-                                        <TextBlock Text="Weapon Type" />
-                                        <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding WeaponTypes}" SelectedItem="{Binding WeaponType}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2" Spacing="5">
-                                        <TextBlock Text="Move Type" />
-                                        <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding MoveTypes}" SelectedItem="{Binding MoveType}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="4" Spacing="5">
-                                        <TextBlock Text="Tome Class" />
-                                        <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding Elements}" SelectedItem="{Binding TomeClass}" />
-                                    </StackPanel>
+                                <Border Classes="subCard">
+                                    <StackPanel>
+                                        <TextBlock Classes="cardTitle" Text="Gameplay Attributes" />
+                                        <Grid ColumnDefinitions="*, 16, *, 16, *" RowDefinitions="Auto, 16, Auto">
+                                            <StackPanel Grid.Row="0" Grid.Column="0" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Weapon Type" />
+                                                <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding WeaponTypes}" SelectedItem="{Binding WeaponType}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="0" Grid.Column="2" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Move Type" />
+                                                <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding MoveTypes}" SelectedItem="{Binding MoveType}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="0" Grid.Column="4" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Tome Class" />
+                                                <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding Elements}" SelectedItem="{Binding TomeClass}" />
+                                            </StackPanel>
 
-                                    <StackPanel Grid.Row="2" Spacing="5">
-                                        <TextBlock Text="Base Vector" />
-                                        <u:NumericByteUpDown Value="{Binding BaseVector}" />
+                                            <StackPanel Grid.Row="2" Grid.Column="0" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Base Vector" />
+                                                <u:NumericByteUpDown Value="{Binding BaseVector}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2" Grid.Column="2" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Refresher" />
+                                                <u:NumericByteUpDown Value="{Binding RefresherQ}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2" Grid.Column="4" Background="Transparent" Spacing="4" Orientation="Horizontal">
+                                                <CheckBox Content="Regular" IsChecked="{Binding RegularQ}" />
+                                                <CheckBox Content="Permanent" IsChecked="{Binding PermanentQ}" Margin="16,0,0,0" />
+                                            </StackPanel>
+                                        </Grid>
                                     </StackPanel>
-                                    <StackPanel Grid.Row="2" Grid.Column="2" Spacing="5">
-                                        <TextBlock Text="Refresher" />
-                                        <u:NumericByteUpDown Value="{Binding RefresherQ}" />
+                                </Border>
+
+                                <Border Classes="subCard">
+                                    <StackPanel>
+                                        <TextBlock Classes="cardTitle" Text="Stats &amp; Grow" />
+                                        <Grid ColumnDefinitions="*, *, *, *, *" RowDefinitions="Auto, 8, Auto">
+                                            <u:NumericIntUpDown Grid.Row="0" Grid.Column="0" Margin="4" InnerLeftContent="Base HP" Value="{Binding Hp}" />
+                                            <u:NumericIntUpDown Grid.Row="0" Grid.Column="1" Margin="4" InnerLeftContent="Base Atk" Value="{Binding Atk}" />
+                                            <u:NumericIntUpDown Grid.Row="0" Grid.Column="2" Margin="4" InnerLeftContent="Base Spd" Value="{Binding Spd}" />
+                                            <u:NumericIntUpDown Grid.Row="0" Grid.Column="3" Margin="4" InnerLeftContent="Base Def" Value="{Binding Def}" />
+                                            <u:NumericIntUpDown Grid.Row="0" Grid.Column="4" Margin="4" InnerLeftContent="Base Res" Value="{Binding Res}" />
+
+                                            <u:NumericIntUpDown Grid.Row="2" Grid.Column="0" Margin="4" InnerLeftContent="Grow HP" Value="{Binding GrowHp}" />
+                                            <u:NumericIntUpDown Grid.Row="2" Grid.Column="1" Margin="4" InnerLeftContent="Grow Atk" Value="{Binding GrowAtk}" />
+                                            <u:NumericIntUpDown Grid.Row="2" Grid.Column="2" Margin="4" InnerLeftContent="Grow Spd" Value="{Binding GrowSpd}" />
+                                            <u:NumericIntUpDown Grid.Row="2" Grid.Column="3" Margin="4" InnerLeftContent="Grow Def" Value="{Binding GrowDef}" />
+                                            <u:NumericIntUpDown Grid.Row="2" Grid.Column="4" Margin="4" InnerLeftContent="Grow Res" Value="{Binding GrowRes}" />
+                                        </Grid>
                                     </StackPanel>
-                                </Grid>
-                                
-                                <StackPanel Orientation="Horizontal" Spacing="20" Margin="0,10,0,0">
-                                    <ToggleSwitch IsChecked="{Binding RegularQ}" OnContent="Regular" OffContent="Not Regular" />
-                                    <ToggleSwitch IsChecked="{Binding PermanentQ}" OnContent="Permanent" OffContent="Not Permanent" />
-                                </StackPanel>
+                                </Border>
+
+                                <Border Classes="subCard">
+                                    <StackPanel>
+                                        <TextBlock Classes="cardTitle" Text="Game Data &amp; Other" />
+                                        <Grid ColumnDefinitions="*, 16, *" RowDefinitions="Auto, 12, Auto, 12, Auto">
+                                            <StackPanel Grid.Row="0" Grid.Column="0" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="ID Num" />
+                                                <u:NumericUIntUpDown Value="{Binding IdNum}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="0" Grid.Column="2" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Version Num" />
+                                                <u:NumericUIntUpDown Value="{Binding VersionNum}" />
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Row="2" Grid.Column="0" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Sort Value" />
+                                                <u:NumericUIntUpDown Value="{Binding SortValue}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2" Grid.Column="2" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Origin" />
+                                                <u:NumericUIntUpDown Value="{Binding Origin}" />
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Row="4" Grid.Column="0" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Series" />
+                                                <u:NumericByteUpDown Value="{Binding Series}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="4" Grid.Column="2" Background="Transparent" Spacing="4">
+                                                <TextBlock Classes="fieldLabel" Text="Timestamp" />
+                                                <TextBox Text="{Binding Timestamp}" />
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <u:Divider Content="Dragonflowers" Margin="0,16" />
+                                        <StackPanel Orientation="Horizontal" Spacing="16">
+                                            <StackPanel Background="Transparent" Spacing="4" Width="200">
+                                                <TextBlock Classes="fieldLabel" Text="Dragonflower Num" />
+                                                <u:NumericUIntUpDown Value="{Binding DragonflowerNum}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
-                        </Border>
+                        </ScrollViewer>
+                    </TabItem>
 
-                        <!-- Stats Section -->
-                        <Border Theme="{StaticResource CardBorder}" Padding="15">
-                            <StackPanel Spacing="15">
-                                <TextBlock Classes="H4" Text="Stats" />
-                                
-                                <Grid ColumnDefinitions="50, *, 10, *" RowDefinitions="Auto, 5, Auto, 5, Auto, 5, Auto, 5, Auto">
-                                    <TextBlock VerticalAlignment="Center" Text="HP" FontWeight="Bold" />
-                                    <u:NumericIntUpDown Grid.Column="1" Value="{Binding Hp}" InnerLeftContent="Base" />
-                                    <u:NumericIntUpDown Grid.Column="3" Value="{Binding GrowHp}" InnerLeftContent="Grow" />
+                    <!--  Legendary Tab  -->
+                    <TabItem Header="Legendary">
+                        <ScrollViewer>
+                            <StackPanel Margin="16,16,16,48" Spacing="0">
+                                <Border Classes="subCard">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,0,0,16">
+                                            <TextBlock Classes="cardTitle" Text="Legendary &amp; Mythic Status" Margin="0" VerticalAlignment="Center" />
+                                            <ToggleSwitch IsChecked="{Binding IsLegendary}" OnContent="Enabled" OffContent="Disabled" />
+                                        </StackPanel>
 
-                                    <TextBlock Grid.Row="2" VerticalAlignment="Center" Text="Atk" FontWeight="Bold" />
-                                    <u:NumericIntUpDown Grid.Row="2" Grid.Column="1" Value="{Binding Atk}" InnerLeftContent="Base" />
-                                    <u:NumericIntUpDown Grid.Row="2" Grid.Column="3" Value="{Binding GrowAtk}" InnerLeftContent="Grow" />
+                                        <StackPanel IsVisible="{Binding IsLegendary}" Spacing="16">
+                                            <Grid ColumnDefinitions="*, 16, *" RowDefinitions="Auto, 16, Auto">
+                                                <StackPanel Grid.Row="0" Grid.Column="0" Background="Transparent" Spacing="4">
+                                                    <TextBlock Classes="fieldLabel" Text="Kind" />
+                                                    <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding LegendaryKinds}" SelectedItem="{Binding LegendaryKind}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Row="0" Grid.Column="2" Background="Transparent" Spacing="4">
+                                                    <TextBlock Classes="fieldLabel" Text="Element" />
+                                                    <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding LegendaryElements}" SelectedItem="{Binding LegendaryElement}" />
+                                                </StackPanel>
 
-                                    <TextBlock Grid.Row="4" VerticalAlignment="Center" Text="Spd" FontWeight="Bold" />
-                                    <u:NumericIntUpDown Grid.Row="4" Grid.Column="1" Value="{Binding Spd}" InnerLeftContent="Base" />
-                                    <u:NumericIntUpDown Grid.Row="4" Grid.Column="3" Value="{Binding GrowSpd}" InnerLeftContent="Grow" />
+                                                <StackPanel Grid.Row="2" Grid.Column="0" Background="Transparent" Spacing="4">
+                                                    <TextBlock Classes="fieldLabel" Text="BST" />
+                                                    <u:NumericByteUpDown Value="{Binding LegendaryBst}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Row="2" Grid.Column="2" Background="Transparent" Spacing="4">
+                                                    <TextBlock Classes="fieldLabel" Text="Btn Skill ID" />
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBox Grid.Column="0" Text="{Binding LegendaryBtnSkillId}" />
+                                                        <Button Grid.Column="1" Margin="8,0,0,0" Classes="Secondary" Content="..." Command="{Binding PickLegendaryBtnSkillCommand}" />
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Grid>
 
-                                    <TextBlock Grid.Row="6" VerticalAlignment="Center" Text="Def" FontWeight="Bold" />
-                                    <u:NumericIntUpDown Grid.Row="6" Grid.Column="1" Value="{Binding Def}" InnerLeftContent="Base" />
-                                    <u:NumericIntUpDown Grid.Row="6" Grid.Column="3" Value="{Binding GrowDef}" InnerLeftContent="Grow" />
+                                            <StackPanel Orientation="Horizontal" Spacing="24">
+                                                <CheckBox Content="Duel Effect" IsChecked="{Binding LegendaryDuelQ}" />
+                                                <CheckBox Content="Extra Slot (AR-D)" IsChecked="{Binding LegendaryAeExtraSlotQ}" />
+                                            </StackPanel>
 
-                                    <TextBlock Grid.Row="8" VerticalAlignment="Center" Text="Res" FontWeight="Bold" />
-                                    <u:NumericIntUpDown Grid.Row="8" Grid.Column="1" Value="{Binding Res}" InnerLeftContent="Base" />
-                                    <u:NumericIntUpDown Grid.Row="8" Grid.Column="3" Value="{Binding GrowRes}" InnerLeftContent="Grow" />
-                                </Grid>
+                                            <u:Divider Content="Bonus Stats" />
+                                            <Grid ColumnDefinitions="*, *, *, *, *">
+                                                <u:NumericIntUpDown Grid.Column="0" Margin="4" InnerLeftContent="HP" Value="{Binding LHp}" />
+                                                <u:NumericIntUpDown Grid.Column="1" Margin="4" InnerLeftContent="Atk" Value="{Binding LAtk}" />
+                                                <u:NumericIntUpDown Grid.Column="2" Margin="4" InnerLeftContent="Spd" Value="{Binding LSpd}" />
+                                                <u:NumericIntUpDown Grid.Column="3" Margin="4" InnerLeftContent="Def" Value="{Binding LDef}" />
+                                                <u:NumericIntUpDown Grid.Column="4" Margin="4" InnerLeftContent="Res" Value="{Binding LRes}" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
-                        </Border>
+                        </ScrollViewer>
+                    </TabItem>
 
-                        <!-- Legendary Section -->
-                        <Border Theme="{StaticResource CardBorder}" Padding="15">
-                            <StackPanel Spacing="10">
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Classes="H4" Text="Legendary / Mythic" VerticalAlignment="Center" />
-                                    <ToggleSwitch IsChecked="{Binding IsLegendary}" />
-                                </StackPanel>
+                    <!--  Portraits Tab  -->
+                    <TabItem Header="Portraits">
+                        <ScrollViewer>
+                            <StackPanel Margin="16,16,16,48" Spacing="16">
+                                <Border Classes="subCard" Margin="0">
+                                    <StackPanel>
+                                        <TextBlock Classes="cardTitle" Text="Portrait Editor" />
+                                        <TextBlock Foreground="{DynamicResource SemiColorText2}" TextWrapping="Wrap" Margin="0,0,0,16">
+                                            Replace portraits with your custom transparent webp/png files. The files will automatically be converted to the required webp format. The original game portraits will be backed up and can be restored anytime.
+                                        </TextBlock>
 
-                                <StackPanel IsVisible="{Binding IsLegendary}" Spacing="10">
-                                    <Grid ColumnDefinitions="*, 10, *" RowDefinitions="Auto, 10, Auto, 10, Auto">
-                                        <StackPanel Spacing="5">
-                                            <TextBlock Text="Kind" />
-                                            <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding LegendaryKinds}" SelectedItem="{Binding LegendaryKind}" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="2" Spacing="5">
-                                            <TextBlock Text="Element" />
-                                            <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding LegendaryElements}" SelectedItem="{Binding LegendaryElement}" />
-                                        </StackPanel>
+                                        <ItemsControl>
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            
+                                            <!-- Face_FC -->
+                                            <Border BorderBrush="{DynamicResource SemiColorBorder}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="8" Width="200" Background="{DynamicResource SemiColorBackground0}">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock Text="Face_FC (158x158)" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                                    <Image Source="{Binding FaceFcImage}" Width="158" Height="158" Stretch="Uniform" />
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                                                        <Button Content="Replace" Command="{Binding ReplacePortraitCommand}" CommandParameter="Face_FC" />
+                                                        <Button Content="Restore" Command="{Binding RestorePortraitCommand}" CommandParameter="Face_FC" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
 
-                                        <StackPanel Grid.Row="2" Spacing="5">
-                                            <TextBlock Text="BST" />
-                                            <u:NumericByteUpDown Value="{Binding LegendaryBst}" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Row="2" Grid.Column="2" Spacing="5">
-                                            <TextBlock Text="Btn Skill ID" />
-                                            <TextBox Text="{Binding LegendaryBtnSkillId}" />
-                                        </StackPanel>
+                                            <!-- BtlFace_BU -->
+                                            <Border BorderBrush="{DynamicResource SemiColorBorder}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="8" Width="300" Background="{DynamicResource SemiColorBackground0}">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock Text="BtlFace_BU (476x300)" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                                    <Image Source="{Binding BtlFaceBuImage}" Width="238" Height="150" Stretch="Uniform" />
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                                                        <Button Content="Replace" Command="{Binding ReplacePortraitCommand}" CommandParameter="BtlFace_BU" />
+                                                        <Button Content="Restore" Command="{Binding RestorePortraitCommand}" CommandParameter="BtlFace_BU" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- BtlFace_BU_D -->
+                                            <Border BorderBrush="{DynamicResource SemiColorBorder}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="8" Width="300" Background="{DynamicResource SemiColorBackground0}">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock Text="BtlFace_BU_D (476x300)" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                                    <Image Source="{Binding BtlFaceBuDImage}" Width="238" Height="150" Stretch="Uniform" />
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                                                        <Button Content="Replace" Command="{Binding ReplacePortraitCommand}" CommandParameter="BtlFace_BU_D" />
+                                                        <Button Content="Restore" Command="{Binding RestorePortraitCommand}" CommandParameter="BtlFace_BU_D" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Face -->
+                                            <Border BorderBrush="{DynamicResource SemiColorBorder}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="8" Width="300" Background="{DynamicResource SemiColorBackground0}">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock Text="Face (1684x1920)" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                                    <Image Source="{Binding FaceImage}" Width="210" Height="240" Stretch="Uniform" />
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                                                        <Button Content="Replace" Command="{Binding ReplacePortraitCommand}" CommandParameter="Face" />
+                                                        <Button Content="Restore" Command="{Binding RestorePortraitCommand}" CommandParameter="Face" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- BtlFace -->
+                                            <Border BorderBrush="{DynamicResource SemiColorBorder}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="8" Width="300" Background="{DynamicResource SemiColorBackground0}">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock Text="BtlFace (1684x1920)" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                                    <Image Source="{Binding BtlFaceImage}" Width="210" Height="240" Stretch="Uniform" />
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                                                        <Button Content="Replace" Command="{Binding ReplacePortraitCommand}" CommandParameter="BtlFace" />
+                                                        <Button Content="Restore" Command="{Binding RestorePortraitCommand}" CommandParameter="BtlFace" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- BtlFace_C -->
+                                            <Border BorderBrush="{DynamicResource SemiColorBorder}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="8" Width="300" Background="{DynamicResource SemiColorBackground0}">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock Text="BtlFace_C (1684x1920)" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                                    <Image Source="{Binding BtlFaceCImage}" Width="210" Height="240" Stretch="Uniform" />
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                                                        <Button Content="Replace" Command="{Binding ReplacePortraitCommand}" CommandParameter="BtlFace_C" />
+                                                        <Button Content="Restore" Command="{Binding RestorePortraitCommand}" CommandParameter="BtlFace_C" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- BtlFace_D -->
+                                            <Border BorderBrush="{DynamicResource SemiColorBorder}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="8" Width="300" Background="{DynamicResource SemiColorBackground0}">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock Text="BtlFace_D (1684x1920)" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                                    <Image Source="{Binding BtlFaceDImage}" Width="210" Height="240" Stretch="Uniform" />
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                                                        <Button Content="Replace" Command="{Binding ReplacePortraitCommand}" CommandParameter="BtlFace_D" />
+                                                        <Button Content="Restore" Command="{Binding RestorePortraitCommand}" CommandParameter="BtlFace_D" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <!--  Skills Tab  -->
+                    <TabItem Header="Skills">
+                        <ScrollViewer>
+                            <StackPanel Margin="16,16,16,48" Spacing="0">
+                                <Border Classes="subCard">
+                                    <StackPanel>
+                                        <TextBlock Classes="cardTitle" Text="Skills Array" />
+                                        <TextBlock Foreground="{DynamicResource SemiColorText2}" TextWrapping="Wrap" Margin="0,0,0,16">
+                                            Manage the fixed skills array for this person. Empty fields will be saved as null entries.
+                                        </TextBlock>
                                         
-                                        <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="20" Grid.ColumnSpan="3">
-                                            <CheckBox IsChecked="{Binding LegendaryDuelQ}" Content="Duel Effect" />
-                                            <CheckBox IsChecked="{Binding LegendaryAeExtraSlotQ}" Content="Extra Slot (AR-D)" />
-                                        </StackPanel>
-                                    </Grid>
-                                    
-                                    <u:Divider Content="Bonus Stats" />
-                                    <UniformGrid Columns="5">
-                                        <u:NumericIntUpDown Margin="2" InnerLeftContent="HP" Value="{Binding LHp}" />
-                                        <u:NumericIntUpDown Margin="2" InnerLeftContent="Atk" Value="{Binding LAtk}" />
-                                        <u:NumericIntUpDown Margin="2" InnerLeftContent="Spd" Value="{Binding LSpd}" />
-                                        <u:NumericIntUpDown Margin="2" InnerLeftContent="Def" Value="{Binding LDef}" />
-                                        <u:NumericIntUpDown Margin="2" InnerLeftContent="Res" Value="{Binding LRes}" />
-                                    </UniformGrid>
-                                </StackPanel>
+                                        <ItemsControl ItemsSource="{Binding SkillsList}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid ColumnDefinitions="Auto, *, Auto" Margin="0,4">
+                                                        <TextBlock Grid.Column="0" Text="{Binding Label, StringFormat='{}{0}:'}" Width="80" VerticalAlignment="Center" Margin="0,0,8,0" Classes="fieldLabel"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding Value}" Watermark="SID_..." />
+                                                        <Button Grid.Column="2" Margin="8,0,0,0" Classes="Secondary" Content="..." Command="{Binding $parent[ItemsControl].((vm:PersonEditorViewModel)DataContext).PickSkillCommand}" CommandParameter="{Binding}" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
-                        </Border>
-
-                    </StackPanel>
-                </ScrollViewer>
-            </Grid>
+                        </ScrollViewer>
+                    </TabItem>
+                </TabControl>
+            </Border>
         </Grid>
         <u:OverlayDialogHost />
     </Panel>

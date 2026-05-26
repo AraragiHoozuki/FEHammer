@@ -15,6 +15,7 @@
     Background="Transparent"
     CanResize="True"
     ExtendClientAreaToDecorationsHint="True"
+    ShowInTaskbar="False"
     SizeToContent="Height"
     SystemDecorations="None"
     TransparencyLevelHint="Transparent"

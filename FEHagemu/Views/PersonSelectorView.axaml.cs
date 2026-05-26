@@ -44,16 +44,7 @@ internal static class DialogHelper
 {
     public static void CloseDialogWithOK(Control source)
     {
-        // Case 1: Window-based dialog (Dialog.ShowModal)
-        var window = source.FindAncestorOfType<Window>();
-        if (window is not null && window.GetType() != typeof(Window))
-        {
-            // The Ursa DefaultDialogWindow hosts an OK button; close with result
-            window.Close(DialogResult.OK);
-            return;
-        }
-
-        // Case 2: Overlay-based dialog (OverlayDialog.ShowModal)
+        // Case 1: Try overlay or dialog control first
         // Find the OK button in the dialog's button panel and programmatically click it
         var dialogControl = FindAncestorByTypeName(source, "DialogControl")
                          ?? FindAncestorByTypeName(source, "OverlayDialogControl");
@@ -69,8 +60,20 @@ internal static class DialogHelper
             }
         }
 
-        // Fallback: try closing any parent window
-        window?.Close(DialogResult.OK);
+        // Case 2: Window-based dialog (Dialog.ShowModal) fallback
+        var window = source.FindAncestorOfType<Window>();
+        if (window is not null && window.GetType().Name.Contains("DialogWindow"))
+        {
+            // The Ursa DefaultDialogWindow hosts an OK button; close with result
+            window.Close(DialogResult.OK);
+            return;
+        }
+
+        // Fallback: try closing any parent window if it's not the main Window
+        if (window is not null && window.GetType() != typeof(Window) && !window.GetType().Name.Contains("EditorWindow"))
+        {
+            window.Close(DialogResult.OK);
+        }
     }
 
     private static Control? FindAncestorByTypeName(Control source, string typeName)

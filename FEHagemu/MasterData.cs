@@ -54,7 +54,7 @@ namespace FEHagemu
         public static HSDArc<PersonList> ModPersonArc => PersonArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!;
         public static HSDArc<EnemyList> ModEnemyArc => EnemyArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!;
         public static HSDArc<MessageList> ModMsgArc => MsgArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"))!;
-        
+
 
         public static async Task<bool> LoadAsync()
         {
@@ -144,19 +144,26 @@ namespace FEHagemu
         public static int SkillIconCount => ICON_ATLAS != null ? ICON_ATLAS.Length * SkillAtlasCapacity : 0;
 
         private const int WeaponIconSize = 56;
-        private const int WeaponStartY = 261;
+        private const int WeaponStartY = 317;
         private const int WeaponStartX = 1;
 
         private const int MoveIconSize = 56;
-        private const int MoveStartY = 469;
-        private const int MoveStartX = 353;
+        private const int MoveStartY = 526;
+        private const int MoveStartX = 352;
+
+        private const int EnhanceIconSize = 56;
+        private const int EnhanceStartX = 1;
+        private const int EnhanceStartY = 1;
+        public const int EnhanceGridCols = 36;
+        public const int EnhanceGridRows = 4;  
 
         private const int OriginWidth = 90;
         private const int OriginHeight = 88;
         private const int OriginStartY = 171;
         private const int OriginStartX = -3;
-        
+
         private static readonly Dictionary<int, IImage> skillIconCache = new();
+        private static readonly Dictionary<int, IImage> enhanceIconCache = new();
         private static readonly Dictionary<string, IImage> abcsxCache = new();
 
         public static void InitImage()
@@ -165,7 +172,7 @@ namespace FEHagemu
             ABCSX_ATLAS = new Bitmap(Path.Combine(UI_PATH, "ABCSX.webp"));
             var directory = new DirectoryInfo(UI_PATH);
             var files = directory.GetFiles("Skill_Passive*.png")
-                                 .OrderBy(f => f.Name.Length) 
+                                 .OrderBy(f => f.Name.Length)
                                  .ThenBy(f => f.Name)
                                  .ToArray();
             ICON_ATLAS = new Bitmap[files.Length];
@@ -176,7 +183,6 @@ namespace FEHagemu
             WeaponTypeIcons = new IImage[(int)WeaponType.ColorlessBeast + 1];
             MoveTypeIcons = new IImage[(int)MoveType.Flying + 1];
             OriginTypeIcons = new IImage[(int)Origins.Engage + 1];
-            
         }
 
         public static IImage GetSkillIcon(int id)
@@ -219,10 +225,10 @@ namespace FEHagemu
             // Figure out the file path for the atlas
             var directory = new DirectoryInfo(UI_PATH);
             var files = directory.GetFiles("Skill_Passive*.png")
-                                 .OrderBy(f => f.Name.Length) 
+                                 .OrderBy(f => f.Name.Length)
                                  .ThenBy(f => f.Name)
                                  .ToArray();
-            
+
             if (atlasIndex >= files.Length) return;
             string atlasPath = files[atlasIndex].FullName;
             string backupPath = atlasPath + ".bak";
@@ -235,10 +241,10 @@ namespace FEHagemu
 
             int row = localIndex / SkillGridCols;
             int col = localIndex % SkillGridCols;
-            
+
             // Dispose the old avalonia bitmap so we can write to the file
             ICON_ATLAS[atlasIndex].Dispose();
-            
+
             var keysToRemove = skillIconCache.Keys.Where(k => k / SkillAtlasCapacity == atlasIndex).ToList();
             foreach (var k in keysToRemove)
             {
@@ -268,10 +274,10 @@ namespace FEHagemu
 
             var directory = new DirectoryInfo(UI_PATH);
             var files = directory.GetFiles("Skill_Passive*.png")
-                                 .OrderBy(f => f.Name.Length) 
+                                 .OrderBy(f => f.Name.Length)
                                  .ThenBy(f => f.Name)
                                  .ToArray();
-            
+
             if (atlasIndex >= files.Length) return;
             string atlasPath = files[atlasIndex].FullName;
             string backupPath = atlasPath + ".bak";
@@ -279,10 +285,10 @@ namespace FEHagemu
             if (File.Exists(backupPath))
             {
                 ICON_ATLAS[atlasIndex].Dispose();
-                
+
                 // Keep the backup, delete the modified, replace with backup
                 File.Copy(backupPath, atlasPath, true);
-                
+
                 // Clear all icon cache for safety since they come from the atlas
                 skillIconCache.Clear();
 
@@ -326,6 +332,27 @@ namespace FEHagemu
             return OriginTypeIcons[id];
         }
 
+        public static IImage GetEnhanceIcon(int id)
+        {
+            id = id switch
+            {
+                <= 6 => id + 2,
+                <= 9 => id + 3,
+                <= 15 => id + 4,
+                <= 73 => id + 5,
+                _ => id + 6,
+            };
+            if (enhanceIconCache.TryGetValue(id, out var cached)) return cached;
+            if (STATUS == null) throw new InvalidOperationException("Status Atlas not initialized.");
+            int row = id / EnhanceGridCols;
+            int col = id % EnhanceGridCols;
+            if (row >= EnhanceGridRows) return null!;
+            var cropped = new CroppedBitmap(STATUS,
+                new PixelRect(EnhanceStartX + EnhanceIconSize * col, EnhanceStartY + EnhanceIconSize * row, EnhanceIconSize, EnhanceIconSize));
+            enhanceIconCache[id] = cropped;
+            return cropped;
+        }
+
         public static IImage GetABCSXIcon(string name)
         {
             if (abcsxCache.TryGetValue(name, out var cached)) return cached;
@@ -340,7 +367,7 @@ namespace FEHagemu
                 _ => throw new KeyNotFoundException($"Unknown icon type: {name}")
             };
             var cropped = new CroppedBitmap(ABCSX_ATLAS, new PixelRect(xOffset, 0, 48, 48));
-            abcsxCache[name] = cropped; 
+            abcsxCache[name] = cropped;
             return cropped;
         }
         private static readonly Dictionary<string, Bitmap> otherIconCache = new();
@@ -368,7 +395,7 @@ namespace FEHagemu
 
         private static readonly Dictionary<string, Bitmap> legendaryIconCache = new();
 
-        
+
 
         public static Bitmap GetLegendaryIcon(string? iconName)
         {
@@ -401,6 +428,7 @@ namespace FEHagemu
                 foreach (var bmp in ICON_ATLAS) bmp.Dispose();
             }
             skillIconCache.Clear();
+            enhanceIconCache.Clear();
             abcsxCache.Clear();
         }
         public static string StripIdPrefix(string id, out string prefix)
@@ -433,7 +461,7 @@ namespace FEHagemu
 
         public static HSDArc<PersonList>? GetPersonArc(string pid)
         {
-            foreach(var arc in PersonArcs)
+            foreach (var arc in PersonArcs)
             {
                 foreach (var person in arc.data.list)
                 {
@@ -468,17 +496,18 @@ namespace FEHagemu
         public static void AddMessage(HSDArc<MessageList> arc, string key, string message)
         {
             int index = Array.FindIndex(arc.data.list, msg => msg == key);
-            if (index > -1 && index < arc.data.list.Length - 1 && ((index&1)==0))
+            if (index > -1 && index < arc.data.list.Length - 1 && ((index & 1) == 0))
             {
                 arc.data.list[index + 1] = message;
                 MsgDict[key] = message;
-            } else
+            }
+            else
             {
                 index = arc.data.list.Length;
                 Array.Resize(ref arc.data.list, arc.data.list.Length + 2);
                 arc.data.list[index] = key;
                 arc.data.list[index + 1] = message;
-                arc.data.size = (ulong)arc.data.list.Length/2;
+                arc.data.size = (ulong)arc.data.list.Length / 2;
                 MsgDict.TryAdd(key, message);
             }
         }
@@ -495,7 +524,7 @@ namespace FEHagemu
             }
             else
             {
-                skill.id_num = SkillDict.Values.Where(sk=>sk.id_num < 10000).MaxBy(sk => sk.id_num)!.id_num + 1;
+                skill.id_num = SkillDict.Values.Where(sk => sk.id_num < 10000).MaxBy(sk => sk.id_num)!.id_num + 1;
                 skill.sort_value = SkillDict.Values.MaxBy(sk => sk.sort_value)!.sort_value + 1;
                 Array.Resize(ref arc.data.list, arc.data.list.Length + 1);
                 arc.data.list[^1] = skill;
@@ -593,9 +622,9 @@ namespace FEHagemu
             if (index > -1)
             {
                 arc.data.list[index] = arc.data.list[^2];
-                arc.data.list[index+1] = arc.data.list[^1];
+                arc.data.list[index + 1] = arc.data.list[^1];
                 arc.data.list = arc.data.list[..^2];
-                arc.data.size = (ulong)arc.data.list.Length/2;
+                arc.data.size = (ulong)arc.data.list.Length / 2;
                 MsgDict.TryRemove(key, out _);
             }
         }

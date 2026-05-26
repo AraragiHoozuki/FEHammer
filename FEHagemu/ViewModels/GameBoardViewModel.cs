@@ -30,11 +30,11 @@ namespace FEHagemu.ViewModels
         [ObservableProperty] ObservableCollection<BoardUnitViewModel> units = [];
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(TotalWidth))]
-        [NotifyPropertyChangedFor(nameof(TotalHeight))] 
+        [NotifyPropertyChangedFor(nameof(TotalHeight))]
         uint resizeX = 1;
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(TotalWidth))]
-        [NotifyPropertyChangedFor(nameof(TotalHeight))] 
+        [NotifyPropertyChangedFor(nameof(TotalHeight))]
         uint resizeY = 1;
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(TotalWidth))]
@@ -48,11 +48,15 @@ namespace FEHagemu.ViewModels
         public double TotalWidth => ResizeX * CellSize;
         public double TotalHeight => ResizeY * CellSize;
         public RelativeRect GridTileRect => new(0, 0, CellSize, CellSize, RelativeUnit.Absolute);
-        public string FieldId {get=> mapData.field.id; set {
+        public string FieldId
+        {
+            get => mapData.field.id; set
+            {
                 mapData.field.id = value;
                 FieldBackground = MasterData.GetFieldBackground(mapData.field.id);
                 OnPropertyChanged();
-            } }
+            }
+        }
         [ObservableProperty]
         Bitmap? fieldBackground;
 
@@ -161,7 +165,8 @@ namespace FEHagemu.ViewModels
                 return uVm;
             }
             Units.Add(uVm);
-            if (TryGetCell(unit.pos.x, unit.pos.y, out var cell2)) {
+            if (TryGetCell(unit.pos.x, unit.pos.y, out var cell2))
+            {
                 cell2.CallFirstPersonChange();
             }
             return uVm;
@@ -405,7 +410,8 @@ namespace FEHagemu.ViewModels
         [ObservableProperty]
         public ObservableCollection<BoardUnitViewModel> units = [];
 
-        public string TerrainKanji => Terrain switch {
+        public string TerrainKanji => Terrain switch
+        {
             // 基础地形
             TerrainType.Outdoor => "平",
             TerrainType.Indoor => "平",
@@ -427,7 +433,7 @@ namespace FEHagemu.ViewModels
             TerrainType.IndoorBreakable2 => "破",
             TerrainType.DesertBreakable => "破",
             TerrainType.DesertBreakable2 => "破",
-            TerrainType.BridgeBreakable => "破", 
+            TerrainType.BridgeBreakable => "破",
             TerrainType.BridgeBreakable2 => "破",
 
             // 防御地形 (Defensive)
@@ -465,60 +471,60 @@ namespace FEHagemu.ViewModels
         };
 
         public string TerrainColorHex => Terrain switch
-            {
-                // 基础地形
-                TerrainType.Outdoor => "#A2CD5A", // YellowGreen
-                TerrainType.Indoor => "#D3D3D3",  // LightGray
-                TerrainType.Desert => "#F4A460",  // SandyBrown
-                TerrainType.Forest => "#006400",  // DarkGreen
-                TerrainType.Mountain => "#A9A9A9", // DarkGray
-                TerrainType.Lava => "#CD5C5C",    // IndianRed
-                TerrainType.Wall => "#8B4513",    // SaddleBrown
-                TerrainType.Bridge => "#BC8F8F",  // RosyBrown
-                TerrainType.Inaccessible => "#000000", // Black
+        {
+            // 基础地形
+            TerrainType.Outdoor => "#A2CD5A", // YellowGreen
+            TerrainType.Indoor => "#D3D3D3",  // LightGray
+            TerrainType.Desert => "#F4A460",  // SandyBrown
+            TerrainType.Forest => "#006400",  // DarkGreen
+            TerrainType.Mountain => "#A9A9A9", // DarkGray
+            TerrainType.Lava => "#CD5C5C",    // IndianRed
+            TerrainType.Wall => "#8B4513",    // SaddleBrown
+            TerrainType.Bridge => "#BC8F8F",  // RosyBrown
+            TerrainType.Inaccessible => "#000000", // Black
 
-                // 水域
-                TerrainType.River => "#4682B4",     // SteelBlue
-                TerrainType.Sea => "#1E90FF",       // DodgerBlue
-                TerrainType.IndoorWater => "#ADD8E6", // LightBlue
+            // 水域
+            TerrainType.River => "#4682B4",     // SteelBlue
+            TerrainType.Sea => "#1E90FF",       // DodgerBlue
+            TerrainType.IndoorWater => "#ADD8E6", // LightBlue
 
-                // 可破坏地形 (统一用 LightSalmon, 除了 OutdoorBreakable2)
-                TerrainType.OutdoorBreakable => "#FFA07A", // LightSalmon (破)
-                TerrainType.OutdoorBreakable2 => "#FFD700", // Gold (脆)
-                TerrainType.IndoorBreakable => "#FFA07A",
-                TerrainType.IndoorBreakable2 => "#FFA07A",
-                TerrainType.DesertBreakable => "#FFA07A",
-                TerrainType.DesertBreakable2 => "#FFA07A",
-                TerrainType.BridgeBreakable => "#FFA07A",
-                TerrainType.BridgeBreakable2 => "#FFA07A",
+            // 可破坏地形 (统一用 LightSalmon, 除了 OutdoorBreakable2)
+            TerrainType.OutdoorBreakable => "#FFA07A", // LightSalmon (破)
+            TerrainType.OutdoorBreakable2 => "#FFD700", // Gold (脆)
+            TerrainType.IndoorBreakable => "#FFA07A",
+            TerrainType.IndoorBreakable2 => "#FFA07A",
+            TerrainType.DesertBreakable => "#FFA07A",
+            TerrainType.DesertBreakable2 => "#FFA07A",
+            TerrainType.BridgeBreakable => "#FFA07A",
+            TerrainType.BridgeBreakable2 => "#FFA07A",
 
-                // 防御地形
-                TerrainType.OutdoorDefensive => "#6B8E23", // OliveDrab
-                TerrainType.ForestDefensive => "#6B8E23",
-                TerrainType.IndoorDefensive => "#6B8E23",
+            // 防御地形
+            TerrainType.OutdoorDefensive => "#6B8E23", // OliveDrab
+            TerrainType.ForestDefensive => "#6B8E23",
+            TerrainType.IndoorDefensive => "#6B8E23",
 
-                // 壕沟
-                TerrainType.OutdoorTrench => "#B8860B", // DarkGoldenrod
-                TerrainType.IndoorTrench => "#B8860B",
+            // 壕沟
+            TerrainType.OutdoorTrench => "#B8860B", // DarkGoldenrod
+            TerrainType.IndoorTrench => "#B8860B",
 
-                // 防御壕沟
-                TerrainType.OutdoorDefensiveTrench => "#808000", // Olive
-                TerrainType.IndoorDefensiveTrench => "#808000",
+            // 防御壕沟
+            TerrainType.OutdoorDefensiveTrench => "#808000", // Olive
+            TerrainType.IndoorDefensiveTrench => "#808000",
 
-                // 基地与营地/建筑 (绿色/蓝色 vs 红色/深红)
-                TerrainType.PlayerFortress => "#00FF00",  // Lime (城)
-                TerrainType.EnemyFortress => "#FF0000",   // Red (敌城)
+            // 基地与营地/建筑 (绿色/蓝色 vs 红色/深红)
+            TerrainType.PlayerFortress => "#00FF00",  // Lime (城)
+            TerrainType.EnemyFortress => "#FF0000",   // Red (敌城)
 
-                TerrainType.PlayerCamp => "#3CB371",      // MediumSeaGreen (营)
-                TerrainType.EnemyCamp => "#DC143C",       // Crimson (敌营)
-                TerrainType.OutdoorPlayerCamp => "#3CB371",
-                TerrainType.IndoorPlayerCamp => "#DC143C", // 注意：根据您的汉字，此为敌营颜色
+            TerrainType.PlayerCamp => "#3CB371",      // MediumSeaGreen (营)
+            TerrainType.EnemyCamp => "#DC143C",       // Crimson (敌营)
+            TerrainType.OutdoorPlayerCamp => "#3CB371",
+            TerrainType.IndoorPlayerCamp => "#DC143C", // 注意：根据您的汉字，此为敌营颜色
 
-                TerrainType.PlayerStructure => "#4169E1", // RoyalBlue (构)
-                TerrainType.EnemyStructure => "#8B0000",  // DarkRed (敌构)
+            TerrainType.PlayerStructure => "#4169E1", // RoyalBlue (构)
+            TerrainType.EnemyStructure => "#8B0000",  // DarkRed (敌构)
 
-                _ => "#FFFFFF" // 默认白色，如果出现未定义的枚举值
-            };
+            _ => "#FFFFFF" // 默认白色，如果出现未定义的枚举值
+        };
 
         public string TerrainKanjiColor
         {
@@ -569,8 +575,9 @@ namespace FEHagemu.ViewModels
 
         public string FirstUnitFace => Board.GetFirstUnitByXY(X, Y)?.Face ?? string.Empty;
 
-        public Task<Bitmap>? CellFace => Board.GetFirstUnitByXY(X, Y)?.FaceImg ??  Task.Run(()=>MasterData.EmptyBitmap);
-        public string TerrainDotClass => Terrain switch { 
+        public Task<Bitmap>? CellFace => Board.GetFirstUnitByXY(X, Y)?.FaceImg ?? Task.Run(() => MasterData.EmptyBitmap);
+        public string TerrainDotClass => Terrain switch
+        {
             TerrainType.Lava or TerrainType.Sea or TerrainType.Mountain or TerrainType.IndoorWater or TerrainType.River => "Secondary",
             _ => "Success"
         };
@@ -592,7 +599,7 @@ namespace FEHagemu.ViewModels
         public BoardUnitViewModel(Unit u)
         {
             unit = u;
-            for(int i = 0; i < u.skills.Length; i++)
+            for (int i = 0; i < u.skills.Length; i++)
             {
                 skills.Add(new SkillViewModel(unit.skills[i], i));
             }
@@ -624,12 +631,14 @@ namespace FEHagemu.ViewModels
         ObservableCollection<SkillViewModel> skills = [];
         public string Face => MasterData.GetPerson(unit.id_tag)?.Face ?? string.Empty;
         public Task<Bitmap> FaceImg => MasterData.GetFaceAsync(Face);
-        public Bitmap LegendaryIcon { get
+        public Bitmap LegendaryIcon
+        {
+            get
             {
                 var p = MasterData.GetPerson(unit.id_tag);
                 string? name = p?.LegendaryIconName;
                 return MasterData.GetLegendaryIcon(name);
-            } 
+            }
         }
         public Bitmap LegendaryTypeIcon
         {
@@ -645,9 +654,9 @@ namespace FEHagemu.ViewModels
         [ObservableProperty] private int lV = 1;
         partial void OnLVChanged(int value) => RefreshStats();
         public ushort HP { get => unit.stats.hp; set { unit.stats.hp = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
-        public ushort ATK { get => unit.stats.atk; set { unit.stats.atk = value; OnPropertyChanged();OnPropertyChanged(nameof(Total)); } }
-        public ushort SPD { get => unit.stats.spd; set { unit.stats.spd = value; OnPropertyChanged();OnPropertyChanged(nameof(Total)); } }
-        public ushort DEF { get => unit.stats.def; set { unit.stats.def = value; OnPropertyChanged();OnPropertyChanged(nameof(Total)); } }
+        public ushort ATK { get => unit.stats.atk; set { unit.stats.atk = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
+        public ushort SPD { get => unit.stats.spd; set { unit.stats.spd = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
+        public ushort DEF { get => unit.stats.def; set { unit.stats.def = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
         public ushort RES { get => unit.stats.res; set { unit.stats.res = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
         public int Total { get => HP + ATK + SPD + DEF + RES; }
 
@@ -682,7 +691,7 @@ namespace FEHagemu.ViewModels
                 OnPropertyChanged();
             }
         }
-        
+
 
         public IImage? WeaponIcon
         {
@@ -731,14 +740,17 @@ namespace FEHagemu.ViewModels
             {
                 lV = 40;
                 merge = unit.true_lv - 40;
-            } else
+            }
+            else
             {
                 lV = unit.true_lv;
                 merge = 0;
             }
-            if (needRefreshStats) { 
-                RefreshStats(); 
-            } else
+            if (needRefreshStats)
+            {
+                RefreshStats();
+            }
+            else
             {
                 RefreshDefaultStats();
             }
@@ -805,17 +817,18 @@ namespace FEHagemu.ViewModels
                 CanResize = true,
                 StartupLocation = WindowStartupLocation.CenterScreen
             });
-            if (res == DialogResult.OK && vm.SelectedPerson is not null) {
+            if (res == DialogResult.OK && vm.SelectedPerson is not null)
+            {
                 var pvm = vm.SelectedPerson;
                 Id = pvm.person.Id;
-                for (int i = 0; i< pvm.skills.Length; i++)
+                for (int i = 0; i < pvm.skills.Length; i++)
                 {
                     SetSkill(pvm.skills[i], i);
                 }
                 cell?.CallFirstPersonChange();
             }
         }
-        
+
         [RelayCommand]
         public async Task CopyId()
         {
@@ -830,7 +843,7 @@ namespace FEHagemu.ViewModels
         {
             for (int i = 0; i < DragonFlowerCount; i++)
             {
-                unit.stats[i % 5] ++;
+                unit.stats[i % 5]++;
             }
             OnPropertyChanged(nameof(HP));
             OnPropertyChanged(nameof(ATK));
@@ -881,7 +894,8 @@ namespace FEHagemu.ViewModels
         private void LoadNotEquippables()
         {
             if (skill is null) return;
-            for (int i = 0; i < (int)WeaponType.ColorlessBeast + 1; i++) { 
+            for (int i = 0; i < (int)WeaponType.ColorlessBeast + 1; i++)
+            {
                 if (((uint)skill.wep_equip & (1u << i)) == 0) NotEquippables.Add(MasterData.GetWeaponIcon(i));
             }
             for (int i = 0; i < (int)MoveType.Flying + 1; i++)
@@ -901,7 +915,7 @@ namespace FEHagemu.ViewModels
                 if (s is null) return string.Empty;
                 return MasterData.GetMessage(s.description ?? string.Empty);
             }
-            
+
         }
         public bool RefinedQ => (skill?.refinedQ == 1);
         public bool SpecialQ => skill?.category == SkillCategory.Special;
@@ -933,8 +947,10 @@ namespace FEHagemu.ViewModels
                 return 0;
             }
         }
-        public string FullDescription {
-            get {
+        public string FullDescription
+        {
+            get
+            {
                 StringBuilder sb = new();
                 if (skill?.category == SkillCategory.Weapon) sb.AppendLine($"威力: {skill.might}");
                 if (skill?.category == SkillCategory.Special) sb.AppendLine($"CD: {skill.cooldown}");
@@ -949,7 +965,8 @@ namespace FEHagemu.ViewModels
                 if (skill is null)
                 {
                     return 0;
-                } else if (skill.category == SkillCategory.Weapon)
+                }
+                else if (skill.category == SkillCategory.Weapon)
                 {
                     return skill.might;
                 }
@@ -961,7 +978,8 @@ namespace FEHagemu.ViewModels
         {
             get
             {
-                if (skill is null) { return 0; } else
+                if (skill is null) { return 0; }
+                else
                 if (skill.category == SkillCategory.Special)
                 {
                     return skill.cooldown;

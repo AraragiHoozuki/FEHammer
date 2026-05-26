@@ -1,0 +1,57 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:u="https://irihi.tech/ursa"
+        xmlns:services="using:FEHagemu.Services"
+        x:Class="FEHagemu.Views.Tools.FieldNoteEditorWindow"
+        Title="字段条目说明编辑" Width="550" Height="450"
+        CanResize="True"
+        WindowStartupLocation="CenterScreen">
+    <Window.Styles>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground0}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="16" />
+            <Setter Property="BoxShadow" Value="0 2 8 0 #10000000" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+    </Window.Styles>
+
+    <Panel Background="{DynamicResource SemiColorBackground1}">
+        <Grid RowDefinitions="Auto, *, Auto" Margin="16">
+            <!-- Header -->
+            <Grid ColumnDefinitions="*, Auto">
+                <StackPanel>
+                    <TextBlock Name="TitleText" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource SemiColorText0}"/>
+                    <TextBlock Text="添加或编辑此字段的枚举值说明，以便在右键菜单中快速查阅。" FontSize="12" Foreground="{DynamicResource SemiColorText2}" Margin="0,4,0,0"/>
+                </StackPanel>
+                <Button Grid.Column="1" Content="＋ 添加新条目" Classes="Success" Theme="{DynamicResource SolidButton}" Click="OnAddItemClick" VerticalAlignment="Center"/>
+            </Grid>
+
+            <!-- List -->
+            <Border Grid.Row="1" Classes="card" Margin="0,16">
+                <ScrollViewer>
+                    <ItemsControl Name="NotesItemsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="services:FieldNoteItem">
+                                <Grid ColumnDefinitions="2*, 4*, Auto, Auto, Auto" Margin="0,0,0,10">
+                                    <TextBox Text="{Binding Value, Mode=TwoWay}" Watermark="数值/键名 (如: 0)" Margin="0,0,8,0" AcceptsReturn="True" TextWrapping="Wrap" />
+                                    <TextBox Grid.Column="1" Text="{Binding Meaning, Mode=TwoWay}" Watermark="说明含义 (如: 武器)" Margin="0,0,8,0" AcceptsReturn="True" TextWrapping="Wrap" />
+                                    <Button Grid.Column="2" Content="▲" Click="OnMoveUpClick" Tag="{Binding}" Width="28" Height="28" Padding="0" FontSize="11" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="0,0,2,0" ToolTip.Tip="上移" />
+                                    <Button Grid.Column="3" Content="▼" Click="OnMoveDownClick" Tag="{Binding}" Width="28" Height="28" Padding="0" FontSize="11" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="0,0,4,0" ToolTip.Tip="下移" />
+                                    <u:IconButton Grid.Column="4" Classes="Danger" Theme="{DynamicResource TertiaryIconButton}" Icon="{StaticResource SemiIconClear}" Click="OnRemoveItemClick" Tag="{Binding}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Footer -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+                <Button Content="取消" Width="80" HorizontalContentAlignment="Center" Click="OnCancelClick" />
+                <Button Content="保存" Width="80" HorizontalContentAlignment="Center" Classes="Primary" Theme="{DynamicResource SolidButton}" Click="OnSaveClick" />
+            </StackPanel>
+        </Grid>
+    </Panel>
+</Window>

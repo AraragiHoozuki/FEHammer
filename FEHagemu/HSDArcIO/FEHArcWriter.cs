@@ -11,22 +11,27 @@ namespace FEHagemu.FEHArchive
     {
         private struct PendingPointer
         {
-            public long PatchOffset; // 需要回填偏移量的文件位置
-            public object Data;      // 要写入的数据对象
-            public FieldInfo Field;  // 对应的字段信息
-            public int Index;        // 如果是数组元素，对应的索引
+            public long PatchOffset;
+            public object Data;
+            public FieldInfo Field;
+            public HSDHelperAttribute Attr;
+            public int Index;
 
-            public PendingPointer(long offset, object data, FieldInfo field, int index = -1)
+            public PendingPointer(long offset, object data, FieldInfo field, HSDHelperAttribute attr, int index = -1)
             {
                 PatchOffset = offset;
                 Data = data;
                 Field = field;
+                Attr = attr;
                 Index = index;
             }
         }
         private List<PendingPointer> pendingPointers = new();
         List<long> ptr_offsets = [];
         long pointer_list_offset;
+
+        private static readonly byte[] ZeroPad8 = new byte[8];
+        private static readonly byte[] ZeroPtr = new byte[8];
 
         #region New Write Methods
         private void WriteAtomValue(object value, int size, ulong key)
@@ -102,7 +107,10 @@ namespace FEHagemu.FEHArchive
         }
         public void WritePadding(HSDHelperAttribute at)
         {
-            Write(new byte[at.Size]);
+            if (at.Size <= 8)
+                Write(ZeroPad8.AsSpan(0, at.Size));
+            else
+                Write(new byte[at.Size]);
         }
         private void WriteFieldDispatch(object value, FieldInfo field, HSDHelperAttribute at)
         {
@@ -177,7 +185,7 @@ namespace FEHagemu.FEHArchive
                     }
                     if (!isNull)
                     {
-                        pendingPointers.Add(new PendingPointer(BaseStream.Position, arr, field, i));
+                        pendingPointers.Add(new PendingPointer(BaseStream.Position, arr, field, at, i));
                     }
                     Write((ulong)0);
                 }
@@ -191,30 +199,28 @@ namespace FEHagemu.FEHArchive
         {
             if (data == null) return;
             Type type = data.GetType();
-            FieldInfo[] fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
-            foreach (var field in fields)
+            var metas = HSDReflectionCache.GetFieldMetas(type);
+            foreach (ref readonly var m in metas.AsSpan())
             {
-                var at = field.GetCustomAttribute<HSDHelperAttribute>();
-                if (at == null) continue;
-                object value = field.GetValue(data)!;
-                if (at.IsPtr)
+                object value = m.Field.GetValue(data)!;
+                if (m.Attr.IsPtr)
                 {
                     bool isNull = value == null;
-                    if (!isNull && at.Type == HSDBinType.String && string.IsNullOrEmpty((string)value))
+                    if (!isNull && m.Attr.Type == HSDBinType.String && string.IsNullOrEmpty((string)value))
                     {
-                        isNull = true; 
+                        isNull = true;
                     }
 
                     if (!isNull)
                     {
-                        pendingPointers.Add(new PendingPointer(BaseStream.Position, value, field));
+                        pendingPointers.Add(new PendingPointer(BaseStream.Position, value, m.Field, m.Attr));
                     }
 
                     Write((ulong)0);
                 }
                 else
                 {
-                    WriteFieldDispatch(value, field, at);
+                    WriteFieldDispatch(value, m.Field, m.Attr);
                 }
             }
 
@@ -227,43 +233,35 @@ namespace FEHagemu.FEHArchive
 
         private void ProcessPendingPointers()
         {
-            if (pendingPointers.Count == 0) return;
-
-            var currentBatch = pendingPointers;
-            pendingPointers = [];
-
-            foreach (var ptr in currentBatch)
+            while (pendingPointers.Count > 0)
             {
-                long targetAddress = BaseStream.Position;
-                ptr_offsets.Add(ptr.PatchOffset);
-                UpdatePointerAddress(ptr.PatchOffset, targetAddress);
+                var currentBatch = pendingPointers;
+                pendingPointers = new List<PendingPointer>();
 
-                var at = ptr.Field.GetCustomAttribute<HSDHelperAttribute>();
-
-                object dataToWrite;
-                if (ptr.Index != -1)
+                foreach (var ptr in currentBatch)
                 {
-                    dataToWrite = ((Array)ptr.Data).GetValue(ptr.Index)!;
+                    long targetAddress = BaseStream.Position;
+                    ptr_offsets.Add(ptr.PatchOffset);
+                    UpdatePointerAddress(ptr.PatchOffset, targetAddress);
 
-                    if (at.ElementType == HSDBinType.String)
-                        WriteStringBuffer((string)dataToWrite, at.StringType);
-                    else if (at.ElementType == HSDBinType.Struct)
-                        WriteStruct(dataToWrite, false); 
-                    else if (at.ElementType == HSDBinType.Array)
-                        throw new NotSupportedException("Pointer to Array element that is also an Array is ambiguous.");
+                    var at = ptr.Attr;
+                    if (ptr.Index != -1)
+                    {
+                        object dataToWrite = ((Array)ptr.Data).GetValue(ptr.Index)!;
+                        if (at.ElementType == HSDBinType.String)
+                            WriteStringBuffer((string)dataToWrite, at.StringType);
+                        else if (at.ElementType == HSDBinType.Struct)
+                            WriteStruct(dataToWrite, false);
+                        else if (at.ElementType == HSDBinType.Array)
+                            throw new NotSupportedException("Pointer to Array element that is also an Array is ambiguous.");
+                        else
+                            WriteAtomValue(dataToWrite, at.Size, at.Key);
+                    }
                     else
-                        WriteAtomValue(dataToWrite, at.Size, at.Key);
+                    {
+                        WriteFieldDispatch(ptr.Data, ptr.Field, at);
+                    }
                 }
-                else
-                {
-                    dataToWrite = ptr.Data;
-                    WriteFieldDispatch(dataToWrite, ptr.Field, at);
-                }
-            }
-
-            if (pendingPointers.Count > 0)
-            {
-                ProcessPendingPointers();
             }
         }
 
@@ -284,9 +282,11 @@ namespace FEHagemu.FEHArchive
             }
         }
 
+        private static readonly byte[] ZeroHeader = new byte[HSDArcHeader.Size];
+
         public void WriteStart()
         {
-            Write(new byte[HSDArcHeader.Size]);
+            Write(ZeroHeader);
         }
 
         public void WriteEnd(uint unknown1, uint unknown2, ulong magic) {
