@@ -54,8 +54,10 @@ namespace FEHagemu.ViewModels.Tools
                 string sourceFile = files[0].Path.LocalPath;
                 try
                 {
-                    await MasterData.ReplaceSkillIcon(SelectedIcon.Id, sourceFile);
-                    await Ursa.Controls.MessageBox.ShowOverlayAsync($"Successfully updated Icon {SelectedIcon.Id}.", "Success");
+                    var writeback = await MasterData.ReplaceSkillIcon(SelectedIcon.Id, sourceFile);
+                    await Ursa.Controls.MessageBox.ShowOverlayAsync(
+                        $"图标 {SelectedIcon.Id} 已保存到 {writeback.DestinationText}。",
+                        "保存成功");
                     // Refresh all icons in the same atlas using UI thread to bind to Avalonia images properly
                     RefreshAtlasIcons(SelectedIcon.Id / MasterData.SkillAtlasCapacity);
                 }
@@ -72,7 +74,7 @@ namespace FEHagemu.ViewModels.Tools
             if (SelectedIcon is null) return;
             try
             {
-                MasterData.RestoreSkillIcon(SelectedIcon.Id);
+                await MasterData.RestoreSkillIcon(SelectedIcon.Id);
                 RefreshAtlasIcons(SelectedIcon.Id / MasterData.SkillAtlasCapacity);
                 await Ursa.Controls.MessageBox.ShowOverlayAsync($"Successfully restored Icon {SelectedIcon.Id}.", "Success");
             }

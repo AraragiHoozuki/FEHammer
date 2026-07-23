@@ -10,9 +10,8 @@
     xmlns:views="clr-namespace:FEHagemu.Views"
     xmlns:vm="using:FEHagemu.ViewModels"
     Name="SkillSelectDialog"
-    MinWidth="480"
-    MaxWidth="560"
-    MaxHeight="860"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Stretch"
     d:DesignHeight="600"
     d:DesignWidth="500"
     x:DataType="vm:SkillSelectorViewModel"
@@ -103,7 +102,8 @@
         </ItemsPanelTemplate>
     </UserControl.Resources>
 
-    <Grid RowDefinitions="Auto, *">
+    <Grid Name="LayoutRoot" ColumnDefinitions="2*,6,3*">
+        <Grid Grid.Column="0" RowDefinitions="Auto,*">
         <!--  Filter Area  -->
         <Border
             Grid.Row="0"
@@ -302,12 +302,21 @@
                 <DataTemplate>
                     <Border Classes="skillItem" DoubleTapped="OnSkillItemDoubleTapped">
                         <Grid HorizontalAlignment="Stretch" ColumnDefinitions="Auto,*">
-                            <Image
-                                Grid.Column="0"
-                                Width="32"
-                                Height="32"
-                                Margin="2"
-                                Source="{Binding Icon}" />
+                            <Panel Grid.Column="0" Width="40" Height="36">
+                                <Image
+                                    Width="32"
+                                    Height="32"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Source="{Binding Icon}" />
+                                <Image
+                                    Width="18"
+                                    Height="18"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    IsVisible="{Binding ShowSpecialCooldownQ}"
+                                    Source="{Binding SpecialCooldownIcon}" />
+                            </Panel>
                             <TextBlock
                                 Grid.Column="1"
                                 Margin="8,0,0,0"
@@ -379,11 +388,20 @@
                             Classes="skillIcon"
                             DoubleTapped="OnSkillItemDoubleTapped"
                             Tapped="OnSkillIconTapped">
-                            <Image
-                                Width="36"
-                                Height="36"
-                                Margin="2"
-                                Source="{Binding Icon}" />
+                            <Panel Width="40" Height="40">
+                                <Image
+                                    Width="36"
+                                    Height="36"
+                                    Margin="2"
+                                    Source="{Binding Icon}" />
+                                <Image
+                                    Width="17"
+                                    Height="17"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    IsVisible="{Binding ShowSpecialCooldownQ}"
+                                    Source="{Binding SpecialCooldownIcon}" />
+                            </Panel>
                             <ToolTip.Tip>
                                 <ToolTip Classes="FEHSkill">
                                     <views:SkillToolTipPanel />
@@ -425,5 +443,47 @@
                 </controls:VirtualizingWrapPanel.ItemTemplate>
             </controls:VirtualizingWrapPanel>
         </ScrollViewer>
+        </Grid>
+
+        <GridSplitter
+            Grid.Column="1"
+            IsVisible="{Binding !#SkillSelectDialog.IsSelectionMode}"
+            ResizeDirection="Columns" />
+
+        <Grid
+            Grid.Column="2"
+            Margin="12,8,12,10"
+            IsVisible="{Binding !#SkillSelectDialog.IsSelectionMode}"
+            RowDefinitions="Auto,*">
+            <Grid Margin="0,0,0,10" ColumnDefinitions="*,Auto">
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="18"
+                    FontWeight="SemiBold"
+                    Text="{Binding SkillModeHeader}"
+                    TextTrimming="CharacterEllipsis" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <u:IconButton
+                        Command="{Binding SkillDetails.SaveToGameCommand}"
+                        Content="保存"
+                        Icon="{StaticResource SemiIconSave}"
+                        IsEnabled="{Binding !SkillDetails.IsSaving}"
+                        IsVisible="{Binding IsEditMode}" />
+                    <u:IconButton
+                        Command="{Binding ToggleSkillModeCommand}"
+                        Content="{Binding SkillModeButtonText}"
+                        Icon="{StaticResource SemiIconEdit}"
+                        IsEnabled="{Binding IsSkillSelected}" />
+                </StackPanel>
+            </Grid>
+            <views:SkillBrowserDetailsView
+                Grid.Row="1"
+                IsVisible="{Binding IsBrowseMode}" />
+            <views:SkillDetailsView
+                Grid.Row="1"
+                DataContext="{Binding SkillDetails}"
+                IsEditing="True"
+                IsVisible="{Binding #SkillSelectDialog.((vm:SkillSelectorViewModel)DataContext).IsEditMode}" />
+        </Grid>
     </Grid>
 </UserControl>

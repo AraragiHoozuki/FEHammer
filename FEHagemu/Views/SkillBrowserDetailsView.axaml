@@ -1,0 +1,322 @@
+<UserControl
+    x:Class="FEHagemu.Views.SkillBrowserDetailsView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:FEHagemu.ViewModels"
+    Name="SkillBrowserDetailsRoot"
+    d:DesignHeight="760"
+    d:DesignWidth="720"
+    x:DataType="vm:SkillSelectorViewModel"
+    mc:Ignorable="d">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.sectionTitle">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+        </Style>
+        <Style Selector="TextBlock.secondary">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText2}" />
+        </Style>
+        <Style Selector="Button.ownerItem">
+            <Setter Property="Width" Value="70" />
+            <Setter Property="Height" Value="70" />
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="Padding" Value="3" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.ownerItem:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorBorder}" />
+        </Style>
+        <Style Selector="Button.chainItem">
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="Padding" Value="7,4" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground0}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Button.chainItem.current">
+            <Setter Property="Background" Value="{DynamicResource SemiBlue1Color}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiBlue5Color}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+        <ContentControl Content="{Binding SelectedSkill}">
+            <ContentControl.ContentTemplate>
+                <DataTemplate x:DataType="vm:SkillViewModel">
+                    <Grid Margin="4,4,4,16" ColumnDefinitions="Auto,16,*,Auto">
+                        <Panel Width="72" Height="72" VerticalAlignment="Top">
+                            <Border
+                                Background="{DynamicResource SemiColorBackground0}"
+                                BorderBrush="{DynamicResource SemiColorBorder}"
+                                BorderThickness="1"
+                                CornerRadius="6" />
+                            <Image Margin="8" Source="{Binding Icon}" />
+                            <TextBlock
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Margin="0,3,3,0"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                IsVisible="{Binding WeaponQ}"
+                                Text="{Binding ExNumber}" />
+                            <Image
+                                Width="26"
+                                Height="26"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Margin="0,2,2,0"
+                                IsVisible="{Binding ShowSpecialCooldownQ}"
+                                Source="{Binding SpecialCooldownIcon}" />
+                        </Panel>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="4">
+                            <TextBlock
+                                FontSize="22"
+                                FontWeight="SemiBold"
+                                Foreground="{DynamicResource SemiColorText0}"
+                                Text="{Binding Name}"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                Classes="secondary"
+                                FontFamily="Consolas"
+                                Text="{Binding Id}"
+                                TextTrimming="CharacterEllipsis" />
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <TextBlock Classes="secondary" Text="{Binding CategoryName}" />
+                                <TextBlock Classes="secondary" Text="{Binding SpCost, StringFormat='SP {0}'}" />
+                            </StackPanel>
+                        </StackPanel>
+                        <Border
+                            Grid.Column="3"
+                            Padding="7,3"
+                            VerticalAlignment="Top"
+                            Background="{DynamicResource SemiColorBackground0}"
+                            BorderBrush="{DynamicResource SemiColorBorder}"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            IsVisible="{Binding ExclusiveQ}">
+                            <TextBlock FontSize="11" FontWeight="SemiBold" Text="专属" />
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </ContentControl.ContentTemplate>
+        </ContentControl>
+
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+            <ContentControl Content="{Binding SelectedSkill}">
+                <ContentControl.ContentTemplate>
+                    <DataTemplate x:DataType="vm:SkillViewModel">
+                        <StackPanel Spacing="0">
+
+                        <Border
+                            Padding="4,14"
+                            BorderBrush="{DynamicResource SemiColorBorder}"
+                            BorderThickness="0,1,0,0">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="sectionTitle" Text="技能说明" />
+                                <TextBlock
+                                    FontSize="14"
+                                    Foreground="{DynamicResource SemiColorText1}"
+                                    LineHeight="21"
+                                    Text="{Binding Description}"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border
+                            Padding="4,14"
+                            BorderBrush="{DynamicResource SemiColorBorder}"
+                            BorderThickness="0,1,0,0"
+                            IsVisible="{Binding HasWeaponRefineChain}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="sectionTitle" Text="武器锻造" />
+                                <ItemsControl ItemsSource="{Binding WeaponRefineChain}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:SkillChainItem">
+                                            <Button
+                                                Classes="chainItem"
+                                                Classes.current="{Binding IsCurrent}"
+                                                Command="{Binding #SkillBrowserDetailsRoot.((vm:SkillSelectorViewModel)DataContext).NavigateToSkillCommand}"
+                                                CommandParameter="{Binding SkillId}">
+                                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                                    <Image Width="20" Height="20" Source="{Binding Icon}" />
+                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <Border
+                            Padding="4,14"
+                            BorderBrush="{DynamicResource SemiColorBorder}"
+                            BorderThickness="0,1,0,0"
+                            IsVisible="{Binding HasRefine}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="sectionTitle" Text="锻造效果" />
+                                <TextBlock
+                                    FontSize="13"
+                                    Foreground="{DynamicResource SemiColorText1}"
+                                    LineHeight="20"
+                                    Text="{Binding RefineDescription}"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border
+                            Padding="4,14"
+                            BorderBrush="{DynamicResource SemiColorBorder}"
+                            BorderThickness="0,1,0,0"
+                            IsVisible="{Binding HasChain}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="sectionTitle" Text="技能链" />
+                                <ItemsControl ItemsSource="{Binding AncestorChain}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:SkillChainItem">
+                                            <Button
+                                                Classes="chainItem"
+                                                Command="{Binding #SkillBrowserDetailsRoot.((vm:SkillSelectorViewModel)DataContext).NavigateToSkillCommand}"
+                                                CommandParameter="{Binding SkillId}">
+                                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                                    <Image Width="20" Height="20" Source="{Binding Icon}" />
+                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <Border
+                            Padding="4,14"
+                            BorderBrush="{DynamicResource SemiColorBorder}"
+                            BorderThickness="0,1,0,0"
+                            IsVisible="{Binding HasSuccessors}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="sectionTitle" Text="后置技能" />
+                                <ItemsControl ItemsSource="{Binding SuccessorItems}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:SkillChainItem">
+                                            <Button
+                                                Classes="chainItem"
+                                                Command="{Binding #SkillBrowserDetailsRoot.((vm:SkillSelectorViewModel)DataContext).NavigateToSkillCommand}"
+                                                CommandParameter="{Binding SkillId}">
+                                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                                    <Image Width="20" Height="20" Source="{Binding Icon}" />
+                                                    <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <Border
+                            Padding="4,14"
+                            BorderBrush="{DynamicResource SemiColorBorder}"
+                            BorderThickness="0,1,0,0"
+                            IsVisible="{Binding NotEquippables.Count}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="sectionTitle" Text="无法装备" />
+                                <ItemsControl ItemsSource="{Binding NotEquippables}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border
+                                                Margin="0,0,5,5"
+                                                Padding="4"
+                                                Background="{DynamicResource SemiColorBackground0}"
+                                                CornerRadius="4">
+                                                <Image Width="24" Height="24" Opacity="0.72" Source="{Binding}" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <Border
+                            Padding="4,14"
+                            BorderBrush="{DynamicResource SemiColorBorder}"
+                            BorderThickness="0,1,0,0">
+                            <StackPanel Spacing="10">
+                                <TextBlock
+                                    Classes="sectionTitle"
+                                    Text="{Binding #SkillBrowserDetailsRoot.((vm:SkillSelectorViewModel)DataContext).SkillOwners.Count, StringFormat='持有角色（{0}）'}" />
+                                <ItemsControl ItemsSource="{Binding #SkillBrowserDetailsRoot.((vm:SkillSelectorViewModel)DataContext).SkillOwners}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:SkillOwnerViewModel">
+                                            <Button
+                                                Classes="ownerItem"
+                                                Command="{Binding #SkillBrowserDetailsRoot.((vm:SkillSelectorViewModel)DataContext).NavigateToPersonCommand}"
+                                                CommandParameter="{Binding}"
+                                                ToolTip.Tip="{Binding Name}">
+                                                <Panel Width="64" Height="64">
+                                                    <Image Source="/Assets/UI/FaceFrame_BG.png" Stretch="Fill" />
+                                                    <Image Margin="6" Source="{Binding Face^}" Stretch="UniformToFill" />
+                                                    <Image Source="/Assets/UI/FaceFrame.png" Stretch="Fill" />
+                                                    <StackPanel
+                                                        Margin="0,0,0,-2"
+                                                        HorizontalAlignment="Left"
+                                                        VerticalAlignment="Bottom"
+                                                        Orientation="Horizontal">
+                                                        <Image Width="16" Height="16" Source="{Binding WeaponIcon}" />
+                                                        <Image Width="16" Height="16" Source="{Binding MoveIcon}" />
+                                                    </StackPanel>
+                                                </Panel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    Classes="secondary"
+                                    IsVisible="{Binding #SkillBrowserDetailsRoot.((vm:SkillSelectorViewModel)DataContext).HasNoSkillOwners}"
+                                    Text="没有角色持有此技能" />
+                            </StackPanel>
+                        </Border>
+                        </StackPanel>
+                    </DataTemplate>
+                </ContentControl.ContentTemplate>
+            </ContentControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

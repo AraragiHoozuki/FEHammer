@@ -1,41 +1,56 @@
-﻿using System;
+using System;
 
 namespace FEHagemu.HSDArchive
 {
-    public enum StringType
+    public enum StringType { Plain, ID, Message }
+    public enum PtrMode { None, Ptr, DelayedPtr }
+
+    public interface IHSDDynamicSize
     {
-        Plain,
-        ID,
-        Message
+        int GetDynamicSize(string fieldName);
     }
 
-    public enum Sign
-    {
-        Unsigned = 0,
-        Signed = 1,
-    }
-
-    public enum HSDBinType
-    {
-        Atom = 0,
-        Struct,
-        String,
-        Array,
-        Padding,
-        Unknown
-    }
     [AttributeUsage(AttributeTargets.Field)]
-    public class HSDHelperAttribute : Attribute
+    public abstract class HSDFieldAttribute : Attribute
     {
+        public PtrMode Ptr = PtrMode.None;
+    }
+
+    [AttributeUsage(AttributeTargets.Field)]
+    public class HSDAtomAttribute : HSDFieldAttribute
+    {
+        public int Size;
         public ulong Key;
-        public int Size = 0;
-        public HSDBinType ElementType = HSDBinType.Atom;
-        public Type ElementRealType = typeof(string);
-        public HSDBinType Type = HSDBinType.Atom;
-        public bool IsPtr = false;
-        public bool IsDelayedPtr = false;
-        public bool ElementIsPtr = false;
-        public string? DynamicSizeCalculator = null;
+    }
+
+    [AttributeUsage(AttributeTargets.Field)]
+    public class HSDStringAttribute : HSDFieldAttribute
+    {
         public StringType StringType = StringType.Plain;
+    }
+
+    [AttributeUsage(AttributeTargets.Field)]
+    public class HSDStructAttribute : HSDFieldAttribute { }
+
+    [AttributeUsage(AttributeTargets.Field)]
+    public class HSDArrayAttribute : HSDFieldAttribute
+    {
+        public int Size;
+        public PtrMode ElementPtr = PtrMode.None;
+        public int ElementSize;
+        public ulong ElementKey;
+        public StringType StringType = StringType.Plain;
+    }
+
+    [AttributeUsage(AttributeTargets.Field)]
+    public class HSDPaddingAttribute : HSDFieldAttribute
+    {
+        public int Size;
+    }
+
+    [AttributeUsage(AttributeTargets.Field)]
+    public class HSDRawAttribute : HSDFieldAttribute
+    {
+        public int Size;
     }
 }

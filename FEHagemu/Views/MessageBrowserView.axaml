@@ -1,0 +1,99 @@
+<UserControl
+    x:Class="FEHagemu.Views.MessageBrowserView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:FEHagemu.ViewModels"
+    d:DesignHeight="700"
+    d:DesignWidth="1100"
+    x:DataType="vm:MessageBrowserViewModel"
+    mc:Ignorable="d">
+    <Grid Margin="10" RowDefinitions="Auto,*,Auto">
+        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <TextBox
+                MinWidth="240"
+                Text="{Binding SearchText, Mode=TwoWay}"
+                Watermark="搜索 ID、文本或归档" />
+            <Button
+                Grid.Column="1"
+                Command="{Binding ResetSearchCommand}"
+                Content="清除" />
+            <StackPanel
+                Grid.Column="2"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="8">
+                <TextBlock FontWeight="SemiBold" Text="{Binding LanguageText}" />
+                <TextBlock Opacity="0.7" Text="{Binding ResultCountText}" />
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="0,10,0,0" ColumnDefinitions="2*,6,3*">
+            <ListBox
+                Grid.Column="0"
+                ItemsSource="{Binding FilteredMessages}"
+                SelectedItem="{Binding SelectedMessage, Mode=TwoWay}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:MessageEntryViewModel">
+                        <Grid Margin="6,4" RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto">
+                            <TextBlock
+                                FontFamily="Consolas"
+                                FontWeight="SemiBold"
+                                Text="{Binding Key}"
+                                TextTrimming="CharacterEllipsis" />
+                            <TextBlock
+                                Grid.Column="1"
+                                Margin="10,0,0,0"
+                                Opacity="0.55"
+                                Text="{Binding ArcName}" />
+                            <TextBlock
+                                Grid.Row="1"
+                                Grid.ColumnSpan="2"
+                                MaxLines="2"
+                                Opacity="0.72"
+                                Text="{Binding Preview}"
+                                TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
+
+            <Grid Grid.Column="2" Margin="12,0,0,0" RowDefinitions="Auto,Auto,*,Auto">
+                <TextBlock
+                    FontFamily="Consolas"
+                    FontSize="16"
+                    FontWeight="SemiBold"
+                    Text="{Binding SelectedMessage.Key}" />
+                <TextBlock
+                    Grid.Row="1"
+                    Margin="0,3,0,8"
+                    Opacity="0.6"
+                    Text="{Binding SelectedMessage.ArcName}" />
+                <TextBox
+                    Grid.Row="2"
+                    AcceptsReturn="True"
+                    Text="{Binding SelectedMessage.ValueText, Mode=TwoWay}"
+                    TextWrapping="Wrap"
+                    VerticalContentAlignment="Top"
+                    Watermark="Message 文本" />
+                <Button
+                    Grid.Row="3"
+                    Margin="0,10,0,0"
+                    HorizontalAlignment="Right"
+                    Command="{Binding SaveSelectedCommand}"
+                    Content="保存到归档"
+                    IsEnabled="{Binding !Saving}" />
+            </Grid>
+        </Grid>
+
+        <TextBlock
+            Grid.Row="2"
+            Margin="0,8,0,0"
+            MinHeight="20"
+            Opacity="0.75"
+            Text="{Binding StatusText}" />
+    </Grid>
+</UserControl>

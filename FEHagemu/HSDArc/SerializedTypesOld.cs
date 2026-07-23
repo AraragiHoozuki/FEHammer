@@ -37,11 +37,11 @@ namespace FEHagemu.HSDArchiveOld
 
     public class Person
     {
-        public string id;
-        public string roman;
-        public string face;
-        public string face2;
-        public LegendaryInfo legendary;
+        public string id = string.Empty;
+        public string roman = string.Empty;
+        public string face = string.Empty;
+        public string face2 = string.Empty;
+        public LegendaryInfo legendary = LegendaryInfo.None;
         public uint dragonflower_num;
         public ulong timestamp;
         public uint id_num;
@@ -56,10 +56,10 @@ namespace FEHagemu.HSDArchiveOld
         public byte permanentQ;
         public byte base_vector;
         public byte refresherQ;
-        public byte[] unknown;
+        public byte[] unknown = [];
         public byte padding; //7bytes offset
-        public Stats stats;
-        public Stats grow;
-        public string[] skills;
+        public Stats stats = new();
+        public Stats grow = new();
+        public string[] skills = [];
     }
 }

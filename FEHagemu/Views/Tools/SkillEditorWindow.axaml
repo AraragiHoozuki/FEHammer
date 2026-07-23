@@ -16,6 +16,10 @@
     mc:Ignorable="d">
 
     <Window.Styles>
+        <Style Selector="u|NumericIntUpDown">
+            <Setter Property="Minimum" Value="-32768" />
+            <Setter Property="Maximum" Value="32767" />
+        </Style>
         <Style Selector="Border.card">
             <Setter Property="Background" Value="{DynamicResource SemiColorBackground0}" />
             <Setter Property="CornerRadius" Value="8" />

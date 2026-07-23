@@ -1,0 +1,570 @@
+<UserControl
+    x:Class="FEHagemu.Views.SkillDetailsView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="using:FEHagemu.Views.Components"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tools="using:FEHagemu.ViewModels.Tools"
+    xmlns:u="https://irihi.tech/ursa"
+    Name="SkillDetailsRoot"
+    d:DesignHeight="800"
+    d:DesignWidth="760"
+    x:DataType="tools:SkillEditorViewModel"
+    mc:Ignorable="d">
+
+    <UserControl.Styles>
+        <Style Selector="Border.editorSection">
+            <Setter Property="Padding" Value="6,16" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorBorder}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+        </Style>
+        <Style Selector="TextBlock.sectionTitle">
+            <Setter Property="Margin" Value="0,0,0,12" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+        </Style>
+        <Style Selector="TextBlock.fieldLabel">
+            <Setter Property="Margin" Value="0,0,0,5" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText2}" />
+        </Style>
+        <Style Selector="TextBlock.tableHeader">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText1}" />
+        </Style>
+        <Style Selector="TextBlock.tableRowLabel">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText1}" />
+        </Style>
+    </UserControl.Styles>
+
+    <TabControl Theme="{DynamicResource SegmentedTabControl}">
+        <TabItem Header="基础">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="6,8,10,32">
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="标识信息" />
+                            <Grid ColumnDefinitions="Auto,18,*">
+                                <Border
+                                    Width="88"
+                                    Height="88"
+                                    Background="{DynamicResource SemiColorBackground0}"
+                                    BorderBrush="{DynamicResource SemiColorBorder}"
+                                    BorderThickness="1"
+                                    CornerRadius="6">
+                                    <Image Margin="10" Source="{Binding SkillIcon}" />
+                                </Border>
+                                <Grid
+                                    Grid.Column="2"
+                                    ColumnDefinitions="*,14,*"
+                                    RowDefinitions="Auto,12,Auto">
+                                    <StackPanel>
+                                        <TextBlock Classes="fieldLabel" Text="技能 ID" />
+                                        <TextBox FontFamily="Consolas" Text="{Binding Id}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Classes="fieldLabel" Text="名称" />
+                                        <TextBox Text="{Binding NameText}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="2">
+                                        <TextBlock Classes="fieldLabel" Text="图标 ID" />
+                                        <u:NumericUIntUpDown Value="{Binding Icon}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="2" Grid.Column="2">
+                                        <TextBlock Classes="fieldLabel" Text="数值 ID" />
+                                        <u:NumericUIntUpDown Value="{Binding IdNum}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="技能说明" />
+                            <TextBox
+                                MinHeight="150"
+                                AcceptsReturn="True"
+                                Text="{Binding DescriptionText}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="分类与排序" />
+                            <Grid ColumnDefinitions="*,14,*,14,*">
+                                <StackPanel>
+                                    <TextBlock Classes="fieldLabel" Text="类别" />
+                                    <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding Category}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Classes="fieldLabel" Text="魔法属性" />
+                                    <ComboBox ItemsSource="{Binding Elements}" SelectedItem="{Binding TomeClass}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Classes="fieldLabel" Text="SP 消耗" />
+                                    <u:NumericUIntUpDown Value="{Binding SpCost}" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid Margin="0,12,0,0" ColumnDefinitions="*,14,*,14,*">
+                                <StackPanel>
+                                    <TextBlock Classes="fieldLabel" Text="排序值" />
+                                    <u:NumericUIntUpDown Value="{Binding SortValue}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Classes="fieldLabel" Text="晋级层级" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding PromotionTier}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Classes="fieldLabel" Text="晋级稀有度" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding PromotionRarity}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="装备">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="6,8,10,32">
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="装备类型" />
+                            <Grid ColumnDefinitions="*,18,*">
+                                <c:FlagEditorView DataContext="{Binding WepEquipVM}" />
+                                <c:FlagEditorView Grid.Column="2" DataContext="{Binding MovEquipVM}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="使用限制" />
+                            <Grid ColumnDefinitions="*,18,*">
+                                <ToggleSwitch
+                                    IsChecked="{Binding ExclusiveQ}"
+                                    OffContent="非专属技能"
+                                    OnContent="专属技能" />
+                                <ToggleSwitch
+                                    Grid.Column="2"
+                                    IsChecked="{Binding EnemyOnlyQ}"
+                                    OffContent="玩家可使用"
+                                    OnContent="仅敌方使用" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="锻造设置" />
+                            <Grid ColumnDefinitions="*,14,*">
+                                <StackPanel>
+                                    <TextBlock Classes="fieldLabel" Text="锻造状态" />
+                                    <ToggleSwitch IsChecked="{Binding RefinedQ}" OffContent="未锻造" OnContent="已锻造" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Classes="fieldLabel" Text="锻造排序 ID" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding RefineSortId}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="战斗">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="6,8,10,32">
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="战斗参数" />
+                            <UniformGrid Columns="4">
+                                <StackPanel Margin="0,0,10,12">
+                                    <TextBlock Classes="fieldLabel" Text="威力" />
+                                    <u:NumericUIntUpDown Value="{Binding Might}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,10,12">
+                                    <TextBlock Classes="fieldLabel" Text="射程" />
+                                    <u:NumericUIntUpDown Value="{Binding Range}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,10,12">
+                                    <TextBlock Classes="fieldLabel" Text="冷却" />
+                                    <u:NumericUIntUpDown Value="{Binding Cooldown}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,0,12">
+                                    <TextBlock Classes="fieldLabel" Text="辅助 CD" />
+                                    <u:NumericUIntUpDown Value="{Binding AssistCd}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,10,0">
+                                    <TextBlock Classes="fieldLabel" Text="治疗量" />
+                                    <u:NumericUIntUpDown Value="{Binding Healing}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,10,0">
+                                    <TextBlock Classes="fieldLabel" Text="技能范围" />
+                                    <u:NumericUIntUpDown Value="{Binding SkillRange}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,10,0">
+                                    <TextBlock Classes="fieldLabel" Text="分数" />
+                                    <u:NumericUIntUpDown Value="{Binding Score}" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Classes="fieldLabel" Text="范围形状" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding RangeShape}" />
+                                </StackPanel>
+                            </UniformGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="克制、防护与自适应" />
+                            <Grid ColumnDefinitions="*,18,*">
+                                <StackPanel Spacing="8">
+                                    <c:FlagEditorView DataContext="{Binding EffectiveWepVM}" />
+                                    <c:FlagEditorView DataContext="{Binding ShieldWepVM}" />
+                                    <c:FlagEditorView DataContext="{Binding WeakWepVM}" />
+                                    <c:FlagEditorView DataContext="{Binding GotWeakWepVM}" />
+                                    <c:FlagEditorView DataContext="{Binding AdaptiveWepVM}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="8">
+                                    <c:FlagEditorView DataContext="{Binding EffectiveMovVM}" />
+                                    <c:FlagEditorView DataContext="{Binding ShieldMovVM}" />
+                                    <c:FlagEditorView DataContext="{Binding WeakMovVM}" />
+                                    <c:FlagEditorView DataContext="{Binding GotWeakMovVM}" />
+                                    <c:FlagEditorView DataContext="{Binding AdaptiveMovVM}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="属性">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto">
+                <StackPanel MinWidth="720" Margin="6,8,10,32">
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="属性数组" />
+                            <Grid
+                                ColumnDefinitions="150,*,*,*,*,*"
+                                RowDefinitions="34,42,42,42,42,42,42,42">
+                                <TextBlock Grid.Column="1" Classes="tableHeader" Text="HP" />
+                                <TextBlock Grid.Column="2" Classes="tableHeader" Text="攻击" />
+                                <TextBlock Grid.Column="3" Classes="tableHeader" Text="速度" />
+                                <TextBlock Grid.Column="4" Classes="tableHeader" Text="防守" />
+                                <TextBlock Grid.Column="5" Classes="tableHeader" Text="魔防" />
+
+                                <TextBlock Grid.Row="1" Classes="tableRowLabel" Text="基础加成" />
+                                <u:NumericIntUpDown Grid.Row="1" Grid.Column="1" Margin="3" Value="{Binding Hp}" />
+                                <u:NumericIntUpDown Grid.Row="1" Grid.Column="2" Margin="3" Value="{Binding Atk}" />
+                                <u:NumericIntUpDown Grid.Row="1" Grid.Column="3" Margin="3" Value="{Binding Spd}" />
+                                <u:NumericIntUpDown Grid.Row="1" Grid.Column="4" Margin="3" Value="{Binding Def}" />
+                                <u:NumericIntUpDown Grid.Row="1" Grid.Column="5" Margin="3" Value="{Binding Res}" />
+
+                                <TextBlock Grid.Row="2" Classes="tableRowLabel" Text="战斗加成" />
+                                <u:NumericIntUpDown Grid.Row="2" Grid.Column="1" Margin="3" Value="{Binding CbHp}" />
+                                <u:NumericIntUpDown Grid.Row="2" Grid.Column="2" Margin="3" Value="{Binding CbAtk}" />
+                                <u:NumericIntUpDown Grid.Row="2" Grid.Column="3" Margin="3" Value="{Binding CbSpd}" />
+                                <u:NumericIntUpDown Grid.Row="2" Grid.Column="4" Margin="3" Value="{Binding CbDef}" />
+                                <u:NumericIntUpDown Grid.Row="2" Grid.Column="5" Margin="3" Value="{Binding CbRes}" />
+
+                                <TextBlock Grid.Row="3" Classes="tableRowLabel" Text="技能参数 1" />
+                                <u:NumericIntUpDown Grid.Row="3" Grid.Column="1" Margin="3" Value="{Binding SpHp}" />
+                                <u:NumericIntUpDown Grid.Row="3" Grid.Column="2" Margin="3" Value="{Binding SpAtk}" />
+                                <u:NumericIntUpDown Grid.Row="3" Grid.Column="3" Margin="3" Value="{Binding SpSpd}" />
+                                <u:NumericIntUpDown Grid.Row="3" Grid.Column="4" Margin="3" Value="{Binding SpDef}" />
+                                <u:NumericIntUpDown Grid.Row="3" Grid.Column="5" Margin="3" Value="{Binding SpRes}" />
+
+                                <TextBlock Grid.Row="4" Classes="tableRowLabel" Text="技能参数 2" />
+                                <u:NumericIntUpDown Grid.Row="4" Grid.Column="1" Margin="3" Value="{Binding Sp2Hp}" />
+                                <u:NumericIntUpDown Grid.Row="4" Grid.Column="2" Margin="3" Value="{Binding Sp2Atk}" />
+                                <u:NumericIntUpDown Grid.Row="4" Grid.Column="3" Margin="3" Value="{Binding Sp2Spd}" />
+                                <u:NumericIntUpDown Grid.Row="4" Grid.Column="4" Margin="3" Value="{Binding Sp2Def}" />
+                                <u:NumericIntUpDown Grid.Row="4" Grid.Column="5" Margin="3" Value="{Binding Sp2Res}" />
+
+                                <TextBlock Grid.Row="5" Classes="tableRowLabel" Text="技能参数 3" />
+                                <u:NumericIntUpDown Grid.Row="5" Grid.Column="1" Margin="3" Value="{Binding Sp3Hp}" />
+                                <u:NumericIntUpDown Grid.Row="5" Grid.Column="2" Margin="3" Value="{Binding Sp3Atk}" />
+                                <u:NumericIntUpDown Grid.Row="5" Grid.Column="3" Margin="3" Value="{Binding Sp3Spd}" />
+                                <u:NumericIntUpDown Grid.Row="5" Grid.Column="4" Margin="3" Value="{Binding Sp3Def}" />
+                                <u:NumericIntUpDown Grid.Row="5" Grid.Column="5" Margin="3" Value="{Binding Sp3Res}" />
+
+                                <TextBlock Grid.Row="6" Classes="tableRowLabel" Text="锻造属性" />
+                                <u:NumericIntUpDown Grid.Row="6" Grid.Column="1" Margin="3" Value="{Binding RefineHp}" />
+                                <u:NumericIntUpDown Grid.Row="6" Grid.Column="2" Margin="3" Value="{Binding RefineAtk}" />
+                                <u:NumericIntUpDown Grid.Row="6" Grid.Column="3" Margin="3" Value="{Binding RefineSpd}" />
+                                <u:NumericIntUpDown Grid.Row="6" Grid.Column="4" Margin="3" Value="{Binding RefineDef}" />
+                                <u:NumericIntUpDown Grid.Row="6" Grid.Column="5" Margin="3" Value="{Binding RefineRes}" />
+
+                                <TextBlock Grid.Row="7" Classes="tableRowLabel" Text="职业参数" />
+                                <u:NumericIntUpDown Grid.Row="7" Grid.Column="1" Margin="3" Value="{Binding CpHp}" />
+                                <u:NumericIntUpDown Grid.Row="7" Grid.Column="2" Margin="3" Value="{Binding CpAtk}" />
+                                <u:NumericIntUpDown Grid.Row="7" Grid.Column="3" Margin="3" Value="{Binding CpSpd}" />
+                                <u:NumericIntUpDown Grid.Row="7" Grid.Column="4" Margin="3" Value="{Binding CpDef}" />
+                                <u:NumericIntUpDown Grid.Row="7" Grid.Column="5" Margin="3" Value="{Binding CpRes}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="计算与修正" />
+                            <Grid ColumnDefinitions="*,14,*,14,*">
+                                <StackPanel>
+                                    <TextBlock Classes="fieldLabel" Text="战斗属性方法" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding CombatStatsMethod}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Classes="fieldLabel" Text="方法参数" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding CombatStatsMethodParam}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Classes="fieldLabel" Text="战后治疗" />
+                                    <u:NumericUIntUpDown Value="{Binding HealAfterBattle}" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid Margin="0,12,0,0" ColumnDefinitions="*,14,*">
+                                <StackPanel>
+                                    <TextBlock Classes="fieldLabel" Text="增伤" />
+                                    <u:NumericUIntUpDown Value="{Binding DamageUp}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Classes="fieldLabel" Text="减伤" />
+                                    <u:NumericUIntUpDown Value="{Binding DamageDown}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="Flags">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="6,8,10,32">
+                    <Border Classes="editorSection">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="sectionTitle" Text="技能 Flags" />
+                            <c:FlagEditorView DataContext="{Binding FlagsVM}" />
+                            <c:FlagEditorView DataContext="{Binding Flags1VM}" />
+                            <c:FlagEditorView DataContext="{Binding Flags2VM}" />
+                            <c:FlagEditorView DataContext="{Binding Flags3VM}" />
+                            <c:FlagEditorView DataContext="{Binding Flags4VM}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="状态中和" />
+                            <Grid ColumnDefinitions="*,18,*">
+                                <c:FlagEditorView DataContext="{Binding NeutralizeEnemyBonusVM}" />
+                                <c:FlagEditorView Grid.Column="2" DataContext="{Binding NeutralizeSelfPenaltyVM}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="高级">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="6,8,10,32">
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="触发与目标" />
+                            <Grid ColumnDefinitions="*,14,*,14,*">
+                                <StackPanel>
+                                    <TextBlock Classes="fieldLabel" Text="Timing" />
+                                    <u:NumericUIntUpDown Value="{Binding Timing}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Classes="fieldLabel" Text="Ability" />
+                                    <u:NumericUIntUpDown Value="{Binding Ability}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Classes="fieldLabel" Text="Target Either" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding TargetEitherQ}" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid Margin="0,12,0,0" ColumnDefinitions="*,14,*">
+                                <StackPanel>
+                                    <TextBlock Classes="fieldLabel" Text="目标武器" />
+                                    <u:NumericUIntUpDown Value="{Binding TargetWep}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Classes="fieldLabel" Text="目标移动" />
+                                    <u:NumericUIntUpDown Value="{Binding TargetMov}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="限制条件" />
+                            <Grid
+                                ColumnDefinitions="86,*,14,*,14,*"
+                                RowDefinitions="Auto,10,Auto,10,Auto">
+                                <TextBlock VerticalAlignment="Center" Text="Limit 1" />
+                                <u:NumericUIntUpDown Grid.Column="1" InnerLeftContent="ID" Value="{Binding Limit1Id}" />
+                                <u:NumericUIntUpDown Grid.Column="3" InnerLeftContent="P1" Value="{Binding Limit1Param1}" />
+                                <u:NumericUIntUpDown Grid.Column="5" InnerLeftContent="P2" Value="{Binding Limit1Param2}" />
+                                <TextBlock Grid.Row="2" VerticalAlignment="Center" Text="Limit 2" />
+                                <u:NumericUIntUpDown Grid.Row="2" Grid.Column="1" InnerLeftContent="ID" Value="{Binding Limit2Id}" />
+                                <u:NumericUIntUpDown Grid.Row="2" Grid.Column="3" InnerLeftContent="P1" Value="{Binding Limit2Param1}" />
+                                <u:NumericUIntUpDown Grid.Row="2" Grid.Column="5" InnerLeftContent="P2" Value="{Binding Limit2Param2}" />
+                                <TextBlock Grid.Row="4" VerticalAlignment="Center" Text="Limit 3" />
+                                <u:NumericUIntUpDown Grid.Row="4" Grid.Column="1" InnerLeftContent="ID" Value="{Binding Limit3Id}" />
+                                <u:NumericUIntUpDown Grid.Row="4" Grid.Column="3" InnerLeftContent="P1" Value="{Binding Limit3Param1}" />
+                                <u:NumericUIntUpDown Grid.Row="4" Grid.Column="5" InnerLeftContent="P2" Value="{Binding Limit3Param2}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="随机与继承" />
+                            <Grid ColumnDefinitions="*,14,*,14,*">
+                                <StackPanel>
+                                    <TextBlock Classes="fieldLabel" Text="允许随机" />
+                                    <ToggleSwitch IsChecked="{Binding RandomAllowedQ}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Classes="fieldLabel" Text="随机模式" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding RandomMode}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Classes="fieldLabel" Text="继承基础" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding TtInheritBase}" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid Margin="0,12,0,0" ColumnDefinitions="*,14,*">
+                                <StackPanel>
+                                    <TextBlock Classes="fieldLabel" Text="最低等级" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding MinLv}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Classes="fieldLabel" Text="最高等级" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding MaxLv}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="特殊机制" />
+                            <UniformGrid Columns="4">
+                                <StackPanel Margin="0,0,10,0">
+                                    <TextBlock Classes="fieldLabel" Text="魔器" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding ArcaneWeaponQ}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,10,0">
+                                    <TextBlock Classes="fieldLabel" Text="Seer Snare" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding SeerSnareAvailableQ}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,10,0">
+                                    <TextBlock Classes="fieldLabel" Text="再移动范围" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding CantoRange}" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Classes="fieldLabel" Text="开路范围" />
+                                    <u:NumericUIntUpDown Maximum="255" Value="{Binding PathfinderRange}" />
+                                </StackPanel>
+                            </UniformGrid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="关联">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="6,8,10,32">
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="关联技能" />
+                            <Grid
+                                ColumnDefinitions="*,14,*"
+                                RowDefinitions="Auto,12,Auto,12,Auto">
+                                <StackPanel>
+                                    <TextBlock Classes="fieldLabel" Text="Refine Base" />
+                                    <TextBox FontFamily="Consolas" Text="{Binding RefineBase}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Classes="fieldLabel" Text="Refine ID" />
+                                    <TextBox FontFamily="Consolas" Text="{Binding RefineId}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="2">
+                                    <TextBlock Classes="fieldLabel" Text="Beast Effect ID" />
+                                    <TextBox FontFamily="Consolas" Text="{Binding BeastEffectId}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="2">
+                                    <TextBlock Classes="fieldLabel" Text="Next Skill" />
+                                    <TextBox FontFamily="Consolas" Text="{Binding NextSkill}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="4">
+                                    <TextBlock Classes="fieldLabel" Text="Passive Next" />
+                                    <TextBox FontFamily="Consolas" Text="{Binding PassiveNext}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="学习条件" />
+                            <Grid ColumnDefinitions="*,14,*">
+                                <StackPanel>
+                                    <TextBlock Classes="fieldLabel" Text="Requirement 1" />
+                                    <TextBox FontFamily="Consolas" Text="{Binding Requirements1}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Classes="fieldLabel" Text="Requirement 2" />
+                                    <TextBox FontFamily="Consolas" Text="{Binding Requirements2}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="editorSection">
+                        <StackPanel>
+                            <TextBlock Classes="sectionTitle" Text="Sprite 资源" />
+                            <Grid
+                                ColumnDefinitions="*,14,*"
+                                RowDefinitions="Auto,12,Auto">
+                                <StackPanel>
+                                    <TextBlock Classes="fieldLabel" Text="Sprite 1" />
+                                    <TextBox FontFamily="Consolas" Text="{Binding Sprite1}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Classes="fieldLabel" Text="Sprite 2" />
+                                    <TextBox FontFamily="Consolas" Text="{Binding Sprite2}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="2">
+                                    <TextBlock Classes="fieldLabel" Text="Sprite 3" />
+                                    <TextBox FontFamily="Consolas" Text="{Binding Sprite3}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="2">
+                                    <TextBlock Classes="fieldLabel" Text="Sprite 4" />
+                                    <TextBox FontFamily="Consolas" Text="{Binding Sprite4}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+    </TabControl>
+</UserControl>

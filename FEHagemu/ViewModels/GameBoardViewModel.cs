@@ -21,12 +21,14 @@ namespace FEHagemu.ViewModels
 {
     public partial class GameBoardViewModel : ViewModelBase
     {
-        internal SRPGMap mapData;
+        internal SRPGMap mapData = null!;
 
         [ObservableProperty] ObservableCollection<ObservableCollection<BoardCellViewModel>> cells = [];
         [ObservableProperty] BoardCellViewModel? selectedCell;
         [ObservableProperty] private ObservableCollection<BoardUnitViewModel> popupUnits = [];
-        [ObservableProperty] private bool isPopupOpen = false;
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasSelectedPopupUnit))]
+        private BoardUnitViewModel? selectedPopupUnit;
         [ObservableProperty] ObservableCollection<BoardUnitViewModel> units = [];
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(TotalWidth))]
@@ -71,6 +73,10 @@ namespace FEHagemu.ViewModels
 
         public void SetMap(SRPGMap map)
         {
+            if (SelectedCell is not null) SelectedCell.IsSelected = false;
+            SelectedCell = null;
+            SelectedPopupUnit = null;
+            PopupUnits.Clear();
             Units.Clear();
             mapData = map;
             ResizeX = mapData.field.width;
@@ -147,7 +153,7 @@ namespace FEHagemu.ViewModels
 
         private BoardUnitViewModel AddUnit(Unit unit)
         {
-            var uVm = new BoardUnitViewModel(unit);
+            var uVm = new BoardUnitViewModel(this, unit);
             var count = Units.Count;
             for (int i = 0; i < count; i++)
             {
@@ -177,8 +183,9 @@ namespace FEHagemu.ViewModels
             if (SelectedCell != null)
             {
                 var unit = Unit.Create(SelectedCell.X, SelectedCell.Y);
-                AddUnit(unit).IsHighlighted = true;
+                BoardUnitViewModel addedUnit = AddUnit(unit);
                 UpdatePopup(SelectedCell);
+                SelectedPopupUnit = addedUnit;
             }
         }
         public BoardUnitViewModel? GetFirstUnitByXY(int x, int y)
@@ -259,15 +266,12 @@ namespace FEHagemu.ViewModels
             if (SelectedCell is not null) SelectedCell.IsSelected = false;
             cell.IsSelected = true;
             SelectedCell = cell;
-            foreach (var u in Units)
-            {
-                u.IsHighlighted = (u.unit.pos.x == cell.X && u.unit.pos.y == cell.Y);
-            }
             UpdatePopup(cell);
         }
 
         private void UpdatePopup(BoardCellViewModel cell)
         {
+            BoardUnitViewModel? selected = SelectedPopupUnit;
             var cellUnits = new ObservableCollection<BoardUnitViewModel>();
             foreach (var u in Units)
             {
@@ -278,38 +282,20 @@ namespace FEHagemu.ViewModels
             }
             PopupUnits = cellUnits;
             OnPropertyChanged(nameof(HasNoPopupUnits));
-            IsPopupOpen = true;
+            SelectedPopupUnit = selected is not null && cellUnits.Contains(selected)
+                ? selected
+                : cellUnits.FirstOrDefault();
         }
 
         public bool HasNoPopupUnits => PopupUnits.Count == 0;
+        public bool HasSelectedPopupUnit => SelectedPopupUnit is not null;
 
-        [RelayCommand]
-        public void ClosePopup()
+        partial void OnSelectedPopupUnitChanged(BoardUnitViewModel? value)
         {
-            IsPopupOpen = false;
+            foreach (BoardUnitViewModel unit in Units)
+                unit.IsHighlighted = ReferenceEquals(unit, value);
         }
 
-        [RelayCommand]
-        public async Task SelectUnit(BoardUnitViewModel unit)
-        {
-            foreach (var u in Units)
-            {
-                u.IsHighlighted = (u == unit);
-            }
-            await Dialog.ShowModal(
-                new BoardUnitView(),
-                unit,
-                null,
-                new DialogOptions()
-                {
-                    Title = unit.Name,
-                    CanResize = true,
-                    StartupLocation = WindowStartupLocation.CenterScreen,
-                    Button = DialogButton.None
-                });
-            // Refresh cell face in case the unit was changed
-            if (SelectedCell is not null) SelectedCell.CallFirstPersonChange();
-        }
         [RelayCommand]
         public void ResizeMap()
         {
@@ -334,15 +320,14 @@ namespace FEHagemu.ViewModels
                 var to_paste = ClonedUnit.Clone();
                 to_paste.pos.x = SelectedCell.X;
                 to_paste.pos.y = SelectedCell.Y;
-                AddUnit(to_paste).IsHighlighted = true;
+                BoardUnitViewModel addedUnit = AddUnit(to_paste);
                 UpdatePopup(SelectedCell);
+                SelectedPopupUnit = addedUnit;
             }
         }
         [RelayCommand]
-        private async Task DeleteUnit(BoardUnitViewModel buvm)
+        private void DeleteUnit(BoardUnitViewModel buvm)
         {
-            buvm.IsRemoving = true;
-            await Task.Delay(300);
             Units.Remove(buvm);
             if (TryGetCell(buvm.unit.pos.x, buvm.unit.pos.y, out var cell))
             {
@@ -369,8 +354,7 @@ namespace FEHagemu.ViewModels
         public static Type Terrains => typeof(TerrainType);
         public static IEnumerable<TerrainType> AllTerrains => Enum.GetValues<TerrainType>();
 
-        [ObservableProperty]
-        private GameBoardViewModel board;
+        public required GameBoardViewModel Board { get; init; }
         [ObservableProperty]
         private ushort x;
         [ObservableProperty]
@@ -592,12 +576,12 @@ namespace FEHagemu.ViewModels
     public partial class BoardUnitViewModel : ViewModelBase
     {
         public readonly Unit unit;
+        public GameBoardViewModel Board { get; }
         [ObservableProperty]
         private bool isHighlighted = false;
-        [ObservableProperty]
-        private bool isRemoving = false;
-        public BoardUnitViewModel(Unit u)
+        public BoardUnitViewModel(GameBoardViewModel board, Unit u)
         {
+            Board = board;
             unit = u;
             for (int i = 0; i < u.skills.Length; i++)
             {
@@ -650,26 +634,33 @@ namespace FEHagemu.ViewModels
             }
         }
         [ObservableProperty] private int merge = 0;
-        partial void OnMergeChanged(int value) => RefreshStats();
+        partial void OnMergeChanged(int value)
+        {
+            if (!suppressStatRefresh) RefreshStats();
+        }
         [ObservableProperty] private int lV = 1;
-        partial void OnLVChanged(int value) => RefreshStats();
-        public ushort HP { get => unit.stats.hp; set { unit.stats.hp = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
-        public ushort ATK { get => unit.stats.atk; set { unit.stats.atk = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
-        public ushort SPD { get => unit.stats.spd; set { unit.stats.spd = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
-        public ushort DEF { get => unit.stats.def; set { unit.stats.def = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
-        public ushort RES { get => unit.stats.res; set { unit.stats.res = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
+        partial void OnLVChanged(int value)
+        {
+            if (!suppressStatRefresh) RefreshStats();
+        }
+        private bool suppressStatRefresh;
+        public short HP { get => unit.stats.hp; set { unit.stats.hp = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
+        public short ATK { get => unit.stats.atk; set { unit.stats.atk = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
+        public short SPD { get => unit.stats.spd; set { unit.stats.spd = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
+        public short DEF { get => unit.stats.def; set { unit.stats.def = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
+        public short RES { get => unit.stats.res; set { unit.stats.res = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
         public int Total { get => HP + ATK + SPD + DEF + RES; }
 
         [ObservableProperty]
-        public ushort defaultHP;
+        public short defaultHP;
         [ObservableProperty]
-        public ushort defaultATK;
+        public short defaultATK;
         [ObservableProperty]
-        public ushort defaultSPD;
+        public short defaultSPD;
         [ObservableProperty]
-        public ushort defaultDEF;
+        public short defaultDEF;
         [ObservableProperty]
-        public ushort defaultRES;
+        public short defaultRES;
         [ObservableProperty]
         public uint dragonFlowerCount;
         public byte CD { get => unit.cd; set { unit.cd = value; OnPropertyChanged(); } }
@@ -679,7 +670,25 @@ namespace FEHagemu.ViewModels
         public byte IsReturning { get => unit.tetherQ; set { unit.tetherQ = value; OnPropertyChanged(); } }
         public string SpawnCheck { get => unit.spawn_check; set { unit.spawn_check = value; OnPropertyChanged(); } }
         public byte SpawnCount { get => unit.spawn_count; set { unit.spawn_count = value; OnPropertyChanged(); } }
-        public byte SpawnTurns { get => unit.spawn_turns; set { unit.spawn_turns = value; OnPropertyChanged(); } }
+        public byte SpawnTurns
+        {
+            get => unit.spawn_turns;
+            set
+            {
+                if (unit.spawn_turns == value) return;
+                unit.spawn_turns = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ShowSpawnTurn));
+                OnPropertyChanged(nameof(SpawnTurnDigitIcons));
+            }
+        }
+        public bool ShowSpawnTurn => SpawnTurns is > 0 and < byte.MaxValue;
+        public IReadOnlyList<IImage> SpawnTurnDigitIcons => ShowSpawnTurn
+            ? SpawnTurns
+                .ToString(System.Globalization.CultureInfo.InvariantCulture)
+                .Select(character => MasterData.GetHpGaugeDigitIcon(character - '0', IsEnemy))
+                .ToArray()
+            : [];
         public byte SpawnTargetRemain { get => unit.spawn_target_remain; set { unit.spawn_target_remain = value; OnPropertyChanged(); } }
         public byte SpawnTargetKills { get => unit.spawn_target_kills; set { unit.spawn_target_kills = value; OnPropertyChanged(); } }
 
@@ -689,6 +698,7 @@ namespace FEHagemu.ViewModels
             {
                 unit.enemyQ = (byte)(value == true ? 1 : 0);
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(SpawnTurnDigitIcons));
             }
         }
 
@@ -736,15 +746,23 @@ namespace FEHagemu.ViewModels
             {
                 LegendarySkill = new SkillViewModel(string.Empty, 9);
             }
-            if (unit.true_lv > 40)
+            suppressStatRefresh = true;
+            try
             {
-                lV = 40;
-                merge = unit.true_lv - 40;
+                if (unit.true_lv > 40)
+                {
+                    LV = 40;
+                    Merge = unit.true_lv - 40;
+                }
+                else
+                {
+                    LV = unit.true_lv;
+                    Merge = 0;
+                }
             }
-            else
+            finally
             {
-                lV = unit.true_lv;
-                merge = 0;
+                suppressStatRefresh = false;
             }
             if (needRefreshStats)
             {
@@ -762,11 +780,11 @@ namespace FEHagemu.ViewModels
             var p = MasterData.GetPerson(Id);
             if (p is null) return;
             int[] stats = p.CalcStats(LV, Merge, -1, -1);
-            DefaultHP = HP = (ushort)stats[0];
-            DefaultATK = ATK = (ushort)stats[1];
-            DefaultSPD = SPD = (ushort)stats[2];
-            DefaultDEF = DEF = (ushort)stats[3];
-            DefaultRES = RES = (ushort)stats[4];
+            DefaultHP = HP = checked((short)stats[0]);
+            DefaultATK = ATK = checked((short)stats[1]);
+            DefaultSPD = SPD = checked((short)stats[2]);
+            DefaultDEF = DEF = checked((short)stats[3]);
+            DefaultRES = RES = checked((short)stats[4]);
             OnPropertyChanged(nameof(Total));
         }
         private void RefreshDefaultStats()
@@ -776,11 +794,11 @@ namespace FEHagemu.ViewModels
             var p = MasterData.GetPerson(Id);
             if (p is null) return;
             int[] stats = p.CalcStats(LV, Merge, -1, -1);
-            DefaultHP = (ushort)stats[0];
-            DefaultATK = (ushort)stats[1];
-            DefaultSPD = (ushort)stats[2];
-            DefaultDEF = (ushort)stats[3];
-            DefaultRES = (ushort)stats[4];
+            DefaultHP = checked((short)stats[0]);
+            DefaultATK = checked((short)stats[1]);
+            DefaultSPD = checked((short)stats[2]);
+            DefaultDEF = checked((short)stats[3]);
+            DefaultRES = checked((short)stats[4]);
             OnPropertyChanged(nameof(Total));
         }
 
@@ -790,7 +808,7 @@ namespace FEHagemu.ViewModels
             var vm = new SkillSelectorViewModel();
             if (svm.skill is not null && svm.WeaponQ) vm.SearchText = svm.Name;
             vm.SelectSlot(svm.Index);
-            var result = await Dialog.ShowModal(new SkillSelectorView(), vm, null, new DialogOptions()
+            var result = await Dialog.ShowModal(SkillSelectorView.CreateSelectionView(), vm, null, new DialogOptions()
             {
                 Title = "选择技能",
                 CanResize = true,
@@ -810,7 +828,7 @@ namespace FEHagemu.ViewModels
         public async Task ChangePerson(BoardCellViewModel cell)
         {
             var vm = new PersonSelectorViewModel();
-            var res = await Dialog.ShowModal(new PersonSelectorView(), vm, null, new DialogOptions()
+            var res = await Dialog.ShowModal(PersonSelectorView.CreateSelectionView(), vm, null, new DialogOptions()
             {
                 Button = DialogButton.OKCancel,
                 Title = "选择角色",
@@ -875,35 +893,49 @@ namespace FEHagemu.ViewModels
         [ObservableProperty]
         public bool isSelected = false;
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ShowPassiveSlotIcon))]
+        [NotifyPropertyChangedFor(nameof(PassiveSlotIcon))]
         public int index = 0;
-        public ObservableCollection<IImage> NotEquippables { get; } = [];
+        private IReadOnlyList<IImage>? notEquippables;
+        public IReadOnlyList<IImage> NotEquippables => notEquippables ??= LoadNotEquippables();
 
         public SkillViewModel(string id, int i)
         {
             skill = MasterData.GetSkill(id);
             Index = i;
-            LoadNotEquippables();
         }
 
         public SkillViewModel(Skill s)
         {
             skill = s;
-            LoadNotEquippables();
         }
 
-        private void LoadNotEquippables()
+        private IReadOnlyList<IImage> LoadNotEquippables()
         {
-            if (skill is null) return;
+            if (skill is null) return [];
+            var result = new List<IImage>();
             for (int i = 0; i < (int)WeaponType.ColorlessBeast + 1; i++)
             {
-                if (((uint)skill.wep_equip & (1u << i)) == 0) NotEquippables.Add(MasterData.GetWeaponIcon(i));
+                if (((uint)skill.wep_equip & (1u << i)) == 0) result.Add(MasterData.GetWeaponIcon(i));
             }
             for (int i = 0; i < (int)MoveType.Flying + 1; i++)
             {
-                if (((uint)skill.mov_equip & (1u << i)) == 0) NotEquippables.Add(MasterData.GetMoveIcon(i));
+                if (((uint)skill.mov_equip & (1u << i)) == 0) result.Add(MasterData.GetMoveIcon(i));
             }
+            return result;
         }
         public IImage Icon => MasterData.GetSkillIcon(skill is null ? 0 : (int)skill.icon);
+        public bool ShowPassiveSlotIcon => Index is >= 3 and <= 7;
+        public IImage PassiveSlotIcon => Index switch
+        {
+            3 => MasterData.GetABCSXIcon("A"),
+            4 => MasterData.GetABCSXIcon("B"),
+            5 => MasterData.GetABCSXIcon("C"),
+            6 => MasterData.GetABCSXIcon("X"),
+            7 => MasterData.GetABCSXIcon("S"),
+            _ => MasterData.EmptyBitmap
+        };
+        public string Id => skill?.id ?? string.Empty;
         public string Name => MasterData.GetMessage(skill?.name ?? string.Empty);
         public string Description => MasterData.GetMessage(skill?.description ?? string.Empty);
         public string? RefineDescription
@@ -920,7 +952,10 @@ namespace FEHagemu.ViewModels
         public bool RefinedQ => (skill?.refinedQ == 1);
         public bool SpecialQ => skill?.category == SkillCategory.Special;
         public bool WeaponQ => skill?.category == SkillCategory.Weapon;
-        public bool ShowExNumberQ => SpecialQ || WeaponQ;
+        public bool ShowSpecialCooldownQ => SpecialQ && Cooldown is >= 0 and <= 9;
+        public IImage SpecialCooldownIcon => ShowSpecialCooldownQ
+            ? MasterData.GetSpecialCooldownIcon(Cooldown)
+            : MasterData.EmptyBitmap;
         public uint SpCost => skill?.sp_cost ?? 0;
         public bool ExclusiveQ => skill?.exclusiveQ == 1;
         public bool HasRefine => skill?.refinedQ == 1 && !string.IsNullOrEmpty(RefineDescription);
@@ -1101,6 +1136,54 @@ namespace FEHagemu.ViewModels
         }
 
         public bool HasSuccessors => SuccessorItems.Count > 0;
+
+        private IReadOnlyList<SkillChainItem>? weaponRefineChain;
+        public IReadOnlyList<SkillChainItem> WeaponRefineChain =>
+            weaponRefineChain ??= BuildWeaponRefineChain();
+        public bool HasWeaponRefineChain => WeaponRefineChain.Count > 1;
+
+        private IReadOnlyList<SkillChainItem> BuildWeaponRefineChain()
+        {
+            if (skill?.category != SkillCategory.Weapon) return [];
+
+            Skill baseWeapon = skill;
+            var visited = new HashSet<string>(StringComparer.Ordinal) { skill.id };
+            while (!string.IsNullOrEmpty(baseWeapon.refine_base)
+                && visited.Add(baseWeapon.refine_base)
+                && MasterData.GetSkill(baseWeapon.refine_base) is { category: SkillCategory.Weapon } parent)
+            {
+                baseWeapon = parent;
+            }
+
+            Skill[] refinedWeapons = MasterData.SkillDict.Values
+                .Where(candidate => candidate.category == SkillCategory.Weapon
+                    && candidate.id != baseWeapon.id
+                    && string.Equals(candidate.refine_base, baseWeapon.id, StringComparison.Ordinal))
+                .OrderBy(candidate => candidate.refine_sort_id)
+                .ThenBy(candidate => candidate.sort_value)
+                .ThenBy(candidate => candidate.id, StringComparer.Ordinal)
+                .ToArray();
+
+            if (refinedWeapons.Length == 0) return [];
+
+            var result = new List<SkillChainItem>(refinedWeapons.Length + 1)
+            {
+                CreateChainItem(baseWeapon)
+            };
+            result.AddRange(refinedWeapons.Select(CreateChainItem));
+            return result;
+        }
+
+        private SkillChainItem CreateChainItem(Skill item)
+        {
+            return new SkillChainItem
+            {
+                SkillId = item.id,
+                Name = MasterData.GetMessage(item.name),
+                Icon = MasterData.GetSkillIcon((int)item.icon),
+                IsCurrent = string.Equals(item.id, skill?.id, StringComparison.Ordinal)
+            };
+        }
     }
 
     public class SkillChainItem

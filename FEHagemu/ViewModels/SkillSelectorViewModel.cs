@@ -4,6 +4,7 @@ using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FEHagemu.HSDArchive;
+using FEHagemu.ViewModels.Tools;
 using Irihi.Avalonia.Shared.Contracts;
 using System;
 using System.Collections;
@@ -29,13 +30,84 @@ namespace FEHagemu.ViewModels
         [ObservableProperty]
         public bool selectedQ = false;
     }
+
+    public sealed class SkillOwnerViewModel
+    {
+        public SkillOwnerViewModel(Person person)
+        {
+            Person = person;
+        }
+
+        public Person Person { get; }
+        public string Id => Person.Id;
+        public string Name => MasterData.GetMessage("M" + Person.Id);
+        public string Title
+        {
+            get
+            {
+                string body = MasterData.StripIdPrefix(Person.Id, out string prefix);
+                return MasterData.GetMessage("M" + prefix + "HONOR_" + body);
+            }
+        }
+        public Task<Avalonia.Media.Imaging.Bitmap> Face => MasterData.GetFaceAsync(Person.Face);
+        public IImage WeaponIcon => MasterData.GetWeaponIcon((int)Person.WeaponType);
+        public IImage MoveIcon => MasterData.GetMoveIcon((int)Person.MoveType);
+    }
+
     public partial class SkillSelectorViewModel : ViewModelBase
     {
         private List<SkillViewModel> allSkills = null!;
         [ObservableProperty]
         ObservableCollection<SkillViewModel> filteredSkills = [];
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsSkillSelected))]
+        [NotifyPropertyChangedFor(nameof(IsBrowseMode))]
+        [NotifyPropertyChangedFor(nameof(HasNoSkillOwners))]
         SkillViewModel? selectedSkill;
+        public bool IsSkillSelected => SelectedSkill is not null;
+        public bool IsBrowseMode => IsSkillSelected && !IsEditMode;
+        [ObservableProperty]
+        SkillEditorViewModel? skillDetails;
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasSkillOwners))]
+        [NotifyPropertyChangedFor(nameof(HasNoSkillOwners))]
+        IReadOnlyList<SkillOwnerViewModel> skillOwners = [];
+        public bool HasSkillOwners => SkillOwners.Count > 0;
+        public bool HasNoSkillOwners => IsSkillSelected && !HasSkillOwners;
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(SkillModeButtonText))]
+        [NotifyPropertyChangedFor(nameof(SkillModeHeader))]
+        [NotifyPropertyChangedFor(nameof(IsBrowseMode))]
+        bool isEditMode;
+        public string SkillModeButtonText => IsEditMode ? "浏览" : "编辑";
+        public string SkillModeHeader => IsEditMode ? "编辑技能" : "技能详情";
+        partial void OnSelectedSkillChanged(SkillViewModel? value)
+        {
+            IsEditMode = false;
+            SkillOwners = [];
+            if (value?.skill is null)
+            {
+                SkillDetails = null;
+                return;
+            }
+
+            string skillId = value.skill.id;
+            SkillOwners = MasterData.PersonDict.Values
+                .Where(person => person.Skills?.Contains(skillId) == true)
+                .OrderByDescending(person => person.IdNum)
+                .Select(person => new SkillOwnerViewModel(person))
+                .ToArray();
+
+            var details = new SkillEditorViewModel();
+            details.LoadSkill(value.skill);
+            details.OnSaved = savedId =>
+            {
+                ReloadSkills();
+                ApplyFilters();
+                NavigateToSkill(savedId);
+            };
+            SkillDetails = details;
+        }
         // 结果计数
         [ObservableProperty] private string resultCountText = string.Empty;
         // 显示/隐藏筛选器
@@ -47,6 +119,7 @@ namespace FEHagemu.ViewModels
         partial void OnIsTopOnlyChanged(bool value) => ApplyFilters();
         // 钉住技能详情回调（由View设置）
         public Action<SkillViewModel>? OnSkillPinRequested { get; set; }
+        public Action<string>? OnPersonNavigationRequested { get; set; }
 
         public partial class SkillTypeToggler(bool s, IImage i) : ViewModelBase
         {
@@ -171,7 +244,7 @@ namespace FEHagemu.ViewModels
                     if (!string.IsNullOrEmpty(svm.skill.next_skill) || !string.IsNullOrEmpty(svm.skill.passive_next)) continue;
                 }
 
-                result.Add(new SkillViewModel(svm.skill.id, 0));
+                result.Add(svm);
             }
             FilteredSkills = new ObservableCollection<SkillViewModel>(result);
             ResultCountText = $"共 {result.Count} / {allSkills.Count} 个技能";
@@ -205,11 +278,22 @@ namespace FEHagemu.ViewModels
         [RelayCommand]
         public async Task Delete(SkillViewModel svm)
         {
-            if (svm is not null && svm.skill is not null && svm.skill.id.Contains("MOD"))
+            if (svm?.skill is not null && MasterData.IsAddedSkill(svm.skill))
             {
-                MasterData.DeleteSkill(MasterData.ModSkillArc, svm.skill);
-                ReloadSkills();
-                ApplyFilters();
+                try
+                {
+                    MasterData.DeleteSkill(MasterData.ModSkillArc, svm.skill);
+                    await MasterData.ModSkillArc.Save();
+                    await MasterData.ModMsgArc.Save();
+                    await MasterData.WriteBackFilesAsync(
+                        [MasterData.ModSkillArc.FilePath, MasterData.ModMsgArc.FilePath]);
+                    ReloadSkills();
+                    ApplyFilters();
+                }
+                catch (Exception ex)
+                {
+                    await MessageBox.ShowAsync(ex.Message, "删除失败", MessageBoxIcon.Error, MessageBoxButton.OK);
+                }
             } else
             {
                 await MessageBox.ShowAsync("Cannot delete built-in skill", "Error", MessageBoxIcon.Error, MessageBoxButton.OK);
@@ -258,6 +342,18 @@ namespace FEHagemu.ViewModels
         void PinSkill(SkillViewModel? svm)
         {
             if (svm is not null) OnSkillPinRequested?.Invoke(svm);
+        }
+
+        [RelayCommand]
+        void NavigateToPerson(SkillOwnerViewModel? owner)
+        {
+            if (owner is not null) OnPersonNavigationRequested?.Invoke(owner.Id);
+        }
+
+        [RelayCommand]
+        void ToggleSkillMode()
+        {
+            if (SelectedSkill is not null) IsEditMode = !IsEditMode;
         }
     }
 

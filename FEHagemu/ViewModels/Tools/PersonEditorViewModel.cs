@@ -20,10 +20,18 @@ namespace FEHagemu.ViewModels.Tools
 {
     public partial class PersonEditorViewModel : ViewModelBase
     {
+        private readonly bool loadPortraitPreviews;
+        private string? sourcePersonId;
+        private bool editingAddedPerson;
+        public Action<string>? OnSaved { get; set; }
+        [ObservableProperty] private bool _isSaving;
         [ObservableProperty] private string _id = "PID_NewPerson";
         [ObservableProperty] private string _roman = "";
         [ObservableProperty] private string _face = "";
-        partial void OnFaceChanged(string value) => RefreshPortraits();
+        partial void OnFaceChanged(string value)
+        {
+            if (loadPortraitPreviews) RefreshPortraits();
+        }
         [ObservableProperty] private string _face2 = "";
 
         [ObservableProperty] private uint _idNum;
@@ -98,15 +106,20 @@ namespace FEHagemu.ViewModels.Tools
         public IEnumerable<LegendaryKind> LegendaryKinds => Enum.GetValues<LegendaryKind>();
         public IEnumerable<LegendaryElement> LegendaryElements => Enum.GetValues<LegendaryElement>();
 
-        public PersonEditorViewModel()
+        public PersonEditorViewModel(bool loadPortraitPreviews = true)
         {
+            this.loadPortraitPreviews = loadPortraitPreviews;
         }
 
         [RelayCommand]
         public async Task SelectPersonFromGame()
         {
             var vm = new PersonSelectorViewModel();
-            var result = await OverlayDialog.ShowModal(new FEHagemu.Views.PersonSelectorView(), vm, null, new OverlayDialogOptions()
+            var result = await OverlayDialog.ShowModal(
+                FEHagemu.Views.PersonSelectorView.CreateSelectionView(),
+                vm,
+                null,
+                new OverlayDialogOptions()
             {
                 Title = "Select Person",
                 CanResize = true,
@@ -133,7 +146,7 @@ namespace FEHagemu.ViewModels.Tools
         private Avalonia.Media.Imaging.Bitmap? LoadPortrait(string type)
         {
             if (string.IsNullOrEmpty(Face)) return null;
-            string path = Path.Combine(MasterData.FACE_PATH, Face, $"{type}.png");
+            string path = MasterData.GetPortraitLocalPath(Face, type);
             if (File.Exists(path))
             {
                 try
@@ -162,22 +175,16 @@ namespace FEHagemu.ViewModels.Tools
 
             if (files.Count > 0)
             {
-                string targetPath = Path.Combine(MasterData.FACE_PATH, Face, $"{portraitType}.png");
+                string targetPath = MasterData.GetPortraitLocalPath(Face, portraitType);
                 string backupPath = targetPath + ".bak";
-                
-                // Backup if original exists and backup doesn't
-                if (File.Exists(targetPath) && !File.Exists(backupPath))
-                {
-                    File.Copy(targetPath, backupPath);
-                }
-                else if (!File.Exists(targetPath))
-                {
-                    // Create directory if needed
-                    Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-                }
 
                 try
                 {
+                    if (!File.Exists(targetPath))
+                        throw new FileNotFoundException("The original portrait was not found.", targetPath);
+                    if (!File.Exists(backupPath))
+                        File.Copy(targetPath, backupPath);
+
                     int targetW = 158, targetH = 158;
                     if (portraitType == "Face_FC") { targetW = 158; targetH = 158; }
                     else if (portraitType == "Face" || portraitType.StartsWith("BtlFace") && !portraitType.Contains("BU")) { targetW = 1684; targetH = 1920; }
@@ -188,8 +195,11 @@ namespace FEHagemu.ViewModels.Tools
                         SixLabors.ImageSharp.Processing.ProcessingExtensions.Mutate(sourceImage, x => x.Resize(targetW, targetH));
                         await sourceImage.SaveAsWebpAsync(targetPath);
                     }
+                    var writeback = await MasterData.WriteBackFilesAsync([targetPath]);
                     RefreshPortraits();
-                    await MessageBox.ShowOverlayAsync($"{portraitType} replaced successfully.", "Success");
+                    await MessageBox.ShowOverlayAsync(
+                        $"{portraitType} 已保存到 {writeback.DestinationText}。",
+                        "保存成功");
                 }
                 catch (Exception e)
                 {
@@ -202,25 +212,16 @@ namespace FEHagemu.ViewModels.Tools
         public async Task RestorePortrait(string portraitType)
         {
             if (string.IsNullOrEmpty(Face)) return;
-            string targetPath = Path.Combine(MasterData.FACE_PATH, Face, $"{portraitType}.png");
-            string backupPath = targetPath + ".bak";
-
-            if (File.Exists(backupPath))
+            string targetPath = MasterData.GetPortraitLocalPath(Face, portraitType);
+            try
             {
-                try
-                {
-                    File.Copy(backupPath, targetPath, true);
-                    RefreshPortraits();
-                    await MessageBox.ShowOverlayAsync($"{portraitType} restored successfully.", "Success");
-                }
-                catch (Exception e)
-                {
-                    await MessageBox.ShowOverlayAsync($"Error restoring image: {e.Message}", "Error");
-                }
+                await MasterData.RestoreFilesByLocalPathAsync([targetPath]);
+                RefreshPortraits();
+                await MessageBox.ShowOverlayAsync($"{portraitType} restored successfully.", "Success");
             }
-            else
+            catch (Exception e)
             {
-                await MessageBox.ShowOverlayAsync($"No backup found for {portraitType}.", "Info");
+                await MessageBox.ShowOverlayAsync($"Error restoring image: {e.Message}", "Error");
             }
         }
 
@@ -230,6 +231,8 @@ namespace FEHagemu.ViewModels.Tools
 
         public void LoadPerson(Person p)
         {
+            sourcePersonId = p.id;
+            editingAddedPerson = MasterData.IsAddedPerson(p);
             Id = p.id;
             Roman = p.roman;
             Face = p.face;
@@ -305,11 +308,71 @@ namespace FEHagemu.ViewModels.Tools
             }
         }
 
+        public void LoadPerson(IPerson person)
+        {
+            if (person is Person regularPerson)
+            {
+                LoadPerson(regularPerson);
+                return;
+            }
+
+            if (person is not Enemy enemy) return;
+
+            sourcePersonId = enemy.id;
+            editingAddedPerson = false;
+            Id = enemy.id;
+            Roman = enemy.roman;
+            Face = enemy.face;
+            Face2 = enemy.face2;
+            NameText = MasterData.GetMessage("M" + enemy.id);
+            TitleText = string.Empty;
+            IdNum = enemy.id_num;
+            VersionNum = enemy.Version;
+            SortValue = 0;
+            Origin = 0;
+            WeaponType = enemy.weapon_type;
+            TomeClass = enemy.tome_class;
+            MoveType = enemy.move_type;
+            Series = 0;
+            RegularQ = false;
+            PermanentQ = false;
+            BaseVector = 0;
+            RefresherQ = enemy.refresherQ;
+            Timestamp = enemy.timestamp;
+
+            Hp = enemy.stats.hp;
+            Atk = enemy.stats.atk;
+            Spd = enemy.stats.spd;
+            Def = enemy.stats.def;
+            Res = enemy.stats.res;
+            GrowHp = enemy.grow.hp;
+            GrowAtk = enemy.grow.atk;
+            GrowSpd = enemy.grow.spd;
+            GrowDef = enemy.grow.def;
+            GrowRes = enemy.grow.res;
+
+            SkillsList.Clear();
+            string?[] enemySkills = [enemy.top_weapon, enemy.assist1, enemy.assist2, enemy.special];
+            string[] labels = ["Top Weapon", "Assist 1", "Assist 2", "Special"];
+            for (int i = 0; i < enemySkills.Length; i++)
+                SkillsList.Add(new StringWrapper { Label = labels[i], Value = enemySkills[i] });
+
+            DragonflowerNum = 0;
+            IsLegendary = false;
+        }
+
 
 
         private Stats CreateStats(int hp, int atk, int spd, int def, int res)
         {
-            return new Stats { hp = (ushort)hp, atk = (ushort)atk, spd = (ushort)spd, def = (ushort)def, res = (ushort)res };
+            return new Stats
+            {
+                hp = checked((short)hp),
+                atk = checked((short)atk),
+                spd = checked((short)spd),
+                def = checked((short)def),
+                res = checked((short)res)
+            };
         }
 
         public Person CreatePersonObj()
@@ -353,7 +416,7 @@ namespace FEHagemu.ViewModels.Tools
             {
                 p.legendary = new LegendaryInfo
                 {
-                    btn_skill_id = LegendaryBtnSkillId,
+                    btn_skill_id = LegendaryBtnSkillId ?? string.Empty,
                     kind = LegendaryKind,
                     element = LegendaryElement,
                     bst = LegendaryBst,
@@ -375,45 +438,68 @@ namespace FEHagemu.ViewModels.Tools
         [RelayCommand]
         public async Task SaveToGame()
         {
-            var p = CreatePersonObj();
-
-            // Logic to add to/update MasterData
-            string pid = p.id;
-            // Assuming saving to "Tutorial" arc for mods or existing arc
-
-            var person_arc = MasterData.GetPersonArc(pid);
-            if (person_arc == null)
+            if (IsSaving) return;
+            IsSaving = true;
+            try
             {
-                // New person, defaults to Tutorial.bin.lz
-                person_arc = MasterData.PersonArcs.FirstOrDefault(arc => arc.path.EndsWith("Tutorial.bin.lz"));
-            }
+                var p = CreatePersonObj();
+                if (!editingAddedPerson)
+                {
+                    p.id = MasterData.CreateUniqueModId(
+                        p.id,
+                        "PID_",
+                        candidate => MasterData.PersonDict.ContainsKey(candidate));
+                }
+                else if (!p.id.StartsWith("PID_", StringComparison.OrdinalIgnoreCase)
+                    || !p.id.Contains("MOD", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("新增角色的 ID 必须以 PID_ 开头并保留 MOD 标记。");
+                }
 
-            if (person_arc == null)
-            {
-                await MessageBox.ShowOverlayAsync("Mod archives not found!", "Error");
-                return;
-            }
+                var personArc = MasterData.ModPersonArc
+                    ?? throw new InvalidOperationException("Person Tutorial.bin.lz was not found.");
+                var messageArc = MasterData.ModMsgArc
+                    ?? throw new InvalidOperationException("Message Tutorial.bin.lz was not found.");
 
-            MasterData.AddPerson(person_arc, p);
-            await person_arc.Save();
+                string? previousPersonId = editingAddedPerson
+                    ? sourcePersonId ?? throw new InvalidOperationException("找不到新增角色的原始 ID。")
+                    : null;
+                MasterData.UpsertModPerson(p, previousPersonId);
+                if (previousPersonId is not null
+                    && !string.Equals(previousPersonId, p.id, StringComparison.Ordinal))
+                {
+                    MasterData.DeleteMessage(messageArc, "M" + previousPersonId);
+                    string oldBody = MasterData.StripIdPrefix(previousPersonId, out string oldPrefix);
+                    MasterData.DeleteMessage(messageArc, "M" + oldPrefix + "HONOR_" + oldBody);
+                }
+                string mpid = "M" + p.id;
+                MasterData.AddMessage(messageArc, mpid, NameText);
 
-            // Add Message if needed? Usually Name/Roman? IDK how Person messages work.
-            // Usually M_PID_...
-
-            var msg_arc = MasterData.ModMsgArc;
-            if (msg_arc != null)
-            {
-                string mpid = "M" + pid;
-                MasterData.AddMessage(msg_arc, mpid, NameText);
-
-                string body = MasterData.StripIdPrefix(pid, out string prefix);
+                string body = MasterData.StripIdPrefix(p.id, out string prefix);
                 string honorKey = "M" + prefix + "HONOR_" + body;
-                MasterData.AddMessage(msg_arc, honorKey, TitleText);
+                MasterData.AddMessage(messageArc, honorKey, TitleText);
 
-                await msg_arc.Save();
+                await personArc.Save();
+                await messageArc.Save();
+                var writeback = await MasterData.WriteBackFilesAsync(
+                    [personArc.FilePath, messageArc.FilePath]);
+
+                Id = p.id;
+                sourcePersonId = p.id;
+                editingAddedPerson = true;
+                await MessageBox.ShowOverlayAsync(
+                    $"角色 {p.id} 已保存到 {writeback.DestinationText}。",
+                    "保存成功");
+                OnSaved?.Invoke(p.id);
             }
-
-            await MessageBox.ShowOverlayAsync($"Person {p.id} saved.", "Success");
+            catch (Exception ex)
+            {
+                await MessageBox.ShowOverlayAsync(ex.Message, "保存失败");
+            }
+            finally
+            {
+                IsSaving = false;
+            }
         }
 
         [RelayCommand]
@@ -421,7 +507,7 @@ namespace FEHagemu.ViewModels.Tools
         {
             if (wrapper == null) return;
             var vm = new SkillSelectorViewModel();
-            var result = await OverlayDialog.ShowModal(new FEHagemu.Views.SkillSelectorView(), vm, null, new OverlayDialogOptions()
+            var result = await OverlayDialog.ShowModal(FEHagemu.Views.SkillSelectorView.CreateSelectionView(), vm, null, new OverlayDialogOptions()
             {
                 Title = "Select Skill",
                 CanResize = true,
@@ -438,7 +524,7 @@ namespace FEHagemu.ViewModels.Tools
         public async Task PickLegendaryBtnSkill()
         {
             var vm = new SkillSelectorViewModel();
-            var result = await OverlayDialog.ShowModal(new FEHagemu.Views.SkillSelectorView(), vm, null, new OverlayDialogOptions()
+            var result = await OverlayDialog.ShowModal(FEHagemu.Views.SkillSelectorView.CreateSelectionView(), vm, null, new OverlayDialogOptions()
             {
                 Title = "Select Skill",
                 CanResize = true,

@@ -9,10 +9,10 @@
     xmlns:u="https://irihi.tech/ursa"
     xmlns:views="clr-namespace:FEHagemu.Views"
     xmlns:vm="using:FEHagemu.ViewModels"
+    xmlns:tools="using:FEHagemu.ViewModels.Tools"
     Name="PersonSelectorDialog"
-    MinWidth="520"
-    MaxWidth="680"
-    MaxHeight="860"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Stretch"
     d:DesignHeight="600"
     d:DesignWidth="600"
     x:DataType="vm:PersonSelectorViewModel"
@@ -74,7 +74,8 @@
         </ItemsPanelTemplate>
     </UserControl.Resources>
 
-    <Grid RowDefinitions="Auto, *">
+    <Grid Name="LayoutRoot" ColumnDefinitions="*,0,0">
+        <Grid Grid.Column="0" RowDefinitions="Auto,*">
         <!-- Filter Area -->
         <Border
             Grid.Row="0"
@@ -303,5 +304,259 @@
                 </controls:VirtualizingWrapPanel.ItemTemplate>
             </controls:VirtualizingWrapPanel>
         </ScrollViewer>
+        </Grid>
+
+        <GridSplitter
+            Grid.Column="1"
+            IsVisible="{Binding !#PersonSelectorDialog.IsSelectionMode}"
+            ResizeDirection="Columns" />
+
+        <Grid
+            Grid.Column="2"
+            Margin="12,8,12,10"
+            IsVisible="{Binding !#PersonSelectorDialog.IsSelectionMode}"
+            RowDefinitions="Auto,*">
+            <Grid Margin="0,0,0,10" ColumnDefinitions="*,Auto">
+                <ContentControl Content="{Binding SelectedPerson}">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate x:DataType="vm:PersonViewModel">
+                            <Grid ColumnDefinitions="Auto,12,*">
+                                <Panel Width="80" Height="80">
+                                    <Image Source="/Assets/UI/FaceFrame_BG.png" Stretch="Fill" />
+                                    <Image Margin="7" Source="{Binding Face^}" Stretch="UniformToFill" />
+                                    <Image Source="/Assets/UI/FaceFrame.png" Stretch="Fill" />
+                                </Panel>
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="3">
+                                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding Name}" TextWrapping="Wrap" />
+                                    <TextBlock FontSize="13" Opacity="0.75" Text="{Binding Title}" TextWrapping="Wrap" />
+                                    <StackPanel HorizontalAlignment="Left" Orientation="Horizontal" Spacing="5">
+                                            <Image Width="24" Height="24" Source="{Binding WeaponIcon}" ToolTip.Tip="{Binding WeaponTypeName}" />
+                                            <Image Width="24" Height="24" Source="{Binding MoveIcon}" ToolTip.Tip="{Binding MoveTypeName}" />
+                                            <ItemsControl MaxWidth="120" ItemsSource="{Binding OriginIcons}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel HorizontalAlignment="Right" Orientation="Horizontal" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:PersonOriginIconViewModel">
+                                                        <Image Width="30" Height="24" Margin="1,0" Source="{Binding Icon}" Stretch="Uniform" ToolTip.Tip="{Binding Name}" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
+                <StackPanel Grid.Column="1" VerticalAlignment="Top" Orientation="Horizontal" Spacing="8">
+                    <u:IconButton
+                        Command="{Binding PersonDetails.SaveToGameCommand}"
+                        Content="保存"
+                        Icon="{StaticResource SemiIconSave}"
+                        IsEnabled="{Binding !PersonDetails.IsSaving}"
+                        IsVisible="{Binding IsEditMode}" />
+                    <u:IconButton
+                        Command="{Binding TogglePersonModeCommand}"
+                        Content="{Binding PersonModeButtonText}"
+                        Icon="{StaticResource SemiIconEdit}"
+                        IsEnabled="{Binding IsPersonSelected}" />
+                </StackPanel>
+            </Grid>
+
+            <views:PersonBrowserDetailsView
+                Grid.Row="1"
+                IsVisible="{Binding IsBrowseMode}" />
+
+            <ScrollViewer
+                Grid.Row="1"
+                HorizontalScrollBarVisibility="Disabled"
+                IsVisible="{Binding IsEditMode}">
+                <ContentControl Content="{Binding PersonDetails}">
+                        <ContentControl.ContentTemplate>
+                            <DataTemplate x:DataType="tools:PersonEditorViewModel">
+                                <StackPanel Spacing="6">
+                                    <Expander Header="基础信息" IsExpanded="False">
+                                        <Grid
+                                            Margin="10"
+                                            ColumnDefinitions="*,12,*"
+                                            RowDefinitions="Auto,10,Auto,10,Auto"
+                                            IsEnabled="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).IsEditMode}">
+                                            <StackPanel>
+                                                <TextBlock Opacity="0.65" Text="ID" />
+                                                <TextBox Text="{Binding Id}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Opacity="0.65" Text="Roman" />
+                                                <TextBox Text="{Binding Roman}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2">
+                                                <TextBlock Opacity="0.65" Text="名称" />
+                                                <TextBox Text="{Binding NameText}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2" Grid.Column="2">
+                                                <TextBlock Opacity="0.65" Text="称号" />
+                                                <TextBox Text="{Binding TitleText}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="4">
+                                                <TextBlock Opacity="0.65" Text="Face" />
+                                                <TextBox Text="{Binding Face}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="4" Grid.Column="2">
+                                                <TextBlock Opacity="0.65" Text="Face 2" />
+                                                <TextBox Text="{Binding Face2}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Expander>
+
+                                    <Expander Header="战斗分类" IsExpanded="False">
+                                        <Grid
+                                            Margin="10"
+                                            ColumnDefinitions="*,12,*"
+                                            RowDefinitions="Auto,10,Auto,10,Auto"
+                                            IsEnabled="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).IsEditMode}">
+                                            <StackPanel>
+                                                <TextBlock Opacity="0.65" Text="武器类型" />
+                                                <ComboBox ItemsSource="{Binding WeaponTypes}" SelectedItem="{Binding WeaponType}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Opacity="0.65" Text="移动类型" />
+                                                <ComboBox ItemsSource="{Binding MoveTypes}" SelectedItem="{Binding MoveType}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2">
+                                                <TextBlock Opacity="0.65" Text="魔法属性" />
+                                                <ComboBox ItemsSource="{Binding Elements}" SelectedItem="{Binding TomeClass}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2" Grid.Column="2">
+                                                <TextBlock Opacity="0.65" Text="作品 Origin" />
+                                                <u:NumericUIntUpDown Value="{Binding Origin}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="14">
+                                                <CheckBox Content="常规" IsChecked="{Binding RegularQ}" />
+                                                <CheckBox Content="常驻" IsChecked="{Binding PermanentQ}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="4" Grid.Column="2">
+                                                <TextBlock Opacity="0.65" Text="再动标记" />
+                                                <u:NumericByteUpDown Value="{Binding RefresherQ}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Expander>
+
+                                    <Expander Header="基础属性与成长" IsExpanded="False">
+                                        <Grid
+                                            Margin="10"
+                                            ColumnDefinitions="*,*,*,*,*"
+                                            RowDefinitions="Auto,8,Auto"
+                                            IsEnabled="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).IsEditMode}">
+                                            <u:NumericIntUpDown Grid.Column="0" Margin="2" InnerLeftContent="HP" Value="{Binding Hp}" />
+                                            <u:NumericIntUpDown Grid.Column="1" Margin="2" InnerLeftContent="攻击" Value="{Binding Atk}" />
+                                            <u:NumericIntUpDown Grid.Column="2" Margin="2" InnerLeftContent="速度" Value="{Binding Spd}" />
+                                            <u:NumericIntUpDown Grid.Column="3" Margin="2" InnerLeftContent="防守" Value="{Binding Def}" />
+                                            <u:NumericIntUpDown Grid.Column="4" Margin="2" InnerLeftContent="魔防" Value="{Binding Res}" />
+                                            <u:NumericIntUpDown Grid.Row="2" Grid.Column="0" Margin="2" InnerLeftContent="HP成长" Value="{Binding GrowHp}" />
+                                            <u:NumericIntUpDown Grid.Row="2" Grid.Column="1" Margin="2" InnerLeftContent="攻成长" Value="{Binding GrowAtk}" />
+                                            <u:NumericIntUpDown Grid.Row="2" Grid.Column="2" Margin="2" InnerLeftContent="速成长" Value="{Binding GrowSpd}" />
+                                            <u:NumericIntUpDown Grid.Row="2" Grid.Column="3" Margin="2" InnerLeftContent="防成长" Value="{Binding GrowDef}" />
+                                            <u:NumericIntUpDown Grid.Row="2" Grid.Column="4" Margin="2" InnerLeftContent="魔防成长" Value="{Binding GrowRes}" />
+                                        </Grid>
+                                    </Expander>
+
+                                    <Expander Header="技能数组" IsExpanded="False">
+                                        <ItemsControl
+                                            Margin="10"
+                                            ItemsSource="{Binding SkillsList}"
+                                            IsEnabled="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).IsEditMode}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="tools:StringWrapper">
+                                                    <Grid Margin="0,3" ColumnDefinitions="90,*">
+                                                        <TextBlock VerticalAlignment="Center" Opacity="0.65" Text="{Binding Label}" />
+                                                        <TextBox Grid.Column="1" FontFamily="Consolas" Text="{Binding Value}" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Expander>
+
+                                    <Expander Header="传说与特殊属性" IsExpanded="False">
+                                        <StackPanel
+                                            Margin="10"
+                                            Spacing="10"
+                                            IsEnabled="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).IsEditMode}">
+                                            <ToggleSwitch Content="启用传说/神阶数据" IsChecked="{Binding IsLegendary}" />
+                                            <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,10,Auto,10,Auto">
+                                                <StackPanel>
+                                                    <TextBlock Opacity="0.65" Text="类型" />
+                                                    <ComboBox ItemsSource="{Binding LegendaryKinds}" SelectedItem="{Binding LegendaryKind}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2">
+                                                    <TextBlock Opacity="0.65" Text="属性" />
+                                                    <ComboBox ItemsSource="{Binding LegendaryElements}" SelectedItem="{Binding LegendaryElement}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Row="2">
+                                                    <TextBlock Opacity="0.65" Text="BST" />
+                                                    <u:NumericByteUpDown Value="{Binding LegendaryBst}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Row="2" Grid.Column="2">
+                                                    <TextBlock Opacity="0.65" Text="按钮技能 ID" />
+                                                    <TextBox Text="{Binding LegendaryBtnSkillId}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="14">
+                                                    <CheckBox Content="Duel" IsChecked="{Binding LegendaryDuelQ}" />
+                                                    <CheckBox Content="额外栏位" IsChecked="{Binding LegendaryAeExtraSlotQ}" />
+                                                </StackPanel>
+                                            </Grid>
+                                            <Grid ColumnDefinitions="*,*,*,*,*">
+                                                <u:NumericIntUpDown Grid.Column="0" Margin="2" InnerLeftContent="HP" Value="{Binding LHp}" />
+                                                <u:NumericIntUpDown Grid.Column="1" Margin="2" InnerLeftContent="攻击" Value="{Binding LAtk}" />
+                                                <u:NumericIntUpDown Grid.Column="2" Margin="2" InnerLeftContent="速度" Value="{Binding LSpd}" />
+                                                <u:NumericIntUpDown Grid.Column="3" Margin="2" InnerLeftContent="防守" Value="{Binding LDef}" />
+                                                <u:NumericIntUpDown Grid.Column="4" Margin="2" InnerLeftContent="魔防" Value="{Binding LRes}" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Expander>
+
+                                    <Expander Header="内部数据" IsExpanded="False">
+                                        <Grid
+                                            Margin="10"
+                                            ColumnDefinitions="*,12,*"
+                                            RowDefinitions="Auto,10,Auto,10,Auto,10,Auto"
+                                            IsEnabled="{Binding #PersonSelectorDialog.((vm:PersonSelectorViewModel)DataContext).IsEditMode}">
+                                            <StackPanel>
+                                                <TextBlock Opacity="0.65" Text="ID Num" />
+                                                <u:NumericUIntUpDown Value="{Binding IdNum}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Opacity="0.65" Text="Version Num" />
+                                                <u:NumericUIntUpDown Value="{Binding VersionNum}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2">
+                                                <TextBlock Opacity="0.65" Text="Sort Value" />
+                                                <u:NumericUIntUpDown Value="{Binding SortValue}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="2" Grid.Column="2">
+                                                <TextBlock Opacity="0.65" Text="Series" />
+                                                <u:NumericByteUpDown Value="{Binding Series}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="4">
+                                                <TextBlock Opacity="0.65" Text="Base Vector" />
+                                                <u:NumericByteUpDown Value="{Binding BaseVector}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="4" Grid.Column="2">
+                                                <TextBlock Opacity="0.65" Text="Dragonflower Num" />
+                                                <u:NumericUIntUpDown Value="{Binding DragonflowerNum}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="6" Grid.ColumnSpan="3">
+                                                <TextBlock Opacity="0.65" Text="Timestamp" />
+                                                <TextBox Text="{Binding Timestamp}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Expander>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ContentControl.ContentTemplate>
+                </ContentControl>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </UserControl>

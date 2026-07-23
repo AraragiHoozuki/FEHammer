@@ -1,0 +1,126 @@
+<UserControl
+    x:Class="FEHagemu.Views.MapBrowserView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:u="https://irihi.tech/ursa"
+    xmlns:views="clr-namespace:FEHagemu.Views"
+    xmlns:vm="using:FEHagemu.ViewModels"
+    d:DesignHeight="700"
+    d:DesignWidth="1100"
+    x:DataType="vm:MainWindowViewModel"
+    mc:Ignorable="d">
+
+    <Grid ColumnDefinitions="300,6,*">
+        <Grid Grid.Column="0" RowDefinitions="Auto,Auto,*,Auto">
+            <Grid Margin="12,10,12,6" ColumnDefinitions="*,Auto">
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="SemiBold"
+                    Text="地图" />
+                <TextBlock
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Foreground="{DynamicResource SemiGrey6Color}"
+                    Text="{Binding MapResultCountText}" />
+            </Grid>
+
+            <TextBox
+                Grid.Row="1"
+                Margin="12,0,12,8"
+                Classes="ClearButton"
+                Text="{Binding MapSearchText, UpdateSourceTrigger=PropertyChanged}"
+                Watermark="搜索地图文件..." />
+
+            <ListBox
+                Grid.Row="2"
+                Margin="6,0"
+                ItemsSource="{Binding FilteredMaps}"
+                SelectedItem="{Binding SelectedMap, Mode=TwoWay}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:MapListItem">
+                        <Grid Margin="6,4" RowDefinitions="Auto,Auto">
+                            <TextBlock
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Text="{Binding DisplayName}"
+                                TextTrimming="CharacterEllipsis" />
+                            <TextBlock
+                                Grid.Row="1"
+                                FontSize="11"
+                                Foreground="{DynamicResource SemiGrey6Color}"
+                                Text="{Binding FileName}"
+                                TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <Border
+                Grid.Row="3"
+                Padding="12,7"
+                BorderBrush="{DynamicResource SemiGrey3Color}"
+                BorderThickness="0,1,0,0">
+                <TextBlock
+                    FontSize="11"
+                    Foreground="{DynamicResource SemiGrey6Color}"
+                    Text="{Binding MapStatusText}"
+                    TextTrimming="CharacterEllipsis"
+                    ToolTip.Tip="{Binding MapStatusText}" />
+            </Border>
+        </Grid>
+
+        <GridSplitter
+            Grid.Column="1"
+            Background="{DynamicResource SemiGrey3Color}"
+            ResizeDirection="Columns" />
+
+        <Grid Grid.Column="2" RowDefinitions="Auto,*">
+            <Border
+                Padding="12,8"
+                BorderBrush="{DynamicResource SemiGrey3Color}"
+                BorderThickness="0,0,0,1"
+                IsVisible="{Binding HasOpenMap}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{DynamicResource SemiGrey6Color}"
+                        Text="{Binding MapStatusText}"
+                        TextTrimming="CharacterEllipsis" />
+                    <u:IconButton
+                        Grid.Column="1"
+                        Command="{Binding SaveMapCommand}"
+                        Content="保存地图"
+                        Icon="{StaticResource SemiIconSave}"
+                        IsEnabled="{Binding !SavingMap}"
+                        Theme="{DynamicResource SolidIconButton}" />
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="1" IsVisible="{Binding HasOpenMap}">
+                <views:GameBoardView DataContext="{Binding GameBoard}" />
+            </Grid>
+            <StackPanel
+                Grid.RowSpan="2"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                IsVisible="{Binding !HasOpenMap}"
+                Spacing="8">
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    FontSize="18"
+                    FontWeight="SemiBold"
+                    Text="选择一张地图" />
+                <TextBlock
+                    MaxWidth="360"
+                    Foreground="{DynamicResource SemiGrey6Color}"
+                    Text="{Binding MapStatusText}"
+                    TextAlignment="Center"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

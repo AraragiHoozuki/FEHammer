@@ -1,0 +1,295 @@
+<UserControl
+    x:Class="FEHagemu.Views.PersonBrowserDetailsView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:FEHagemu.ViewModels"
+    Name="PersonBrowserDetailsRoot"
+    d:DesignHeight="720"
+    d:DesignWidth="680"
+    x:DataType="vm:PersonSelectorViewModel"
+    mc:Ignorable="d">
+
+    <UserControl.Styles>
+        <Style Selector="Border.detailSection">
+            <Setter Property="Padding" Value="4,14" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorBorder}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+        </Style>
+        <Style Selector="TextBlock.sectionTitle">
+            <Setter Property="Margin" Value="0,0,0,10" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+        </Style>
+        <Style Selector="TextBlock.tableHeader">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText1}" />
+        </Style>
+        <Style Selector="TextBlock.statValue">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="TextBlock.rankValue">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText2}" />
+        </Style>
+        <Style Selector="Border.statTable">
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground1}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="ClipToBounds" Value="True" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="MaxWidth" Value="680" />
+        </Style>
+        <Style Selector="Border.statHeader">
+            <Setter Property="BorderThickness" Value="0,0,0,2" />
+        </Style>
+        <Style Selector="Border.statHeader.hp">
+            <Setter Property="BorderBrush" Value="#49A76F" />
+        </Style>
+        <Style Selector="Border.statHeader.atk">
+            <Setter Property="BorderBrush" Value="#D45E61" />
+        </Style>
+        <Style Selector="Border.statHeader.spd">
+            <Setter Property="BorderBrush" Value="#9A73C7" />
+        </Style>
+        <Style Selector="Border.statHeader.def">
+            <Setter Property="BorderBrush" Value="#D39A43" />
+        </Style>
+        <Style Selector="Border.statHeader.res">
+            <Setter Property="BorderBrush" Value="#4C98B7" />
+        </Style>
+        <Style Selector="Border.statRow">
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorBorder}" />
+            <Setter Property="BorderThickness" Value="0,1,0,0" />
+        </Style>
+        <Style Selector="Border.statRow.alternate">
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground0}" />
+        </Style>
+        <Style Selector="Border.statRow.neutral">
+            <Setter Property="Background" Value="{DynamicResource SemiColorBackground0}" />
+        </Style>
+        <Style Selector="Border.statRow.hone TextBlock.statValue">
+            <Setter Property="Foreground" Value="#3F9F68" />
+        </Style>
+        <Style Selector="Border.statRow.hone TextBlock.rowLabel">
+            <Setter Property="Foreground" Value="#3F9F68" />
+        </Style>
+        <Style Selector="Border.statRow.flaw TextBlock.statValue">
+            <Setter Property="Foreground" Value="#D05C61" />
+        </Style>
+        <Style Selector="Border.statRow.flaw TextBlock.rowLabel">
+            <Setter Property="Foreground" Value="#D05C61" />
+        </Style>
+        <Style Selector="TextBlock.rowLabel">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+        </Style>
+        <Style Selector="TextBlock.rowCaption">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{DynamicResource SemiColorText2}" />
+        </Style>
+        <Style Selector="Border.totalCell">
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorBorder}" />
+            <Setter Property="BorderThickness" Value="1,0,0,0" />
+        </Style>
+        <Style Selector="Button.skillLink">
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="Padding" Value="8,5" />
+            <Setter Property="MinHeight" Value="42" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="CornerRadius" Value="5" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <ContentControl Content="{Binding SelectedPerson}">
+            <ContentControl.ContentTemplate>
+                <DataTemplate x:DataType="vm:PersonViewModel">
+                    <StackPanel Margin="0,0,4,24">
+                        <Border Classes="detailSection">
+                            <StackPanel>
+                                <TextBlock Classes="sectionTitle" Text="基础属性与成长" />
+                                <Border Classes="statTable">
+                                    <StackPanel>
+                                        <Grid Height="36" Background="{DynamicResource SemiColorBackground0}" ColumnDefinitions="88,*,*,*,*,*,*">
+                                            <TextBlock Classes="tableHeader" Text="项目" />
+                                            <Border Grid.Column="1" Classes="statHeader hp">
+                                                <TextBlock Classes="tableHeader" Text="HP" />
+                                            </Border>
+                                            <Border Grid.Column="2" Classes="statHeader atk">
+                                                <TextBlock Classes="tableHeader" Text="攻击" />
+                                            </Border>
+                                            <Border Grid.Column="3" Classes="statHeader spd">
+                                                <TextBlock Classes="tableHeader" Text="速度" />
+                                            </Border>
+                                            <Border Grid.Column="4" Classes="statHeader def">
+                                                <TextBlock Classes="tableHeader" Text="防守" />
+                                            </Border>
+                                            <Border Grid.Column="5" Classes="statHeader res">
+                                                <TextBlock Classes="tableHeader" Text="魔防" />
+                                            </Border>
+                                            <Border Grid.Column="6" Classes="totalCell" BorderThickness="1,0,0,0">
+                                                <TextBlock Classes="tableHeader" Text="总和" />
+                                            </Border>
+                                        </Grid>
+                                        <ItemsControl ItemsSource="{Binding BaseAndGrowthRows}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:PersonStatRowViewModel">
+                                                    <Border Classes="statRow" Classes.alternate="{Binding IsAlternate}">
+                                                        <Grid MinHeight="44" ColumnDefinitions="88,*,*,*,*,*,*">
+                                                            <StackPanel Margin="8,0" VerticalAlignment="Center" Spacing="1">
+                                                                <TextBlock Classes="rowLabel" Text="{Binding Label}" />
+                                                                <TextBlock Classes="rowCaption" Text="{Binding Caption}" />
+                                                            </StackPanel>
+                                                            <TextBlock Grid.Column="1" Classes="statValue" Text="{Binding Hp}" />
+                                                            <TextBlock Grid.Column="2" Classes="statValue" Text="{Binding Atk}" />
+                                                            <TextBlock Grid.Column="3" Classes="statValue" Text="{Binding Spd}" />
+                                                            <TextBlock Grid.Column="4" Classes="statValue" Text="{Binding Def}" />
+                                                            <TextBlock Grid.Column="5" Classes="statValue" Text="{Binding Res}" />
+                                                            <Border Grid.Column="6" Classes="totalCell">
+                                                                <TextBlock Classes="statValue" Text="{Binding Total}" />
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="detailSection">
+                            <StackPanel>
+                                <TextBlock Classes="sectionTitle" Text="40 级属性" />
+                                <Border Classes="statTable">
+                                    <StackPanel>
+                                        <Grid Height="36" Background="{DynamicResource SemiColorBackground0}" ColumnDefinitions="88,*,*,*,*,*,*">
+                                            <TextBlock Classes="tableHeader" Text="成长" />
+                                            <Border Grid.Column="1" Classes="statHeader hp">
+                                                <TextBlock Classes="tableHeader" Text="HP" />
+                                            </Border>
+                                            <Border Grid.Column="2" Classes="statHeader atk">
+                                                <TextBlock Classes="tableHeader" Text="攻击" />
+                                            </Border>
+                                            <Border Grid.Column="3" Classes="statHeader spd">
+                                                <TextBlock Classes="tableHeader" Text="速度" />
+                                            </Border>
+                                            <Border Grid.Column="4" Classes="statHeader def">
+                                                <TextBlock Classes="tableHeader" Text="防守" />
+                                            </Border>
+                                            <Border Grid.Column="5" Classes="statHeader res">
+                                                <TextBlock Classes="tableHeader" Text="魔防" />
+                                            </Border>
+                                            <Border Grid.Column="6" Classes="totalCell" BorderThickness="1,0,0,0">
+                                                <TextBlock Classes="tableHeader" Text="总和" />
+                                            </Border>
+                                        </Grid>
+                                        <ItemsControl ItemsSource="{Binding Level40StatRows}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:PersonStatRowViewModel">
+                                                    <Border
+                                                        Classes="statRow"
+                                                        Classes.alternate="{Binding IsAlternate}"
+                                                        Classes.flaw="{Binding IsFlaw}"
+                                                        Classes.hone="{Binding IsHone}"
+                                                        Classes.neutral="{Binding IsNeutral}">
+                                                        <Grid MinHeight="56" ColumnDefinitions="88,*,*,*,*,*,*">
+                                                            <StackPanel Margin="8,0" VerticalAlignment="Center" Spacing="1">
+                                                                <TextBlock Classes="rowLabel" Text="{Binding Label}" />
+                                                                <TextBlock Classes="rowCaption" Text="{Binding Caption}" />
+                                                            </StackPanel>
+                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                <TextBlock Classes="statValue" Text="{Binding Hp}" />
+                                                                <TextBlock Classes="rankValue" IsVisible="{Binding ShowRanks}" Text="{Binding HpRank}" />
+                                                            </StackPanel>
+                                                            <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                                <TextBlock Classes="statValue" Text="{Binding Atk}" />
+                                                                <TextBlock Classes="rankValue" IsVisible="{Binding ShowRanks}" Text="{Binding AtkRank}" />
+                                                            </StackPanel>
+                                                            <StackPanel Grid.Column="3" VerticalAlignment="Center">
+                                                                <TextBlock Classes="statValue" Text="{Binding Spd}" />
+                                                                <TextBlock Classes="rankValue" IsVisible="{Binding ShowRanks}" Text="{Binding SpdRank}" />
+                                                            </StackPanel>
+                                                            <StackPanel Grid.Column="4" VerticalAlignment="Center">
+                                                                <TextBlock Classes="statValue" Text="{Binding Def}" />
+                                                                <TextBlock Classes="rankValue" IsVisible="{Binding ShowRanks}" Text="{Binding DefRank}" />
+                                                            </StackPanel>
+                                                            <StackPanel Grid.Column="5" VerticalAlignment="Center">
+                                                                <TextBlock Classes="statValue" Text="{Binding Res}" />
+                                                                <TextBlock Classes="rankValue" IsVisible="{Binding ShowRanks}" Text="{Binding ResRank}" />
+                                                            </StackPanel>
+                                                            <Border Grid.Column="6" Classes="totalCell">
+                                                                <StackPanel VerticalAlignment="Center">
+                                                                    <TextBlock Classes="statValue" Text="{Binding Total}" />
+                                                                    <TextBlock Classes="rankValue" IsVisible="{Binding ShowRanks}" Text="{Binding TotalRank}" />
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="detailSection">
+                            <StackPanel>
+                                <TextBlock Classes="sectionTitle" Text="技能" />
+                                <ItemsControl HorizontalAlignment="Stretch" ItemsSource="{Binding SkillItems}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel HorizontalAlignment="Stretch" Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:SkillViewModel">
+                                            <Button
+                                                Classes="skillLink"
+                                                Command="{Binding #PersonBrowserDetailsRoot.((vm:PersonSelectorViewModel)DataContext).NavigateToSkillCommand}"
+                                                CommandParameter="{Binding Id}"
+                                                ToolTip.Tip="{Binding Description}">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <Panel Width="34" Height="34">
+                                                        <Image Width="34" Height="34" Source="{Binding Icon}" />
+                                                        <Image
+                                                            Width="16"
+                                                            Height="16"
+                                                            HorizontalAlignment="Right"
+                                                            VerticalAlignment="Top"
+                                                            IsVisible="{Binding ShowSpecialCooldownQ}"
+                                                            Source="{Binding SpecialCooldownIcon}" />
+                                                    </Panel>
+                                                    <TextBlock MaxWidth="190" VerticalAlignment="Center" FontSize="13" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="12"
+                                    Foreground="{DynamicResource SemiColorText2}"
+                                    IsVisible="{Binding !HasSkills}"
+                                    Text="无技能数据" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </DataTemplate>
+            </ContentControl.ContentTemplate>
+        </ContentControl>
+    </ScrollViewer>
+</UserControl>

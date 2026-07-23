@@ -1,0 +1,55 @@
+<UserControl
+    x:Class="FEHagemu.Views.RestoreBrowserView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:FEHagemu.ViewModels"
+    d:DesignHeight="700"
+    d:DesignWidth="980"
+    x:DataType="vm:RestoreBrowserViewModel"
+    mc:Ignorable="d">
+
+    <Grid Margin="18" RowDefinitions="Auto,Auto,*">
+        <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="3">
+                <TextBlock FontSize="20" FontWeight="SemiBold" Text="还原修改" />
+                <TextBlock FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="{Binding StatusText}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <Button Command="{Binding SelectAllCommand}" Content="全选" />
+                <Button Command="{Binding ClearSelectionCommand}" Content="清除选择" />
+                <Button Command="{Binding RestoreSelectedCommand}" Content="还原所选" IsEnabled="{Binding !Restoring}" />
+                <Button Command="{Binding RestoreAllCommand}" Content="全部还原" IsEnabled="{Binding !Restoring}" />
+            </StackPanel>
+        </Grid>
+
+        <Grid
+            Grid.Row="1"
+            Height="34"
+            Margin="0,16,0,0"
+            Background="{DynamicResource SemiColorBackground0}"
+            ColumnDefinitions="36,90,180,110,*,150">
+            <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="类型" />
+            <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="文件" />
+            <TextBlock Grid.Column="3" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="同步状态" />
+            <TextBlock Grid.Column="4" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="VMDK 路径" />
+            <TextBlock Grid.Column="5" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="修改时间" />
+        </Grid>
+
+        <ListBox Grid.Row="2" ItemsSource="{Binding ModifiedFiles}" SelectionMode="Multiple">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:ModifiedFileItemViewModel">
+                    <Grid MinHeight="42" Margin="10,4" ColumnDefinitions="36,90,180,110,*,150">
+                        <CheckBox VerticalAlignment="Center" IsChecked="{Binding IsSelected}" />
+                        <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding Category}" />
+                        <TextBlock Grid.Column="2" VerticalAlignment="Center" FontFamily="Consolas" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="3" VerticalAlignment="Center" FontSize="12" Text="{Binding SyncStatus}" />
+                        <TextBlock Grid.Column="4" VerticalAlignment="Center" FontFamily="Consolas" FontSize="12" Text="{Binding RemotePath}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="5" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource SemiColorText2}" Text="{Binding ModifiedTime}" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</UserControl>

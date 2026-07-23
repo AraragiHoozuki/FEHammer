@@ -19,7 +19,7 @@ namespace FEHagemu.Services
         private Dictionary<string, List<FieldNoteItem>> _notes = new Dictionary<string, List<FieldNoteItem>>();
         private readonly string _filePath;
 
-        public event Action<string> NoteChanged;
+        public event Action<string>? NoteChanged;
 
         private FieldNoteService()
         {

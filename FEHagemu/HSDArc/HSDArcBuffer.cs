@@ -1,5 +1,6 @@
 ﻿using FEHagemu.FEHArchive;
 using FEHagemu.HSDArcIO;
+using FEHagemu.Services.GameData;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -67,7 +68,7 @@ namespace FEHagemu.HSDArchive
             using (var writer = new FEHArcWriter(ms))
             {
                 writer.WriteStart();
-                writer.WriteStruct(data);
+                writer.WriteStruct(data!);
                 writer.WritePointerOffsets();
                 writer.WriteEnd(header.unknown1, header.unknown2, header.magic);
             }
@@ -78,22 +79,32 @@ namespace FEHagemu.HSDArchive
             return buffer;
         }
 
-        public async Task Save()
+        public Task Save()
+        {
+            return Save(useSharedLock: true);
+        }
+
+        internal async Task Save(bool useSharedLock)
         {
             byte[] data = await Task.Run(() => Cryptor.EncryptAndCompress(Binarize()));
 
-            string tempPath = FilePath + ".tmp"; 
+            IDisposable? dataLock = useSharedLock
+                ? await SharedDataAccess.AcquireAsync(
+                    SharedDataAccess.DirectoryKey(FilePath)).ConfigureAwait(false)
+                : null;
+            string tempPath = SharedDataAccess.CreateTemporaryPath(FilePath, "archive");
             string bakPath = FilePath + ".bak";  
-
-            await File.WriteAllBytesAsync(tempPath, data);
-
-            if (File.Exists(FilePath))
+            try
             {
-                File.Replace(tempPath, FilePath, bakPath, true);
+                await File.WriteAllBytesAsync(tempPath, data);
+                if (File.Exists(FilePath) && !File.Exists(bakPath))
+                    File.Copy(FilePath, bakPath);
+                File.Move(tempPath, FilePath, overwrite: true);
             }
-            else
+            finally
             {
-                File.Move(tempPath, FilePath);
+                if (File.Exists(tempPath)) File.Delete(tempPath);
+                dataLock?.Dispose();
             }
         }
     }

@@ -9,23 +9,51 @@
     xmlns:views="clr-namespace:FEHagemu.Views"
     xmlns:vm="using:FEHagemu.ViewModels"
     Title="FEHagemu"
-    Width="400"
-    Height="600"
+    Width="1180"
+    Height="780"
     x:DataType="vm:MainWindowViewModel"
     Icon="/Assets/favicon.ico"
     mc:Ignorable="d">
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,*">
         <Menu>
-            <MenuItem Header="文件">
-                <MenuItem Command="{Binding OpenMapCommand}" Header="打开地图" />
-                <MenuItem Command="{Binding SaveMapCommand}" Header="保存地图" />
-
-            </MenuItem>
             <MenuItem Header="数据">
-                <MenuItem Command="{Binding ImportSkillCommand}" Header="导入技能" />
-                <MenuItem Command="{Binding ImportPersonCommand}" Header="导入角色" />
-                <MenuItem Command="{Binding ExportPackageCommand}" Header="导出数据包" />
-                <MenuItem Command="{Binding ExportSkillsCommand}" Header="导出所有技能数据" />
+                <MenuItem Header="MasterData">
+                    <MenuItem Header="VMDK 数据源" IsEnabled="{Binding !LoadingQ}">
+                        <MenuItem Header="{Binding MasterDataSourceText}" IsEnabled="False" />
+                        <Separator />
+                        <MenuItem Command="{Binding SelectMasterDataVmdkCommand}" Header="选择 VMDK..." />
+                        <MenuItem Command="{Binding ReloadMasterDataCommand}" Header="重新加载" />
+                        <MenuItem Command="{Binding UseLocalMasterDataCommand}" Header="使用本地 Data 目录" />
+                        <Separator />
+                        <MenuItem Header="{Binding MasterDataWritebackText}" IsEnabled="False" />
+                        <MenuItem
+                            Command="{Binding ConfigureLdPlayerWritebackCommand}"
+                            Header="LDPlayer 写回设置..." />
+                    </MenuItem>
+                    <MenuItem
+                        Header="文本语言"
+                        IsEnabled="{Binding !LoadingQ}"
+                        ItemsSource="{Binding MessageLanguages}">
+                        <MenuItem.ItemContainerTheme>
+                            <ControlTheme
+                                BasedOn="{StaticResource {x:Type MenuItem}}"
+                                TargetType="MenuItem"
+                                x:DataType="vm:MessageLanguageItem">
+                                <Setter Property="Header" Value="{Binding}" />
+                                <Setter Property="Command" Value="{Binding SelectCommand}" />
+                                <Setter Property="IsChecked" Value="{Binding IsSelected}" />
+                                <Setter Property="IsEnabled" Value="{Binding IsSupported}" />
+                                <Setter Property="ToggleType" Value="Radio" />
+                            </ControlTheme>
+                        </MenuItem.ItemContainerTheme>
+                    </MenuItem>
+                    <Separator />
+                    <MenuItem Header="{Binding MasterDataStatus}" IsEnabled="False" />
+                </MenuItem>
+                <MenuItem
+                    Command="{Binding ClearMasterDataCacheCommand}"
+                    Header="删除缓存..."
+                    IsEnabled="{Binding !LoadingQ}" />
             </MenuItem>
 
             <MenuItem Header="地图">
@@ -41,24 +69,34 @@
                     ToggleType="CheckBox" />
             </MenuItem>
             <MenuItem Header="工具">
-                <MenuItem Command="{Binding OpenSkillEditorCommand}" Header="技能编辑器" />
-                <MenuItem Command="{Binding OpenPersonEditorCommand}" Header="角色编辑器" />
                 <MenuItem Command="{Binding OpenFlagToolCommand}" Header="Flag(Bitmask)计算器" />
-                <MenuItem Command="{Binding OpenEnhanceViewerCommand}" Header="状态（ENHANCE）" />
+                <MenuItem Command="{Binding OpenEnhanceViewerCommand}" Header="状态浏览器" />
             </MenuItem>
-
-            <!--<MenuItem
-                    Command="{Binding ImportPersonCommand}"
-                    Header="Import Person"
-                    ToolTip.Tip="Right click a person in person selector window and export its json, then edit it and import it." />
-            -->
-
-            <MenuItem Header="About" />
+            <MenuItem Command="{Binding OpenAboutCommand}" Header="About" />
         </Menu>
-        <u:Divider Grid.Row="1" />
-
-        <views:GameBoardView Grid.Row="2" DataContext="{Binding GameBoard}" />
-        <!--<views:CellPanelView Grid.Column="2" DataContext="{Binding GameBoard.SelectedCell}" />-->
+        <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedMainTabIndex, Mode=TwoWay}">
+            <TabItem Header="地图">
+                <views:MapBrowserView />
+            </TabItem>
+            <TabItem Header="角色">
+                <views:PersonSelectorView
+                    CloseOnDoubleTap="False"
+                    IsSelectionMode="False"
+                    DataContext="{Binding PersonBrowser}" />
+            </TabItem>
+            <TabItem Header="技能">
+                <views:SkillSelectorView
+                    CloseOnDoubleTap="False"
+                    IsSelectionMode="False"
+                    DataContext="{Binding SkillBrowser}" />
+            </TabItem>
+            <TabItem Header="Message">
+                <views:MessageBrowserView DataContext="{Binding MessageBrowser}" />
+            </TabItem>
+            <TabItem Header="还原">
+                <views:RestoreBrowserView DataContext="{Binding RestoreBrowser}" />
+            </TabItem>
+        </TabControl>
 
 
     </Grid>

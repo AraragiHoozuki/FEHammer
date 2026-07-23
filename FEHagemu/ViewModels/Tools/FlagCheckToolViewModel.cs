@@ -35,7 +35,7 @@ namespace FEHagemu.ViewModels.Tools
 
         public void SetIsCheckedSilent(bool value)
         {
-            if (_isChecked != value)
+            if (IsChecked != value)
             {
                 _suppressNotification = true;
                 IsChecked = value;

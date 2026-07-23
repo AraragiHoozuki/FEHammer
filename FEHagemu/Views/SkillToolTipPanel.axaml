@@ -21,7 +21,12 @@
                     <TextBlock
                         HorizontalAlignment="Right" VerticalAlignment="Top"
                         FontSize="13" FontWeight="Bold" Foreground="#00D4FF"
-                        IsVisible="{Binding ShowExNumberQ}" Text="{Binding ExNumber}" />
+                        IsVisible="{Binding WeaponQ}" Text="{Binding ExNumber}" />
+                    <Image
+                        Width="18" Height="18"
+                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                        IsVisible="{Binding ShowSpecialCooldownQ}"
+                        Source="{Binding SpecialCooldownIcon}" />
                 </Panel>
                 <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" Spacing="1">
                     <TextBlock FontSize="16" FontWeight="Bold" Foreground="#EEEEEE"

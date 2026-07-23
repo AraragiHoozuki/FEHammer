@@ -1,0 +1,209 @@
+<UserControl
+    x:Class="FEHagemu.Views.MapCellUnitEditorView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:views="clr-namespace:FEHagemu.Views"
+    xmlns:vm="using:FEHagemu.ViewModels"
+    d:DesignHeight="700"
+    d:DesignWidth="920"
+    x:DataType="vm:GameBoardViewModel"
+    mc:Ignorable="d">
+
+    <UserControl.Styles>
+        <Style Selector="ListBox.unitStrip">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="ListBox.unitStrip ListBoxItem">
+            <Setter Property="Width" Value="64" />
+            <Setter Property="Height" Value="64" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <Style Selector="ListBox.unitStrip ListBoxItem:selected">
+            <Setter Property="Background" Value="{DynamicResource SemiBlue1Color}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiBlue5Color}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid Name="CellEditorRoot" RowDefinitions="Auto,Auto,*">
+        <Border
+            Padding="16,12"
+            Background="{DynamicResource SemiGrey1Color}"
+            BorderBrush="{DynamicResource SemiGrey3Color}"
+            BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="Auto,24,Auto,12,220,24,Auto">
+                <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="6">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Foreground="{DynamicResource SemiGrey6Color}"
+                        Text="坐标" />
+                    <TextBlock FontSize="16" FontWeight="SemiBold">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="({0}, {1})">
+                                <Binding Path="SelectedCell.X" />
+                                <Binding Path="SelectedCell.Y" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </StackPanel>
+
+                <TextBlock
+                    Grid.Column="2"
+                    VerticalAlignment="Center"
+                    Foreground="{DynamicResource SemiGrey6Color}"
+                    Text="地形" />
+                <ComboBox
+                    Grid.Column="4"
+                    ItemsSource="{Binding Source={x:Static vm:BoardCellViewModel.AllTerrains}}"
+                    SelectedItem="{Binding SelectedCell.Terrain, Mode=TwoWay}" />
+                <CheckBox
+                    Grid.Column="6"
+                    VerticalAlignment="Center"
+                    Content="我方出击点"
+                    IsChecked="{Binding SelectedCell.IsPlayerSlot, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <Border
+            Grid.Row="1"
+            Padding="16,10"
+            BorderBrush="{DynamicResource SemiGrey3Color}"
+            BorderThickness="0,0,0,1">
+            <Grid RowDefinitions="Auto,Auto">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock FontSize="14" FontWeight="SemiBold" Text="Unit" />
+                    <TextBlock
+                        Grid.Column="1"
+                        Foreground="{DynamicResource SemiGrey6Color}"
+                        Text="{Binding PopupUnits.Count, StringFormat='共 {0} 个'}" />
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="0,8,0,0" ColumnDefinitions="*,Auto">
+                    <ListBox
+                        Classes="unitStrip"
+                        ItemsSource="{Binding PopupUnits}"
+                        SelectedItem="{Binding SelectedPopupUnit, Mode=TwoWay}"
+                        SelectionMode="Single"
+                        ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                        ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:BoardUnitViewModel">
+                                <Grid ToolTip.Tip="{Binding Name}">
+                                    <Grid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem
+                                                Command="{Binding Board.ChangeUnitPersonCommand}"
+                                                CommandParameter="{Binding}"
+                                                Header="更换角色">
+                                                <MenuItem.Icon>
+                                                    <PathIcon Data="{StaticResource SemiIconEdit}" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <Separator />
+                                            <MenuItem
+                                                Command="{Binding Board.CloneUnitCommand}"
+                                                CommandParameter="{Binding}"
+                                                Header="复制">
+                                                <MenuItem.Icon>
+                                                    <PathIcon Data="{StaticResource SemiIconCopy}" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem
+                                                Classes="Danger"
+                                                Command="{Binding Board.DeleteUnitCommand}"
+                                                CommandParameter="{Binding}"
+                                                Header="删除">
+                                                <MenuItem.Icon>
+                                                    <PathIcon Data="{StaticResource SemiIconDelete}" Foreground="Red" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </Grid.ContextMenu>
+                                    <Image IsVisible="{Binding !IsEnemy}" Source="/Assets/UI/FaceFrame_GreenBG.png" />
+                                    <Image IsVisible="{Binding IsEnemy}" Source="/Assets/UI/FaceFrame_RedBG.png" />
+                                    <Image Margin="4" Source="{Binding FaceImg^}" />
+                                    <Image IsVisible="{Binding !IsEnemy}" Source="/Assets/UI/FaceFrame_Green.png" />
+                                    <Image IsVisible="{Binding IsEnemy}" Source="/Assets/UI/FaceFrame_Red.png" />
+                                    <ItemsControl
+                                        Margin="0,-2,-2,0"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        IsHitTestVisible="False"
+                                        IsVisible="{Binding ShowSpawnTurn}"
+                                        ItemsSource="{Binding SpawnTurnDigitIcons}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Image Width="8" Height="19" Source="{Binding}" Stretch="Uniform" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                    </ItemsControl>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <Button
+                        Grid.Column="1"
+                        Width="56"
+                        Height="56"
+                        Margin="10,0,0,0"
+                        Command="{Binding AddNewUnitCommand}"
+                        ToolTip.Tip="增加 Unit">
+                        <Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Command="{Binding AddNewUnitCommand}" Header="增加空 Unit">
+                                    <MenuItem.Icon>
+                                        <PathIcon Data="{StaticResource SemiIconUserAdd}" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem
+                                    Command="{Binding PasteUnitCommand}"
+                                    Header="粘贴 Unit"
+                                    IsEnabled="{Binding PasteUnitCommand.CanExecute}">
+                                    <MenuItem.Icon>
+                                        <PathIcon Data="{StaticResource SemiIconCopyAdd}" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                        <PathIcon Width="20" Height="20" Data="{StaticResource SemiIconPlus}" />
+                    </Button>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <ScrollViewer
+            Grid.Row="2"
+            HorizontalScrollBarVisibility="Disabled"
+            IsVisible="{Binding HasSelectedPopupUnit}"
+            VerticalScrollBarVisibility="Auto">
+            <views:BoardUnitView
+                Cell="{Binding #CellEditorRoot.((vm:GameBoardViewModel)DataContext).SelectedCell}"
+                DataContext="{Binding SelectedPopupUnit}" />
+        </ScrollViewer>
+
+        <Grid Grid.Row="2" IsVisible="{Binding !HasSelectedPopupUnit}">
+            <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Foreground="{DynamicResource SemiGrey6Color}"
+                Text="此格没有 Unit" />
+        </Grid>
+    </Grid>
+</UserControl>

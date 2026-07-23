@@ -20,6 +20,10 @@ namespace FEHagemu.ViewModels.Tools
 {
     public partial class SkillEditorViewModel : ViewModelBase
     {
+        private string? sourceSkillId;
+        private bool editingAddedSkill;
+        public Action<string>? OnSaved { get; set; }
+        [ObservableProperty] private bool _isSaving;
         // ... (Basic fields)
         [ObservableProperty] private string _id = "SID_NewSkill";
         [ObservableProperty] private string _nameText = "New Skill";
@@ -27,7 +31,7 @@ namespace FEHagemu.ViewModels.Tools
         [ObservableProperty] private SkillCategory _category;
         [ObservableProperty] private uint _spCost;
         [ObservableProperty] private uint _icon;
-        [ObservableProperty] private IImage _skillIcon;
+        [ObservableProperty] private IImage? _skillIcon;
 
         // ... (Combat Stats)
         [ObservableProperty] private uint _might;
@@ -39,29 +43,29 @@ namespace FEHagemu.ViewModels.Tools
         [ObservableProperty] private uint _score;
 
         // ... (Restrictions)
-        [ObservableProperty] private FlagEditorViewModel _wepEquipVM;
-        [ObservableProperty] private FlagEditorViewModel _movEquipVM;
+        public FlagEditorViewModel WepEquipVM { get; }
+        public FlagEditorViewModel MovEquipVM { get; }
         [ObservableProperty] private bool _exclusiveQ;
         [ObservableProperty] private bool _enemyOnlyQ;
 
         // ... (Flags)
-        [ObservableProperty] private FlagEditorViewModel _flagsVM;
-        [ObservableProperty] private FlagEditorViewModel _flags1VM;
-        [ObservableProperty] private FlagEditorViewModel _flags2VM;
-        [ObservableProperty] private FlagEditorViewModel _flags3VM;
-        [ObservableProperty] private FlagEditorViewModel _flags4VM;
+        public FlagEditorViewModel FlagsVM { get; }
+        public FlagEditorViewModel Flags1VM { get; }
+        public FlagEditorViewModel Flags2VM { get; }
+        public FlagEditorViewModel Flags3VM { get; }
+        public FlagEditorViewModel Flags4VM { get; }
 
         // ... (Effective/Shield/Weak)
-        [ObservableProperty] private FlagEditorViewModel _effectiveWepVM;
-        [ObservableProperty] private FlagEditorViewModel _effectiveMovVM;
-        [ObservableProperty] private FlagEditorViewModel _shieldWepVM;
-        [ObservableProperty] private FlagEditorViewModel _shieldMovVM;
-        [ObservableProperty] private FlagEditorViewModel _weakWepVM;
-        [ObservableProperty] private FlagEditorViewModel _weakMovVM;
-        [ObservableProperty] private FlagEditorViewModel _gotWeakWepVM;
-        [ObservableProperty] private FlagEditorViewModel _gotWeakMovVM;
-        [ObservableProperty] private FlagEditorViewModel _adaptiveWepVM;
-        [ObservableProperty] private FlagEditorViewModel _adaptiveMovVM;
+        public FlagEditorViewModel EffectiveWepVM { get; }
+        public FlagEditorViewModel EffectiveMovVM { get; }
+        public FlagEditorViewModel ShieldWepVM { get; }
+        public FlagEditorViewModel ShieldMovVM { get; }
+        public FlagEditorViewModel WeakWepVM { get; }
+        public FlagEditorViewModel WeakMovVM { get; }
+        public FlagEditorViewModel GotWeakWepVM { get; }
+        public FlagEditorViewModel GotWeakMovVM { get; }
+        public FlagEditorViewModel AdaptiveWepVM { get; }
+        public FlagEditorViewModel AdaptiveMovVM { get; }
 
         // ... (Strings)
         [ObservableProperty] private string? _refineBase = null;
@@ -165,8 +169,8 @@ namespace FEHagemu.ViewModels.Tools
         [ObservableProperty] private ushort _healAfterBattle;
         [ObservableProperty] private byte _combatStatsMethod;
         [ObservableProperty] private byte _combatStatsMethodParam;
-        [ObservableProperty] private FlagEditorViewModel _neutralizeEnemyBonusVM;
-        [ObservableProperty] private FlagEditorViewModel _neutralizeSelfPenaltyVM;
+        public FlagEditorViewModel NeutralizeEnemyBonusVM { get; }
+        public FlagEditorViewModel NeutralizeSelfPenaltyVM { get; }
         [ObservableProperty] private uint _timing;
         [ObservableProperty] private uint _ability;
         [ObservableProperty] private uint _targetWep; // uint, not flags enum defined
@@ -182,7 +186,7 @@ namespace FEHagemu.ViewModels.Tools
         [ObservableProperty] private byte _pathfinderRange;
         [ObservableProperty] private byte _arcaneWeaponQ;
         [ObservableProperty] private byte _seerSnareAvailableQ;
-        private byte[] ver_810_new;
+        private byte[] ver_810_new = [];
 
 
         public IEnumerable<SkillCategory> Categories => Enum.GetValues<SkillCategory>();
@@ -191,33 +195,31 @@ namespace FEHagemu.ViewModels.Tools
 
         public SkillEditorViewModel()
         {
-            // Init VMs
-            // Init VMs
-            _wepEquipVM = new FlagEditorViewModel("Weapon Equip", typeof(WeaponTypeFlags), 0, GetWeaponIcon);
-            _movEquipVM = new FlagEditorViewModel("Move Equip", typeof(MoveTypeFlags), 0, GetMoveIcon);
-            _flagsVM = new FlagEditorViewModel("Flags", typeof(SkillFlags), 0);
-            _flags1VM = new FlagEditorViewModel("Flags 1", typeof(SkillFlags1), 0);
-            _flags2VM = new FlagEditorViewModel("Flags 2", typeof(SkillFlags2), 0);
-            _flags3VM = new FlagEditorViewModel("Flags 3", typeof(SkillFlags3), 0);
-            _flags4VM = new FlagEditorViewModel("Flags 4", typeof(SkillFlags4), 0);
+            WepEquipVM = new FlagEditorViewModel("Weapon Equip", typeof(WeaponTypeFlags), 0, GetWeaponIcon);
+            MovEquipVM = new FlagEditorViewModel("Move Equip", typeof(MoveTypeFlags), 0, GetMoveIcon);
+            FlagsVM = new FlagEditorViewModel("Flags", typeof(SkillFlags), 0);
+            Flags1VM = new FlagEditorViewModel("Flags 1", typeof(SkillFlags1), 0);
+            Flags2VM = new FlagEditorViewModel("Flags 2", typeof(SkillFlags2), 0);
+            Flags3VM = new FlagEditorViewModel("Flags 3", typeof(SkillFlags3), 0);
+            Flags4VM = new FlagEditorViewModel("Flags 4", typeof(SkillFlags4), 0);
 
-            _effectiveWepVM = new FlagEditorViewModel("Effective Weapon", typeof(WeaponTypeFlags), 0, GetWeaponIcon);
-            _effectiveMovVM = new FlagEditorViewModel("Effective Move", typeof(MoveTypeFlags), 0, GetMoveIcon);
-            _shieldWepVM = new FlagEditorViewModel("Shield Weapon", typeof(WeaponTypeFlags), 0, GetWeaponIcon);
-            _shieldMovVM = new FlagEditorViewModel("Shield Move", typeof(MoveTypeFlags), 0, GetMoveIcon);
-            _weakWepVM = new FlagEditorViewModel("Weak Weapon", typeof(WeaponTypeFlags), 0, GetWeaponIcon);
-            _weakMovVM = new FlagEditorViewModel("Weak Move", typeof(MoveTypeFlags), 0, GetMoveIcon);
-            _gotWeakWepVM = new FlagEditorViewModel("Got Weak Weapon", typeof(WeaponTypeFlags), 0, GetWeaponIcon);
-            _gotWeakMovVM = new FlagEditorViewModel("Got Weak Move", typeof(MoveTypeFlags), 0, GetMoveIcon);
-            _adaptiveWepVM = new FlagEditorViewModel("Adaptive Weapon", typeof(WeaponTypeFlags), 0, GetWeaponIcon);
-            _adaptiveMovVM = new FlagEditorViewModel("Adaptive Move", typeof(MoveTypeFlags), 0, GetMoveIcon);
+            EffectiveWepVM = new FlagEditorViewModel("Effective Weapon", typeof(WeaponTypeFlags), 0, GetWeaponIcon);
+            EffectiveMovVM = new FlagEditorViewModel("Effective Move", typeof(MoveTypeFlags), 0, GetMoveIcon);
+            ShieldWepVM = new FlagEditorViewModel("Shield Weapon", typeof(WeaponTypeFlags), 0, GetWeaponIcon);
+            ShieldMovVM = new FlagEditorViewModel("Shield Move", typeof(MoveTypeFlags), 0, GetMoveIcon);
+            WeakWepVM = new FlagEditorViewModel("Weak Weapon", typeof(WeaponTypeFlags), 0, GetWeaponIcon);
+            WeakMovVM = new FlagEditorViewModel("Weak Move", typeof(MoveTypeFlags), 0, GetMoveIcon);
+            GotWeakWepVM = new FlagEditorViewModel("Got Weak Weapon", typeof(WeaponTypeFlags), 0, GetWeaponIcon);
+            GotWeakMovVM = new FlagEditorViewModel("Got Weak Move", typeof(MoveTypeFlags), 0, GetMoveIcon);
+            AdaptiveWepVM = new FlagEditorViewModel("Adaptive Weapon", typeof(WeaponTypeFlags), 0, GetWeaponIcon);
+            AdaptiveMovVM = new FlagEditorViewModel("Adaptive Move", typeof(MoveTypeFlags), 0, GetMoveIcon);
 
             var combatFlagVMs = new[] {
-                _effectiveWepVM, _effectiveMovVM,
-                _shieldWepVM, _shieldMovVM,
-                _weakWepVM, _weakMovVM,
-                _gotWeakWepVM, _gotWeakMovVM,
-                _adaptiveWepVM, _adaptiveMovVM
+                EffectiveWepVM, EffectiveMovVM,
+                ShieldWepVM, ShieldMovVM,
+                WeakWepVM, WeakMovVM,
+                GotWeakWepVM, GotWeakMovVM,
+                AdaptiveWepVM, AdaptiveMovVM
             };
 
             FlagEditorViewModel? currentExpanded = null;
@@ -235,8 +237,8 @@ namespace FEHagemu.ViewModels.Tools
                 vm.OnExpansionRequested = onExpand;
             }
 
-            _neutralizeEnemyBonusVM = new FlagEditorViewModel("Neut. Enemy Bonus", typeof(StatsFlag), 0);
-            _neutralizeSelfPenaltyVM = new FlagEditorViewModel("Neut. Self Penalty", typeof(StatsFlag), 0);
+            NeutralizeEnemyBonusVM = new FlagEditorViewModel("Neut. Enemy Bonus", typeof(StatsFlag), 0);
+            NeutralizeSelfPenaltyVM = new FlagEditorViewModel("Neut. Self Penalty", typeof(StatsFlag), 0);
         }
 
         private IImage? GetWeaponIcon(Enum v)
@@ -267,6 +269,8 @@ namespace FEHagemu.ViewModels.Tools
 
         public void LoadSkill(Skill skill)
         {
+            sourceSkillId = skill.id;
+            editingAddedSkill = MasterData.IsAddedSkill(skill);
             Id = skill.id ?? "";
             NameText = MasterData.GetMessage(skill.name) ?? skill.name;
             DescriptionText = MasterData.GetMessage(skill.description) ?? skill.description;
@@ -282,27 +286,27 @@ namespace FEHagemu.ViewModels.Tools
             SkillRange = skill.skill_range;
             Score = skill.score;
 
-            _wepEquipVM.CurrentValue = (ulong)skill.wep_equip;
-            _movEquipVM.CurrentValue = (ulong)skill.mov_equip;
+            WepEquipVM.CurrentValue = (ulong)skill.wep_equip;
+            MovEquipVM.CurrentValue = (ulong)skill.mov_equip;
             ExclusiveQ = skill.exclusiveQ != 0;
             EnemyOnlyQ = skill.enemy_onlyQ != 0;
 
-            _flagsVM.CurrentValue = (ulong)skill.flags;
-            _flags1VM.CurrentValue = (ulong)skill.flags1;
-            _flags2VM.CurrentValue = (ulong)skill.flags2;
-            _flags3VM.CurrentValue = (ulong)skill.flags3;
-            _flags4VM.CurrentValue = (ulong)skill.flags4;
+            FlagsVM.CurrentValue = (ulong)skill.flags;
+            Flags1VM.CurrentValue = (ulong)skill.flags1;
+            Flags2VM.CurrentValue = (ulong)skill.flags2;
+            Flags3VM.CurrentValue = (ulong)skill.flags3;
+            Flags4VM.CurrentValue = (ulong)skill.flags4;
 
-            _effectiveWepVM.CurrentValue = (ulong)skill.effective_wep;
-            _effectiveMovVM.CurrentValue = (ulong)skill.effective_mov;
-            _shieldWepVM.CurrentValue = (ulong)skill.shield_wep;
-            _shieldMovVM.CurrentValue = (ulong)skill.shield_mov;
-            _weakWepVM.CurrentValue = (ulong)skill.weak_wep;
-            _weakMovVM.CurrentValue = (ulong)skill.weak_mov;
-            _gotWeakWepVM.CurrentValue = (ulong)skill.got_weak_wep;
-            _gotWeakMovVM.CurrentValue = (ulong)skill.got_weak_mov;
-            _adaptiveWepVM.CurrentValue = (ulong)skill.adaptive_wep;
-            _adaptiveMovVM.CurrentValue = (ulong)skill.adaptive_mov;
+            EffectiveWepVM.CurrentValue = (ulong)skill.effective_wep;
+            EffectiveMovVM.CurrentValue = (ulong)skill.effective_mov;
+            ShieldWepVM.CurrentValue = (ulong)skill.shield_wep;
+            ShieldMovVM.CurrentValue = (ulong)skill.shield_mov;
+            WeakWepVM.CurrentValue = (ulong)skill.weak_wep;
+            WeakMovVM.CurrentValue = (ulong)skill.weak_mov;
+            GotWeakWepVM.CurrentValue = (ulong)skill.got_weak_wep;
+            GotWeakMovVM.CurrentValue = (ulong)skill.got_weak_mov;
+            AdaptiveWepVM.CurrentValue = (ulong)skill.adaptive_wep;
+            AdaptiveMovVM.CurrentValue = (ulong)skill.adaptive_mov;
 
             RefineBase = skill.refine_base;
             RefineId = skill.refine_id;
@@ -324,26 +328,13 @@ namespace FEHagemu.ViewModels.Tools
             }
 
             // Stats
-            LoadStats(skill.stats, ref _hp, ref _atk, ref _spd, ref _def, ref _res);
-            OnPropertyChanged(nameof(Hp)); OnPropertyChanged(nameof(Atk)); OnPropertyChanged(nameof(Spd)); OnPropertyChanged(nameof(Def)); OnPropertyChanged(nameof(Res));
-
-            LoadStats(skill.combat_buffs, ref _cbHp, ref _cbAtk, ref _cbSpd, ref _cbDef, ref _cbRes);
-            OnPropertyChanged(nameof(CbHp)); OnPropertyChanged(nameof(CbAtk)); OnPropertyChanged(nameof(CbSpd)); OnPropertyChanged(nameof(CbDef)); OnPropertyChanged(nameof(CbRes));
-
-            LoadStats(skill.skill_params, ref _spHp, ref _spAtk, ref _spSpd, ref _spDef, ref _spRes);
-            OnPropertyChanged(nameof(SpHp)); OnPropertyChanged(nameof(SpAtk)); OnPropertyChanged(nameof(SpSpd)); OnPropertyChanged(nameof(SpDef)); OnPropertyChanged(nameof(SpRes));
-
-            LoadStats(skill.skill_params2, ref _sp2Hp, ref _sp2Atk, ref _sp2Spd, ref _sp2Def, ref _sp2Res);
-            OnPropertyChanged(nameof(Sp2Hp)); OnPropertyChanged(nameof(Sp2Atk)); OnPropertyChanged(nameof(Sp2Spd)); OnPropertyChanged(nameof(Sp2Def)); OnPropertyChanged(nameof(Sp2Res));
-
-            LoadStats(skill.skill_params3, ref _sp3Hp, ref _sp3Atk, ref _sp3Spd, ref _sp3Def, ref _sp3Res);
-            OnPropertyChanged(nameof(Sp3Hp)); OnPropertyChanged(nameof(Sp3Atk)); OnPropertyChanged(nameof(Sp3Spd)); OnPropertyChanged(nameof(Sp3Def)); OnPropertyChanged(nameof(Sp3Res));
-
-            LoadStats(skill.refine_stats, ref _refineHp, ref _refineAtk, ref _refineSpd, ref _refineDef, ref _refineRes);
-            OnPropertyChanged(nameof(RefineHp)); OnPropertyChanged(nameof(RefineAtk)); OnPropertyChanged(nameof(RefineSpd)); OnPropertyChanged(nameof(RefineDef)); OnPropertyChanged(nameof(RefineRes));
-
-            LoadStats(skill.class_params, ref _cpHp, ref _cpAtk, ref _cpSpd, ref _cpDef, ref _cpRes);
-            OnPropertyChanged(nameof(CpHp)); OnPropertyChanged(nameof(CpAtk)); OnPropertyChanged(nameof(CpSpd)); OnPropertyChanged(nameof(CpDef)); OnPropertyChanged(nameof(CpRes));
+            LoadStats(skill.stats, value => Hp = value, value => Atk = value, value => Spd = value, value => Def = value, value => Res = value);
+            LoadStats(skill.combat_buffs, value => CbHp = value, value => CbAtk = value, value => CbSpd = value, value => CbDef = value, value => CbRes = value);
+            LoadStats(skill.skill_params, value => SpHp = value, value => SpAtk = value, value => SpSpd = value, value => SpDef = value, value => SpRes = value);
+            LoadStats(skill.skill_params2, value => Sp2Hp = value, value => Sp2Atk = value, value => Sp2Spd = value, value => Sp2Def = value, value => Sp2Res = value);
+            LoadStats(skill.skill_params3, value => Sp3Hp = value, value => Sp3Atk = value, value => Sp3Spd = value, value => Sp3Def = value, value => Sp3Res = value);
+            LoadStats(skill.refine_stats, value => RefineHp = value, value => RefineAtk = value, value => RefineSpd = value, value => RefineDef = value, value => RefineRes = value);
+            LoadStats(skill.class_params, value => CpHp = value, value => CpAtk = value, value => CpSpd = value, value => CpDef = value, value => CpRes = value);
 
             // Limits
             Limit1Id = skill.limit1.id; Limit1Param1 = skill.limit1.param1; Limit1Param2 = skill.limit1.param2;
@@ -362,8 +353,8 @@ namespace FEHagemu.ViewModels.Tools
             HealAfterBattle = skill.heal_after_battle;
             CombatStatsMethod = skill.combat_stats_method;
             CombatStatsMethodParam = skill.combat_stats_method_param;
-            _neutralizeEnemyBonusVM.CurrentValue = (ulong)skill.neutralize_enemy_bonus;
-            _neutralizeSelfPenaltyVM.CurrentValue = (ulong)skill.neutralize_self_penalty;
+            NeutralizeEnemyBonusVM.CurrentValue = (ulong)skill.neutralize_enemy_bonus;
+            NeutralizeSelfPenaltyVM.CurrentValue = (ulong)skill.neutralize_self_penalty;
             Timing = skill.timing;
             Ability = skill.ability;
             TargetWep = skill.target_wep;
@@ -379,19 +370,10 @@ namespace FEHagemu.ViewModels.Tools
             PathfinderRange = skill.pathfinder_range;
             ArcaneWeaponQ = skill.arcane_weaponQ;
             SeerSnareAvailableQ = skill.seer_snare_availableQ;
-            ver_810_new = skill.ver_810_new;
+            ver_810_new = skill.ver_810_new ?? [];
         }
 
-        private void LoadStats(Stats s, ref int hp, ref int atk, ref int spd, ref int def, ref int res)
-        {
-            if (s != null)
-            {
-                hp = s.hp; atk = s.atk; spd = s.spd; def = s.def; res = s.res;
-            }
-            else { hp = atk = spd = def = res = 0; }
-        }
-
-        private void LoadStatsToVm(Stats s, Action<int> setHp, Action<int> setAtk, Action<int> setSpd, Action<int> setDef, Action<int> setRes)
+        private static void LoadStats(Stats? s, Action<int> setHp, Action<int> setAtk, Action<int> setSpd, Action<int> setDef, Action<int> setRes)
         {
             if (s != null)
             {
@@ -405,7 +387,14 @@ namespace FEHagemu.ViewModels.Tools
 
         private Stats CreateStats(int hp, int atk, int spd, int def, int res)
         {
-            return new Stats { hp = (ushort)hp, atk = (ushort)atk, spd = (ushort)spd, def = (ushort)def, res = (ushort)res };
+            return new Stats
+            {
+                hp = checked((short)hp),
+                atk = checked((short)atk),
+                spd = checked((short)spd),
+                def = checked((short)def),
+                res = checked((short)res)
+            };
         }
 
         public Skill CreateSkillObj()
@@ -427,36 +416,36 @@ namespace FEHagemu.ViewModels.Tools
             s.skill_range = (byte)SkillRange;
             s.score = (ushort)Score;
 
-            s.wep_equip = (WeaponTypeFlags)_wepEquipVM.CurrentValue;
-            s.mov_equip = (MoveTypeFlags)_movEquipVM.CurrentValue;
+            s.wep_equip = (WeaponTypeFlags)WepEquipVM.CurrentValue;
+            s.mov_equip = (MoveTypeFlags)MovEquipVM.CurrentValue;
             s.exclusiveQ = (byte)(ExclusiveQ ? 1 : 0);
             s.enemy_onlyQ = (byte)(EnemyOnlyQ ? 1 : 0);
 
-            s.flags = (SkillFlags)_flagsVM.CurrentValue;
-            s.flags1 = (SkillFlags1)_flags1VM.CurrentValue;
-            s.flags2 = (SkillFlags2)_flags2VM.CurrentValue;
-            s.flags3 = (SkillFlags3)_flags3VM.CurrentValue;
-            s.flags4 = (SkillFlags4)_flags4VM.CurrentValue;
+            s.flags = (SkillFlags)FlagsVM.CurrentValue;
+            s.flags1 = (SkillFlags1)Flags1VM.CurrentValue;
+            s.flags2 = (SkillFlags2)Flags2VM.CurrentValue;
+            s.flags3 = (SkillFlags3)Flags3VM.CurrentValue;
+            s.flags4 = (SkillFlags4)Flags4VM.CurrentValue;
 
-            s.effective_wep = (WeaponTypeFlags)_effectiveWepVM.CurrentValue;
-            s.effective_mov = (MoveTypeFlags)_effectiveMovVM.CurrentValue;
-            s.shield_wep = (WeaponTypeFlags)_shieldWepVM.CurrentValue;
-            s.shield_mov = (MoveTypeFlags)_shieldMovVM.CurrentValue;
-            s.weak_wep = (WeaponTypeFlags)_weakWepVM.CurrentValue;
-            s.weak_mov = (MoveTypeFlags)_weakMovVM.CurrentValue;
-            s.got_weak_wep = (WeaponTypeFlags)_gotWeakWepVM.CurrentValue;
-            s.got_weak_mov = (MoveTypeFlags)_gotWeakMovVM.CurrentValue;
-            s.adaptive_wep = (WeaponTypeFlags)_adaptiveWepVM.CurrentValue;
-            s.adaptive_mov = (MoveTypeFlags)_adaptiveMovVM.CurrentValue;
+            s.effective_wep = (WeaponTypeFlags)EffectiveWepVM.CurrentValue;
+            s.effective_mov = (MoveTypeFlags)EffectiveMovVM.CurrentValue;
+            s.shield_wep = (WeaponTypeFlags)ShieldWepVM.CurrentValue;
+            s.shield_mov = (MoveTypeFlags)ShieldMovVM.CurrentValue;
+            s.weak_wep = (WeaponTypeFlags)WeakWepVM.CurrentValue;
+            s.weak_mov = (MoveTypeFlags)WeakMovVM.CurrentValue;
+            s.got_weak_wep = (WeaponTypeFlags)GotWeakWepVM.CurrentValue;
+            s.got_weak_mov = (MoveTypeFlags)GotWeakMovVM.CurrentValue;
+            s.adaptive_wep = (WeaponTypeFlags)AdaptiveWepVM.CurrentValue;
+            s.adaptive_mov = (MoveTypeFlags)AdaptiveMovVM.CurrentValue;
 
-            s.refine_base = RefineBase;
-            s.refine_id = RefineId;
-            s.beast_effect_id = BeastEffectId;
-            s.next_skill = NextSkill;
-            s.passive_next = PassiveNext;
+            s.refine_base = RefineBase ?? string.Empty;
+            s.refine_id = RefineId ?? string.Empty;
+            s.beast_effect_id = BeastEffectId ?? string.Empty;
+            s.next_skill = NextSkill ?? string.Empty;
+            s.passive_next = PassiveNext ?? string.Empty;
 
-            s.requirements = new string[] { Requirements1, Requirements2 };
-            s.sprites = new string[] { Sprite1, Sprite2, Sprite3, Sprite4 };
+            s.requirements = [Requirements1 ?? string.Empty, Requirements2 ?? string.Empty];
+            s.sprites = [Sprite1 ?? string.Empty, Sprite2 ?? string.Empty, Sprite3 ?? string.Empty, Sprite4 ?? string.Empty];
 
             s.stats = CreateStats(Hp, Atk, Spd, Def, Res);
             s.combat_buffs = CreateStats(CbHp, CbAtk, CbSpd, CbDef, CbRes);
@@ -483,8 +472,8 @@ namespace FEHagemu.ViewModels.Tools
             s.heal_after_battle = HealAfterBattle;
             s.combat_stats_method = CombatStatsMethod;
             s.combat_stats_method_param = CombatStatsMethodParam;
-            s.neutralize_enemy_bonus = (StatsFlag)_neutralizeEnemyBonusVM.CurrentValue;
-            s.neutralize_self_penalty = (StatsFlag)_neutralizeSelfPenaltyVM.CurrentValue;
+            s.neutralize_enemy_bonus = (StatsFlag)NeutralizeEnemyBonusVM.CurrentValue;
+            s.neutralize_self_penalty = (StatsFlag)NeutralizeSelfPenaltyVM.CurrentValue;
             s.timing = Timing;
             s.ability = Ability;
             s.target_wep = TargetWep;
@@ -544,7 +533,7 @@ namespace FEHagemu.ViewModels.Tools
         {
             var vm = new SkillSelectorViewModel();
 
-            var result = await OverlayDialog.ShowModal(new FEHagemu.Views.SkillSelectorView(), vm, null, new OverlayDialogOptions()
+            var result = await OverlayDialog.ShowModal(FEHagemu.Views.SkillSelectorView.CreateSelectionView(), vm, null, new OverlayDialogOptions()
             {
                 Title = "Select Skill",
                 CanResize = true,
@@ -562,7 +551,7 @@ namespace FEHagemu.ViewModels.Tools
         {
             var vm = new SkillSelectorViewModel();
 
-            var result = await OverlayDialog.ShowModal(new FEHagemu.Views.SkillSelectorView(), vm, null, new OverlayDialogOptions()
+            var result = await OverlayDialog.ShowModal(FEHagemu.Views.SkillSelectorView.CreateSelectionView(), vm, null, new OverlayDialogOptions()
             {
                 Title = "Select Refine Skill",
                 CanResize = true,
@@ -596,34 +585,72 @@ namespace FEHagemu.ViewModels.Tools
         [RelayCommand]
         public async Task SaveToGame()
         {
-            var s = CreateSkillObj();
-            string id_name = MasterData.StripIdPrefix(s.id, out _);
-            if (!id_name.Contains("MOD")) id_name = id_name + "MOD";
-            s.id = "SID_" + id_name;
-
-            string nameContent = NameText;
-            string descContent = DescriptionText;
-
-            if (!s.name.StartsWith("MSID_")) s.name = $"MSID_{id_name}";
-            if (!s.description.StartsWith("MSID_H_")) s.description = $"MSID_H_{id_name}";
-
-            var skill_arc = MasterData.ModSkillArc;
-            var msg_arc = MasterData.ModMsgArc;
-
-            if (skill_arc == null || msg_arc == null)
+            if (IsSaving) return;
+            IsSaving = true;
+            try
             {
-                await MessageBox.ShowOverlayAsync("Mod archives not found!", "Error");
-                return;
+                var skill = CreateSkillObj();
+                if (!editingAddedSkill)
+                {
+                    skill.id = MasterData.CreateUniqueModId(
+                        skill.id,
+                        "SID_",
+                        candidate => MasterData.SkillDict.ContainsKey(candidate));
+                }
+                else if (!skill.id.StartsWith("SID_", StringComparison.OrdinalIgnoreCase)
+                    || !skill.id.Contains("MOD", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("新增技能的 ID 必须以 SID_ 开头并保留 MOD 标记。");
+                }
+
+                string idBody = skill.id.StartsWith("SID_", StringComparison.OrdinalIgnoreCase)
+                    ? skill.id[4..]
+                    : skill.id;
+                string nameContent = NameText;
+                string descriptionContent = DescriptionText;
+                skill.name = $"MSID_{idBody}";
+                skill.description = $"MSID_H_{idBody}";
+
+                var skillArc = MasterData.ModSkillArc
+                    ?? throw new InvalidOperationException("Skill Tutorial.bin.lz was not found.");
+                var messageArc = MasterData.ModMsgArc
+                    ?? throw new InvalidOperationException("Message Tutorial.bin.lz was not found.");
+
+                Skill? previousSkill = editingAddedSkill
+                    ? skillArc.data.list.FirstOrDefault(item => item.id == sourceSkillId)
+                    : null;
+                MasterData.UpsertModSkill(skill, editingAddedSkill ? sourceSkillId : null);
+                if (previousSkill is not null)
+                {
+                    if (!string.Equals(previousSkill.name, skill.name, StringComparison.Ordinal))
+                        MasterData.DeleteMessage(messageArc, previousSkill.name);
+                    if (!string.Equals(previousSkill.description, skill.description, StringComparison.Ordinal))
+                        MasterData.DeleteMessage(messageArc, previousSkill.description);
+                }
+                MasterData.AddMessage(messageArc, skill.name, nameContent);
+                MasterData.AddMessage(messageArc, skill.description, descriptionContent);
+
+                await skillArc.Save();
+                await messageArc.Save();
+                var writeback = await MasterData.WriteBackFilesAsync(
+                    [skillArc.FilePath, messageArc.FilePath]);
+
+                Id = skill.id;
+                sourceSkillId = skill.id;
+                editingAddedSkill = true;
+                await MessageBox.ShowOverlayAsync(
+                    $"技能 {skill.id} 已保存到 {writeback.DestinationText}。",
+                    "保存成功");
+                OnSaved?.Invoke(skill.id);
             }
-
-            MasterData.AddSkill(skill_arc, s);
-            MasterData.AddMessage(msg_arc, s.name, nameContent);
-            MasterData.AddMessage(msg_arc, s.description, descContent);
-
-            await skill_arc.Save();
-            await msg_arc.Save();
-
-            await MessageBox.ShowOverlayAsync($"Skill {s.id} saved to Mod Data.", "Success");
+            catch (Exception ex)
+            {
+                await MessageBox.ShowOverlayAsync(ex.Message, "保存失败");
+            }
+            finally
+            {
+                IsSaving = false;
+            }
         }
     }
 }

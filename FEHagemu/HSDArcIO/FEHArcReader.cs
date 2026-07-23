@@ -1,69 +1,34 @@
-﻿using System.Buffers;
+using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
-using System;
 using System.Reflection;
-using FEHagemu.HSDArchive;
 using System.Text;
+using FEHagemu.HSDArchive;
 
 namespace FEHagemu.HSDArcIO
 {
     public class FEHArcReader : BinaryReader
     {
+        public byte[] xstarter;
+        private string path;
+        private const int InitialStringBufferSize = 128;
 
-        public FEHArcReader(string path):base(LoadStream(path, out byte[] xor_start))
+        public FEHArcReader(string path) : base(LoadStream(path, out byte[] xor_start))
         {
             xstarter = xor_start;
-            this.path = path; 
+            this.path = path;
         }
 
         public static Stream LoadStream(string path, out byte[] xor_start)
         {
-            if (System.IO.Path.GetExtension(path).Equals(".lz", StringComparison.CurrentCultureIgnoreCase))
-            {
-               return new MemoryStream(Cryptor.ReadLZ(path, out xor_start));
-            }
-            else
-            {
-                throw new FormatException("Please Read an .lz file");
-            }
+            if (Path.GetExtension(path).Equals(".lz", StringComparison.CurrentCultureIgnoreCase))
+                return new MemoryStream(Cryptor.ReadLZ(path, out xor_start));
+            throw new FormatException("Please Read an .lz file");
         }
 
-        public byte[] xstarter;
-        string path;
-        
-        public void Skip(int byte_num) {
-            BaseStream.Seek(byte_num, SeekOrigin.Current);
-        }
+        public void Skip(int byteCount) => BaseStream.Seek(byteCount, SeekOrigin.Current);
 
-        //public void SetArcMeta<T>(HSDArc<T> arc) where T : new()
-        //{
-        //    arc.xor_start = xstarter;
-        //    arc.path = path;
-        //}
-
-        private const int InitialStringBufferSize = 128;
-
-        protected int ReadTilZero(ref byte[] buffer)
-        {
-            int count = 0;
-            byte reading = ReadByte();
-            while (reading != 0)
-            {
-                if (count >= buffer.Length)
-                {
-                    var newBuf = ArrayPool<byte>.Shared.Rent(buffer.Length * 2);
-                    buffer.AsSpan(0, count).CopyTo(newBuf);
-                    ArrayPool<byte>.Shared.Return(buffer);
-                    buffer = newBuf;
-                }
-                buffer[count++] = reading;
-                reading = ReadByte();
-            }
-            return count;
-        }
-
-        //===========================
         public void ReadHeader(ref HSDArcHeader header)
         {
             header.archive_size = ReadUInt32();
@@ -75,41 +40,51 @@ namespace FEHagemu.HSDArcIO
             header.magic = ReadUInt64();
         }
 
-        #region New Reading Methods
-        private void SeekAndExecute(ulong offset, Action readAction)
+        private object ReadAtomValue(Type targetType, int size, ulong key)
         {
-            if (offset == 0) return;
-            long originalPosition = BaseStream.Position;
-            try
+            ulong bits = size switch
             {
-                BaseStream.Seek(HSDArcHeader.Size + (long)offset, SeekOrigin.Begin);
-                readAction();
-            }
-            finally
-            {
-                BaseStream.Seek(originalPosition, SeekOrigin.Begin);
-            }
+                1 => (byte)(ReadByte() ^ key),
+                2 => (ushort)(ReadUInt16() ^ key),
+                4 => (uint)(ReadUInt32() ^ key),
+                8 => ReadUInt64() ^ key,
+                _ => throw new ArgumentException($"Invalid atom size: {size}")
+            };
+
+            Type valueType = targetType.IsEnum
+                ? Enum.GetUnderlyingType(targetType)
+                : targetType;
+            object value = valueType == typeof(sbyte) ? unchecked((sbyte)bits)
+                : valueType == typeof(byte) ? (byte)bits
+                : valueType == typeof(short) ? unchecked((short)bits)
+                : valueType == typeof(ushort) ? (ushort)bits
+                : valueType == typeof(int) ? unchecked((int)bits)
+                : valueType == typeof(uint) ? (uint)bits
+                : valueType == typeof(long) ? unchecked((long)bits)
+                : valueType == typeof(ulong) ? bits
+                : throw new NotSupportedException($"Unsupported atom type: {targetType}");
+            return targetType.IsEnum ? Enum.ToObject(targetType, value) : value;
         }
-        private object ReadAtomValue(int size, ulong key)
+
+        protected int ReadTilZero(ref byte[] buffer)
         {
-            switch (size)
+            int count = 0;
+            byte b = ReadByte();
+            while (b != 0)
             {
-                case 1:
-                    return (byte)(ReadByte() ^ key);
-                case 2:
-                    return (ushort)(ReadUInt16() ^ key);
-                case 4:
-                    return (uint)(ReadUInt32() ^ key);
-                case 8:
-                    return (ulong)(ReadUInt64() ^ key);
-                default:
-                    throw new Exception($"Size {size} is not valid for HSDBinType.Atom");
+                if (count >= buffer.Length)
+                {
+                    var newBuf = ArrayPool<byte>.Shared.Rent(buffer.Length * 2);
+                    buffer.AsSpan(0, count).CopyTo(newBuf);
+                    ArrayPool<byte>.Shared.Return(buffer);
+                    buffer = newBuf;
+                }
+                buffer[count++] = b;
+                b = ReadByte();
             }
+            return count;
         }
-        public void ReadAtom(object data, FieldInfo field, HSDHelperAttribute at)
-        {
-            field.SetValue(data, ReadAtomValue(at.Size, at.Key));
-        }
+
         public string ReadStringBuffer(StringType type)
         {
             var buffer = ArrayPool<byte>.Shared.Rent(InitialStringBufferSize);
@@ -117,18 +92,10 @@ namespace FEHagemu.HSDArcIO
             {
                 int len = ReadTilZero(ref buffer);
                 if (len == 0) return string.Empty;
-
                 if (type == StringType.Plain)
-                {
                     return Encoding.UTF8.GetString(buffer, 0, len);
-                }
 
-                var key = type switch
-                {
-                    StringType.ID => XKeys.XKeyId,
-                    StringType.Message => XKeys.XKeyMsg,
-                    _ => XKeys.XKeyId
-                };
+                var key = type == StringType.ID ? XKeys.XKeyId : XKeys.XKeyMsg;
                 for (int i = 0; i < len; i++)
                 {
                     byte k = key[i % key.Length];
@@ -142,60 +109,44 @@ namespace FEHagemu.HSDArcIO
                 ArrayPool<byte>.Shared.Return(buffer);
             }
         }
-        public void ReadXString(object data, FieldInfo field, HSDHelperAttribute at)
-        {
-            field.SetValue(data, ReadStringBuffer(at.StringType));
-        }
-        public void ReadPadding(HSDHelperAttribute at)
-        {
-            Skip(at.Size);
-        }
-        public void ReadUnknownBuffer(object data, FieldInfo field, HSDHelperAttribute at)
-        {
-            field.SetValue(data, ReadBytes(at.Size));
-        }
-        public void ReadElement(Array arr, HSDHelperAttribute at, int i)
-        {
-            var eleT = arr.GetType().GetElementType();
-            if (at.ElementType == HSDBinType.Atom)
-            {
-                arr.SetValue(ReadAtomValue(at.Size, at.Key), i);
-            }
-            else if (at.ElementType == HSDBinType.Padding)
-            {
-                ReadPadding(at);
-            }
-            else if (at.ElementType == HSDBinType.String)
-            {
-                arr.SetValue(ReadStringBuffer(at.StringType), i);
-            }
-            else if(at.ElementType == HSDBinType.Struct)
-            {
-                var element = Activator.CreateInstance(eleT!);
-                ReadStruct(element!);
-                arr.SetValue(element, i);
-            } else
-            {
-                throw new Exception($"Element Type {at.Type} cannot be read.");
-            }
-            
-        }
-        public void ReadArray(object data, FieldInfo field, HSDHelperAttribute at)
-        {
-            if (!field.FieldType.IsArray) throw new Exception($"Use attribute 'Array' for no-Array field {field.Name}");
-            int size;
-            if (at.DynamicSizeCalculator is not null)
-            {
-                size = (int)data.GetType().GetMethod(at.DynamicSizeCalculator!)!.Invoke(null, new object[] { data })!;
-            }
-            else
-            {
-                size = at.Size;
-            };
-            var eleT = field.FieldType.GetElementType()!;
-            var arr = Array.CreateInstance(eleT, size);
 
-            if (at.ElementIsPtr)
+        private void ReadFieldByAttr(object data, FieldInfo field, HSDFieldAttribute attr)
+        {
+            switch (attr)
+            {
+                case HSDAtomAttribute a:
+                    field.SetValue(data, ReadAtomValue(field.FieldType, a.Size, a.Key));
+                    break;
+                case HSDStringAttribute s:
+                    field.SetValue(data, ReadStringBuffer(s.StringType));
+                    break;
+                case HSDStructAttribute:
+                    var st = Activator.CreateInstance(field.FieldType)!;
+                    ReadStruct(st);
+                    field.SetValue(data, st);
+                    break;
+                case HSDArrayAttribute arr:
+                    ReadArrayField(data, field, arr);
+                    break;
+                case HSDPaddingAttribute p:
+                    Skip(p.Size);
+                    break;
+                case HSDRawAttribute r:
+                    field.SetValue(data, ReadBytes(r.Size));
+                    break;
+            }
+        }
+
+        private void ReadArrayField(object data, FieldInfo field, HSDArrayAttribute arr)
+        {
+            var eleT = field.FieldType.GetElementType()!;
+            int size = arr.Size > 0 ? arr.Size
+                : data is IHSDDynamicSize ds ? ds.GetDynamicSize(field.Name)
+                : throw new InvalidOperationException($"No size for array field {field.Name}");
+
+            var array = Array.CreateInstance(eleT, size);
+
+            if (arr.ElementPtr != PtrMode.None)
             {
                 for (int i = 0; i < size; i++)
                 {
@@ -203,184 +154,87 @@ namespace FEHagemu.HSDArcIO
                     if (offset == 0) continue;
                     long pos = BaseStream.Position;
                     BaseStream.Seek(HSDArcHeader.Size + (long)offset, SeekOrigin.Begin);
-                    ReadElement(arr, at, i);
+                    ReadArrayElement(array, eleT, arr, i);
                     BaseStream.Seek(pos, SeekOrigin.Begin);
                 }
             }
-            else if (at.ElementType == HSDBinType.Atom)
+            else if (eleT == typeof(string))
             {
-                int atomSize = at.Size;
-                ulong key = at.Key;
                 for (int i = 0; i < size; i++)
-                {
-                    arr.SetValue(ReadAtomValue(atomSize, key), i);
-                }
+                    array.SetValue(ReadStringBuffer(arr.StringType), i);
             }
-            else if (at.ElementType == HSDBinType.String)
+            else if (eleT.IsPrimitive || eleT.IsEnum)
             {
-                var strType = at.StringType;
                 for (int i = 0; i < size; i++)
-                {
-                    arr.SetValue(ReadStringBuffer(strType), i);
-                }
+                    array.SetValue(ReadAtomValue(eleT, arr.ElementSize, arr.ElementKey), i);
             }
-            else if (at.ElementType == HSDBinType.Struct)
+            else
             {
                 for (int i = 0; i < size; i++)
                 {
                     var element = Activator.CreateInstance(eleT)!;
                     ReadStruct(element);
-                    arr.SetValue(element, i);
+                    array.SetValue(element, i);
                 }
             }
-            else
-            {
-                for (int i = 0; i < size; i++)
-                {
-                    ReadElement(arr, at, i);
-                }
-            }
-            field.SetValue(data, arr);
+            field.SetValue(data, array);
         }
-        public void ReadField(object data, FieldInfo field, HSDHelperAttribute at)
+
+        private void ReadArrayElement(Array array, Type eleT, HSDArrayAttribute arr, int i)
         {
-            if (at.Type == HSDBinType.Atom)
-            {
-                ReadAtom(data, field, at);
-            }
-            else if (at.Type == HSDBinType.Padding)
-            {
-                ReadPadding(at);
-            }
-            else if (at.Type == HSDBinType.String) {
-                ReadXString(data, field, at);
-            } else if (at.Type == HSDBinType.Struct)
-            {
-                var st = Activator.CreateInstance(field.FieldType);
-                ReadStruct(st!);
-                field.SetValue(data, st);
-            }
-            else if (at.Type == HSDBinType.Array)
-            {
-                ReadArray(data, field, at);
-            }
-            else if (at.Type == HSDBinType.Unknown)
-            {
-                ReadUnknownBuffer(data, field, at);
-            }
+            if (eleT == typeof(string))
+                array.SetValue(ReadStringBuffer(arr.StringType), i);
+            else if (eleT.IsPrimitive || eleT.IsEnum)
+                array.SetValue(ReadAtomValue(eleT, arr.ElementSize, arr.ElementKey), i);
             else
             {
-                throw new Exception($"Field Type {at.Type} cannot be read.");
+                var element = Activator.CreateInstance(eleT)!;
+                ReadStruct(element);
+                array.SetValue(element, i);
             }
         }
-
-        //public void ReadStruct(object data)
-        //{
-        //    Type type = data.GetType();
-        //    FieldInfo[] fields = type.GetFields();
-        //    Dictionary<long, FieldInfo> delayed_ptrs = [];
-
-        //    foreach (var field in fields)
-        //    {
-        //        if (!field.IsPublic)
-        //            continue;
-        //        var at = field.GetCustomAttribute<HSDHelperAttribute>();
-        //        if (at is not null)
-        //        {
-        //            if (at.Type == HSDBinType.Array)
-        //            {
-        //                if (at.IsPtr)
-        //                {
-        //                    if (at.IsDelayedPtr)
-        //                    {
-        //                        delayed_ptrs.TryAdd(BaseStream.Position, field);
-        //                        ReadUInt64();
-        //                    } else
-        //                    {
-        //                        ulong offset = ReadUInt64();
-        //                        if (offset == 0) continue;
-        //                        long pos = BaseStream.Position;
-        //                        BaseStream.Seek(HSDArcHeader.Size + (long)offset, SeekOrigin.Begin);
-        //                        ReadArray(data, field, at);
-        //                        BaseStream.Seek(pos, SeekOrigin.Begin);
-        //                    }
-        //                } else
-        //                {
-        //                    ReadArray(data, field, at);
-        //                }
-        //            }
-        //            else
-        //            {
-        //                if (at.IsPtr)
-        //                {
-        //                    ulong offset = ReadUInt64();
-        //                    if (offset == 0) continue;
-        //                    long pos = BaseStream.Position;
-        //                    BaseStream.Seek(HSDArcHeader.Size + (long)offset, SeekOrigin.Begin);
-        //                    ReadField(data, field, at);
-        //                    BaseStream.Seek(pos, SeekOrigin.Begin);
-        //                }
-        //                else
-        //                {
-        //                    ReadField(data, field, at);
-        //                }
-        //            }
-        //        }
-        //    }
-
-        //    foreach (var item in delayed_ptrs)
-        //    {
-        //        BaseStream.Seek(item.Key, SeekOrigin.Begin);
-        //        var field = item.Value;
-        //        var at = field.GetCustomAttribute<HSDHelperAttribute>();
-        //        ulong offset = ReadUInt64();
-        //        if (offset == 0) continue;
-        //        BaseStream.Seek(HSDArcHeader.Size + (long)offset, SeekOrigin.Begin);
-        //        ReadField(data, field, at!);
-        //    }
-        //}
 
         public void ReadStruct(object data)
         {
-            Type type = data.GetType();
-            var metas = HSDReflectionCache.GetFieldMetas(type);
-            List<(long position, FieldMeta meta)> delayed_ptrs = null;
+            var metas = HSDReflectionCache.GetFieldMetas(data.GetType());
+            List<(long position, FieldMeta meta)>? delayed = null;
 
             foreach (ref readonly var m in metas.AsSpan())
             {
-                if (m.Attr.IsDelayedPtr)
+                switch (m.Attr.Ptr)
                 {
-                    delayed_ptrs ??= new();
-                    delayed_ptrs.Add((BaseStream.Position, m));
-                    ReadUInt64();
-                }
-                else if (m.Attr.IsPtr)
-                {
-                    ulong offset = ReadUInt64();
-                    if (offset == 0) continue;
-                    long pos = BaseStream.Position;
-                    BaseStream.Seek(HSDArcHeader.Size + (long)offset, SeekOrigin.Begin);
-                    ReadField(data, m.Field, m.Attr);
-                    BaseStream.Seek(pos, SeekOrigin.Begin);
-                }
-                else
-                {
-                    ReadField(data, m.Field, m.Attr);
+                    case PtrMode.DelayedPtr:
+                        delayed ??= new();
+                        delayed.Add((BaseStream.Position, m));
+                        ReadUInt64();
+                        break;
+                    case PtrMode.Ptr:
+                        ulong offset = ReadUInt64();
+                        if (offset != 0)
+                        {
+                            long pos = BaseStream.Position;
+                            BaseStream.Seek(HSDArcHeader.Size + (long)offset, SeekOrigin.Begin);
+                            ReadFieldByAttr(data, m.Field, m.Attr);
+                            BaseStream.Seek(pos, SeekOrigin.Begin);
+                        }
+                        break;
+                    default:
+                        ReadFieldByAttr(data, m.Field, m.Attr);
+                        break;
                 }
             }
 
-            if (delayed_ptrs != null)
+            if (delayed != null)
             {
-                foreach (var (position, m) in delayed_ptrs)
+                foreach (var (position, m) in delayed)
                 {
                     BaseStream.Seek(position, SeekOrigin.Begin);
                     ulong offset = ReadUInt64();
                     if (offset == 0) continue;
                     BaseStream.Seek(HSDArcHeader.Size + (long)offset, SeekOrigin.Begin);
-                    ReadField(data, m.Field, m.Attr);
+                    ReadFieldByAttr(data, m.Field, m.Attr);
                 }
             }
         }
-        #endregion
     }
 }

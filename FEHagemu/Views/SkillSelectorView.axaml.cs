@@ -12,13 +12,65 @@ namespace FEHagemu.Views;
 
 public partial class SkillSelectorView : UserControl
 {
+    private const double SelectionViewWidth = 560;
+    private const double SelectionViewHeight = 580;
+
     private readonly List<PinnedSkillWindow> _pinnedWindows = [];
+    public static readonly StyledProperty<bool> CloseOnDoubleTapProperty =
+        AvaloniaProperty.Register<SkillSelectorView, bool>(nameof(CloseOnDoubleTap), true);
+    public static readonly StyledProperty<bool> IsSelectionModeProperty =
+        AvaloniaProperty.Register<SkillSelectorView, bool>(nameof(IsSelectionMode), true);
+
+    public bool CloseOnDoubleTap
+    {
+        get => GetValue(CloseOnDoubleTapProperty);
+        set => SetValue(CloseOnDoubleTapProperty, value);
+    }
+
+    public bool IsSelectionMode
+    {
+        get => GetValue(IsSelectionModeProperty);
+        set => SetValue(IsSelectionModeProperty, value);
+    }
 
     public SkillSelectorView()
     {
         InitializeComponent();
+        UpdateSelectionModeLayout();
         DataContextChanged += OnDataContextChanged;
         Unloaded += OnUnloaded;
+    }
+
+    public static SkillSelectorView CreateSelectionView()
+    {
+        var view = new SkillSelectorView
+        {
+            IsSelectionMode = true
+        };
+        DialogHelper.SetResponsiveInitialSize(view, SelectionViewWidth, SelectionViewHeight);
+        return view;
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == IsSelectionModeProperty)
+            UpdateSelectionModeLayout();
+    }
+
+    private void UpdateSelectionModeLayout()
+    {
+        if (this.FindControl<Grid>("LayoutRoot") is not { } layout) return;
+
+        layout.ColumnDefinitions[0].Width = new GridLength(
+            IsSelectionMode ? 1 : 2,
+            GridUnitType.Star);
+        layout.ColumnDefinitions[1].Width = new GridLength(
+            IsSelectionMode ? 0 : 6,
+            GridUnitType.Pixel);
+        layout.ColumnDefinitions[2].Width = new GridLength(
+            IsSelectionMode ? 0 : 3,
+            GridUnitType.Star);
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
@@ -67,7 +119,10 @@ public partial class SkillSelectorView : UserControl
             && DataContext is SkillSelectorViewModel vm)
         {
             vm.SelectedSkill = svm;
-            DialogHelper.CloseDialogWithOK(this);
+            if (CloseOnDoubleTap)
+                DialogHelper.CloseDialogWithOK(this);
+            else
+                vm.IsEditMode = true;
         }
     }
 

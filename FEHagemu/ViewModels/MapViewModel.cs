@@ -145,11 +145,11 @@ namespace FEHagemu.ViewModels
         public IImage XImage => GetSkillImage(6);
         public IImage SImage => GetSkillImage(7);
 
-        public ushort HP { get => unit.stats.hp; set { unit.stats.hp = value; OnPropertyChanged(); } }
-        public ushort ATK { get => unit.stats.atk; set { unit.stats.atk = value; OnPropertyChanged(); } }
-        public ushort SPD { get => unit.stats.spd; set { unit.stats.spd = value; OnPropertyChanged(); } }
-        public ushort DEF { get => unit.stats.def; set { unit.stats.def = value; OnPropertyChanged(); } }
-        public ushort RES { get => unit.stats.res; set { unit.stats.res = value; OnPropertyChanged(); } }
+        public short HP { get => unit.stats.hp; set { unit.stats.hp = value; OnPropertyChanged(); } }
+        public short ATK { get => unit.stats.atk; set { unit.stats.atk = value; OnPropertyChanged(); } }
+        public short SPD { get => unit.stats.spd; set { unit.stats.spd = value; OnPropertyChanged(); } }
+        public short DEF { get => unit.stats.def; set { unit.stats.def = value; OnPropertyChanged(); } }
+        public short RES { get => unit.stats.res; set { unit.stats.res = value; OnPropertyChanged(); } }
 
         public byte CD { get => unit.cd; set { unit.cd = value; OnPropertyChanged(); } }
         public byte StartTurn { get => unit.start_turn; set { unit.start_turn = value; OnPropertyChanged(); } }

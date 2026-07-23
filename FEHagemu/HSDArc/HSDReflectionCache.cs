@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace FEHagemu.HSDArchive
@@ -7,9 +8,9 @@ namespace FEHagemu.HSDArchive
     public readonly struct FieldMeta
     {
         public readonly FieldInfo Field;
-        public readonly HSDHelperAttribute Attr;
+        public readonly HSDFieldAttribute Attr;
 
-        public FieldMeta(FieldInfo field, HSDHelperAttribute attr)
+        public FieldMeta(FieldInfo field, HSDFieldAttribute attr)
         {
             Field = field;
             Attr = attr;
@@ -25,10 +26,10 @@ namespace FEHagemu.HSDArchive
             return _cache.GetOrAdd(type, static t =>
             {
                 var fields = t.GetFields(BindingFlags.Public | BindingFlags.Instance);
-                var list = new System.Collections.Generic.List<FieldMeta>(fields.Length);
+                var list = new List<FieldMeta>(fields.Length);
                 foreach (var field in fields)
                 {
-                    var attr = field.GetCustomAttribute<HSDHelperAttribute>();
+                    var attr = field.GetCustomAttribute<HSDFieldAttribute>();
                     if (attr != null)
                         list.Add(new FieldMeta(field, attr));
                 }

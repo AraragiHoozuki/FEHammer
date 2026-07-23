@@ -11,34 +11,18 @@
     xmlns:u="https://irihi.tech/ursa"
     xmlns:views="clr-namespace:FEHagemu.Views"
     xmlns:vm="using:FEHagemu.ViewModels"
+    Name="BoardUnitEditor"
     d:DesignHeight="450"
     d:DesignWidth="800"
     x:DataType="vm:BoardUnitViewModel"
     mc:Ignorable="d">
     <UserControl.Styles>
-        <Style Selector="LayoutTransformControl.removing">
-            <Style.Animations>
-                <Animation
-                    Easing="CubicEaseOut"
-                    FillMode="Forward"
-                    Duration="0:0:0.3">
-                    <KeyFrame Cue="0%">
-                        <Setter Property="Opacity" Value="1" />
-                        <Setter Property="ScaleTransform.ScaleY" Value="1" />
-                    </KeyFrame>
-                    <KeyFrame Cue="100%">
-                        <Setter Property="Opacity" Value="0" />
-                        <Setter Property="ScaleTransform.ScaleY" Value="0" />
-                    </KeyFrame>
-                </Animation>
-            </Style.Animations>
-        </Style>
         <!-- Modern Skill Item Style -->
         <Style Selector="Border.modernSkillItem">
             <Setter Property="Background" Value="{DynamicResource SemiGrey1Color}" />
-            <Setter Property="CornerRadius" Value="6" />
-            <Setter Property="Padding" Value="4" />
-            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="2,1" />
+            <Setter Property="Margin" Value="0,1" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="Transitions">
@@ -61,7 +45,7 @@
             <Setter Property="Margin" Value="0,4" />
         </Style>
     </UserControl.Styles>
-    <LayoutTransformControl Classes.removing="{Binding IsRemoving}">
+    <LayoutTransformControl>
 
         <Border
             Margin="4"
@@ -71,7 +55,6 @@
             BorderThickness="1"
             BoxShadow="0 4 12 0 #20000000"
             Classes.highlighted="{Binding IsHighlighted}"
-            Classes.removing="{Binding IsRemoving}"
             ClipToBounds="True"
             CornerRadius="8">
             <Grid Name="UnitPanelRoot" RowDefinitions="Auto,*">
@@ -110,7 +93,7 @@
                             VerticalAlignment="Center"
                             Classes="Success"
                             Command="{Binding ChangePersonCommand}"
-                            CommandParameter="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).GameBoard.SelectedCell}"
+                            CommandParameter="{Binding #BoardUnitEditor.Cell}"
                             Icon="{StaticResource SemiIconEdit}"
                             ToolTip.Tip="编辑单位" />
                     </Grid>
@@ -200,7 +183,8 @@
                                                 HorizontalContentAlignment="Right"
                                                 InnerLeftContent="HP"
                                                 InnerRightContent="{Binding DefaultHP}"
-                                                Minimum="0"
+                                                Maximum="32767"
+                                                Minimum="-32768"
                                                 Step="1"
                                                 Value="{Binding HP}" />
                                             <u:NumericIntUpDown
@@ -208,8 +192,8 @@
                                                 HorizontalContentAlignment="Right"
                                                 InnerLeftContent="ATK"
                                                 InnerRightContent="{Binding DefaultATK}"
-                                                Maximum="99"
-                                                Minimum="0"
+                                                Maximum="32767"
+                                                Minimum="-32768"
                                                 Step="1"
                                                 Value="{Binding ATK}" />
                                             <u:NumericIntUpDown
@@ -217,8 +201,8 @@
                                                 HorizontalContentAlignment="Right"
                                                 InnerLeftContent="SPD"
                                                 InnerRightContent="{Binding DefaultSPD}"
-                                                Maximum="99"
-                                                Minimum="0"
+                                                Maximum="32767"
+                                                Minimum="-32768"
                                                 Step="1"
                                                 Value="{Binding SPD}" />
                                             <u:NumericIntUpDown
@@ -226,8 +210,8 @@
                                                 HorizontalContentAlignment="Right"
                                                 InnerLeftContent="DEF"
                                                 InnerRightContent="{Binding DefaultDEF}"
-                                                Maximum="99"
-                                                Minimum="0"
+                                                Maximum="32767"
+                                                Minimum="-32768"
                                                 Step="1"
                                                 Value="{Binding DEF}" />
                                             <u:NumericIntUpDown
@@ -235,8 +219,8 @@
                                                 HorizontalContentAlignment="Right"
                                                 InnerLeftContent="RES"
                                                 InnerRightContent="{Binding DefaultRES}"
-                                                Maximum="99"
-                                                Minimum="0"
+                                                Maximum="32767"
+                                                Minimum="-32768"
                                                 Step="1"
                                                 Value="{Binding RES}" />
                                         </Grid>
@@ -271,36 +255,48 @@
                                 <StackPanel Grid.Column="1" Margin="4,0,0,0" Spacing="4">
                                     <u:Divider HorizontalContentAlignment="Center">技能</u:Divider>
                                     <Border Classes="statCard">
-                                        <StackPanel Spacing="2">
+                                        <StackPanel Spacing="0">
                                             <ItemsControl HorizontalAlignment="Stretch" ItemsSource="{Binding Skills}">
-                                                <ItemsControl.Styles>
-                                                    <Style Selector="Image">
-                                                        <Setter Property="RenderTransform" Value="rotate(0)" />
-                                                        <Setter Property="Transitions">
-                                                            <Transitions>
-                                                                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.3" />
-                                                            </Transitions>
-                                                        </Setter>
-                                                    </Style>
-                                                    <Style Selector="Image:pointerover">
-                                                        <Setter Property="RenderTransform" Value="rotate(360deg)" />
-                                                    </Style>
-                                                </ItemsControl.Styles>
                                                 <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
+                                                    <DataTemplate x:DataType="vm:SkillViewModel">
                                                         <Border Classes="modernSkillItem">
                                                             <Grid ColumnDefinitions="Auto,*,Auto">
                                                                 <Button
                                                                     Grid.Column="0"
-                                                                    Padding="2"
+                                                                    Padding="0"
                                                                     Theme="{DynamicResource BorderlessButton}"
                                                                     Command="{Binding #UnitPanelRoot.((vm:BoardUnitViewModel)DataContext).ChangeSkillCommand}"
                                                                     CommandParameter="{Binding}">
-                                                                    <Image Height="28" Source="{Binding Path=Icon}" />
+                                                                    <Grid Width="30" Height="30">
+                                                                        <Image
+                                                                            Width="28"
+                                                                            Height="28"
+                                                                            HorizontalAlignment="Center"
+                                                                            VerticalAlignment="Center"
+                                                                            Source="{Binding Icon}" />
+                                                                        <Image
+                                                                            Width="16"
+                                                                            Height="16"
+                                                                            HorizontalAlignment="Right"
+                                                                            VerticalAlignment="Bottom"
+                                                                            IsHitTestVisible="False"
+                                                                            IsVisible="{Binding ShowPassiveSlotIcon}"
+                                                                            Source="{Binding PassiveSlotIcon}"
+                                                                            Stretch="Uniform" />
+                                                                        <Image
+                                                                            Width="16"
+                                                                            Height="16"
+                                                                            HorizontalAlignment="Right"
+                                                                            VerticalAlignment="Bottom"
+                                                                            IsHitTestVisible="False"
+                                                                            IsVisible="{Binding ShowSpecialCooldownQ}"
+                                                                            Source="{Binding SpecialCooldownIcon}"
+                                                                            Stretch="Uniform" />
+                                                                    </Grid>
                                                                 </Button>
                                                                 <TextBlock
                                                                     Grid.Column="1"
-                                                                    Margin="8,0"
+                                                                    Margin="6,0"
                                                                     VerticalAlignment="Center"
                                                                     FontSize="14"
                                                                     FontWeight="Medium"
@@ -308,7 +304,7 @@
                                                                     TextTrimming="CharacterEllipsis" />
                                                                 <u:IconButton
                                                                     Grid.Column="2"
-                                                                    Padding="4"
+                                                                    Padding="2"
                                                                     Theme="{DynamicResource TertiaryIconButton}"
                                                                     Classes="Danger"
                                                                     Command="{Binding #UnitPanelRoot.((vm:BoardUnitViewModel)DataContext).DeleteSkillCommand}"

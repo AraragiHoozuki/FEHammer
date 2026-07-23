@@ -1,13 +1,14 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using FEHagemu.Services;
+using System;
 using System.Collections.ObjectModel;
 
 namespace FEHagemu.Views.Tools
 {
     public partial class FieldNoteEditorWindow : Window
     {
-        private string _key;
+        private string _key = string.Empty;
         public ObservableCollection<FieldNoteItem> Notes { get; set; } = new ObservableCollection<FieldNoteItem>();
 
         public FieldNoteEditorWindow()
@@ -18,7 +19,9 @@ namespace FEHagemu.Views.Tools
         public FieldNoteEditorWindow(string key) : this()
         {
             _key = key;
-            this.FindControl<TextBlock>("TitleText").Text = $"编辑条目 - {key}";
+            var title = this.FindControl<TextBlock>("TitleText")
+                ?? throw new InvalidOperationException("TitleText control was not found.");
+            title.Text = $"编辑条目 - {key}";
             
             var existing = FieldNoteService.Instance.GetNotes(key);
             foreach (var note in existing)
@@ -30,7 +33,8 @@ namespace FEHagemu.Views.Tools
                 Notes.Add(new FieldNoteItem());
             }
 
-            var itemsControl = this.FindControl<ItemsControl>("NotesItemsControl");
+            var itemsControl = this.FindControl<ItemsControl>("NotesItemsControl")
+                ?? throw new InvalidOperationException("NotesItemsControl was not found.");
             itemsControl.ItemsSource = Notes;
         }
 
